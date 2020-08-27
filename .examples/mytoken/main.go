@@ -9,20 +9,21 @@ import (
 	"github.com/Adeithe/go-twitch/api"
 )
 
+var reader *bufio.Reader
+
 func main() {
-	reader := bufio.NewReader(os.Stdin)
 	fmt.Print("Twitch Username: ")
-	username, _ := reader.ReadString('\n')
+	username := stdin()
 	fmt.Print("Twitch Password: ")
-	password, _ := reader.ReadString('\n')
-	login, err := api.Official.Login(clean(username), clean(password))
+	password := stdin()
+	login, err := api.Official.Login(username, password)
 	if err != nil {
 		panic(err)
 	}
 	if login.GetErrorCode() == 3022 {
 		fmt.Print("Twitch 2FA: ")
-		code, _ := reader.ReadString('\n')
-		if err := login.Verify(clean(code)); err != nil {
+		code := stdin()
+		if err := login.Verify(code); err != nil {
 			panic(err)
 		}
 	}
@@ -33,6 +34,10 @@ func main() {
 	fmt.Printf("Twitch Access Token: %s\n", login.GetAccessToken())
 }
 
-func clean(str string) string {
-	return strings.TrimSuffix(str, "\r\n")
+func stdin() string {
+	if reader == nil {
+		reader = bufio.NewReader(os.Stdin)
+	}
+	str, _ := reader.ReadString('\n')
+	return strings.TrimSuffix(strings.TrimSuffix(str, "\r\n"), "\n")
 }

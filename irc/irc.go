@@ -33,6 +33,7 @@ type IClient interface {
 	OnDisconnect(func())
 	OnPing(func())
 	OnPong(func(time.Duration))
+	OnMessage(func(ChatMessage))
 	OnRawMessage(func(IRCMessage))
 }
 

@@ -9,6 +9,7 @@ import (
 	"time"
 )
 
+// HTTPRequest stores data for a HTTP request
 type HTTPRequest struct {
 	BaseURL string
 	Path    string
@@ -17,6 +18,7 @@ type HTTPRequest struct {
 	Body    json.RawMessage
 }
 
+// HTTPResponse contains data about a previously handled HTTP request
 type HTTPResponse struct {
 	StatusCode int
 	Body       []byte

@@ -18,14 +18,7 @@ type captcha struct {
 	Proof string `json:"proof,omitempty"`
 }
 
-type ITwitchLogin interface {
-	Verify(string) error
-	ToBearer() (*Client, error)
-	GetError() string
-	GetErrorCode() int
-	GetAccessToken() string
-}
-
+// TwitchLogin contains data for a Twitch login request
 type TwitchLogin struct {
 	Username      string
 	password      string
@@ -38,6 +31,15 @@ type TwitchLogin struct {
 	RedirectPath  string `json:"redirect_path,omitempty"`
 }
 
+// ITwitchLogin interface containing methods for the Twitch Login
+type ITwitchLogin interface {
+	Verify(string) error
+	ToBearer() (*Client, error)
+	GetError() string
+	GetErrorCode() int
+	GetAccessToken() string
+}
+
 var _ ITwitchLogin = &TwitchLogin{}
 
 // Verify may need to be called if 2FA is enabled
@@ -48,7 +50,7 @@ func (login *TwitchLogin) Verify(code string) error {
 	req := NewRequest("POST", "https://passport.twitch.tv", "login")
 	req.Headers["Content-Type"] = "application/json"
 	data := loginData{
-		ClientID:     Official.ClientID,
+		ClientID:     Official.ID,
 		Username:     login.Username,
 		Password:     login.password,
 		Verification: code,
