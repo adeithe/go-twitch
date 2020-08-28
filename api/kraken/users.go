@@ -5,7 +5,7 @@ type UserOpts struct {
 	Logins []string
 }
 
-type Users struct {
+type UserData struct {
 	Total int    `json:"_total"`
 	Data  []User `json:"users"`
 }

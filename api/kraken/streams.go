@@ -1,0 +1,39 @@
+package kraken
+
+type StreamOpts struct {
+	ChannelIDs []string
+	Game       string
+	Language   string
+	Limit      int
+	Offset     int
+	Type       string
+}
+
+type StreamData struct {
+	Total int      `json:"_total"`
+	Data  []Stream `json:"streams"`
+}
+
+type Stream struct {
+	ID           int           `json:"_id"`
+	Game         string        `json:"game"`
+	Platform     string        `json:"broadcast_platform"`
+	CommunityID  string        `json:"community_id"`
+	CommunityIDs []string      `json:"community_ids"`
+	Viewers      int           `json:"viewers"`
+	VideoHeight  int           `json:"video_height"`
+	FPS          int           `json:"average_fps"`
+	Delay        int           `json:"delay"`
+	IsPlaylist   bool          `json:"is_playlist"`
+	Channel      Channel       `json:"channel"`
+	Thumbnail    StreamPreview `json:"preview"`
+	Type         string        `json:"stream_type"`
+	CreatedAt    string        `json:"created_at"`
+}
+
+type StreamPreview struct {
+	Small    string `json:"small"`
+	Medium   string `json:"medium"`
+	Large    string `json:"large"`
+	Template string `json:"template"`
+}

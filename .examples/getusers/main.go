@@ -25,11 +25,23 @@ func main() {
 	users, err := api.Official.Kraken().GetUsers(kraken.UserOpts{
 		Logins: usernames,
 	})
+	ids := []string{}
+	for _, user := range users.Data {
+		ids = append(ids, user.ID)
+	}
+	streams, err := api.Official.Kraken().GetStreams(kraken.StreamOpts{
+		ChannelIDs: ids,
+	})
 	if err != nil {
 		panic(err)
 	}
+	live := make(map[string]string)
+	for _, stream := range streams.Data {
+		live[fmt.Sprintf("%v", stream.Channel.ID)] = "LIVE"
+	}
 	for i, user := range users.Data {
-		fmt.Printf("[%d] %s (User ID: %s)\n", i, user.Login, user.ID)
+		live, _ := live[user.ID]
+		fmt.Printf("[%d] %s (User ID: %s) %s\n", i, user.Login, user.ID, live)
 	}
 }
 
