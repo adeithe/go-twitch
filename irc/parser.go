@@ -8,12 +8,14 @@ import (
 	"github.com/Adeithe/go-twitch/irc/cmd"
 )
 
+// IRCSource stores data about the sender of an incoming IRC message.
 type IRCSource struct {
 	Nickname string
 	Username string
 	Host     string
 }
 
+// IRCMessage stores data about a parsed incoming IRC message.
 type IRCMessage struct {
 	Raw     string
 	Command cmd.IRCCommand
@@ -33,14 +35,17 @@ type IMessageParser interface {
 
 var _ IMessageParser = &IRCMessage{}
 
+// NewParsedMessage returns a parsed IRCMessage based on the provided raw data.
 func NewParsedMessage(raw string) (IRCMessage, error) {
 	msg := &IRCMessage{Raw: raw}
 	if err := msg.Parse(); err != nil {
-		return IRCMessage{}, err
+		return *msg, err
 	}
 	return *msg, nil
 }
 
+// Parse takes the raw data provided in NewParsedMessage and stores the data accordingly.
+// This is done automatically when running NewParsedMessage but can be run again at any time.
 func (msg *IRCMessage) Parse() error {
 	var index int
 	parts := strings.Split(msg.Raw, " ")

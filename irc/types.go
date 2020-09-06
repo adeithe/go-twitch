@@ -6,6 +6,7 @@ import (
 	"time"
 )
 
+// UserState stores data about a USERSTATE sent to the client.
 type UserState struct {
 	UserID      int
 	DisplayName string

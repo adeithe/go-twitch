@@ -37,7 +37,7 @@ const (
 	Whispers Topic = "whispers.%v"
 )
 
-// ParseTopic will parse the given Topic with the arguements provided.
+// ParseTopic will parse the given Topic with the arguments provided.
 func ParseTopic(topic Topic, args ...interface{}) string {
 	return ParseTopicFromString(string(topic), args...)
 }

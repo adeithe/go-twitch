@@ -11,6 +11,7 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+// IClient interface containing methods for the PubSub client.
 type IClient interface {
 	UseToken(string)
 	Listen(...string)
@@ -33,6 +34,7 @@ type IClient interface {
 	OnMessage(func(string, json.RawMessage))
 }
 
+// Client used to store data for a PubSub session.
 type Client struct {
 	token string
 

@@ -70,8 +70,8 @@ func (api Kraken) GetStreams(opts kraken.StreamOpts) (kraken.StreamData, error) 
 	if len(opts.Type) > 0 {
 		params += fmt.Sprintf("&stream_type=%s", opts.Type)
 	}
-	if opts.Limit < len(opts.ChannelIDs) {
-		opts.Limit = len(opts.ChannelIDs)
+	if opts.Limit > 0 {
+		params += fmt.Sprintf("&limit=%d", opts.Limit)
 	}
 	if opts.Offset > 0 {
 		params += fmt.Sprintf("&offset=%d", opts.Offset)

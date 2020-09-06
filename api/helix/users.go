@@ -1,11 +1,13 @@
 package helix
 
+// UserOpts stores data about a request to the Twitch User API.
 type UserOpts struct {
 	GetSelf bool
 	IDs     []string
 	Logins  []string
 }
 
+// User stores data about a user returned by the Twitch User API.
 type User struct {
 	ID              string `json:"id"`
 	Login           string `json:"login"`

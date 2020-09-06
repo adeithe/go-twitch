@@ -14,6 +14,7 @@ import (
 	"github.com/Adeithe/go-twitch/irc/cmd"
 )
 
+// IClient interface containing methods for the IRC client.
 type IClient interface {
 	SetLogin(string, string)
 	Join(...string)
@@ -33,10 +34,13 @@ type IClient interface {
 	OnDisconnect(func())
 	OnPing(func())
 	OnPong(func(time.Duration))
+	OnJoin(func(string, string))
+	OnPart(func(string, string))
 	OnMessage(func(ChatMessage))
 	OnRawMessage(func(IRCMessage))
 }
 
+// Client stores data for the IRC session.
 type Client struct {
 	Username  string
 	token     string
@@ -57,6 +61,8 @@ type Client struct {
 	onDisconnect []func()
 	onPing       []func()
 	onPong       []func(time.Duration)
+	onJoin       []func(string, string)
+	onPart       []func(string, string)
 	onMessage    []func(ChatMessage)
 	onRawMessage []func(IRCMessage)
 }
@@ -208,7 +214,6 @@ func (irc *Client) reader() {
 }
 
 func (irc *Client) handle(raw string) {
-	fmt.Println(raw)
 	if msg, err := NewParsedMessage(raw); err == nil {
 		switch msg.Command {
 		case cmd.Ready:
@@ -224,6 +229,15 @@ func (irc *Client) handle(raw string) {
 			irc.latency = time.Since(irc.lastPing)
 			for _, f := range irc.onPong {
 				go f(irc.latency)
+			}
+
+		case cmd.Join:
+			for _, f := range irc.onJoin {
+				go f(strings.TrimPrefix(msg.Params[0], "#"), msg.Sender.Username)
+			}
+		case cmd.Part:
+			for _, f := range irc.onPart {
+				go f(strings.TrimPrefix(msg.Params[0], "#"), msg.Sender.Username)
 			}
 
 		case cmd.GlobalUserState:
@@ -245,6 +259,9 @@ func (irc *Client) handle(raw string) {
 			for _, f := range irc.onMessage {
 				go f(message)
 			}
+		}
+		for _, f := range irc.onRawMessage {
+			go f(msg)
 		}
 	}
 }

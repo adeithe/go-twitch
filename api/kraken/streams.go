@@ -1,5 +1,6 @@
 package kraken
 
+// StreamOpts stores data about a request to the Twitch Stream API.
 type StreamOpts struct {
 	ChannelIDs []string
 	Game       string
@@ -9,11 +10,13 @@ type StreamOpts struct {
 	Type       string
 }
 
+// SteamData stores data about a response from the Twitch Stream API.
 type StreamData struct {
 	Total int      `json:"_total"`
 	Data  []Stream `json:"streams"`
 }
 
+// Stream stores data about a stream returned by the Twitch Stream API.
 type Stream struct {
 	ID           int           `json:"_id"`
 	Game         string        `json:"game"`

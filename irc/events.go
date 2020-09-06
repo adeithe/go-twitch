@@ -22,6 +22,16 @@ func (irc *Client) OnPong(handler func(latency time.Duration)) {
 	irc.onPong = append(irc.onPong, handler)
 }
 
+// OnJoin event called when any user joins the channel.
+func (irc *Client) OnJoin(handler func(channel string, username string)) {
+	irc.onJoin = append(irc.onJoin, handler)
+}
+
+// OnPart event called when any user parts from the channel.
+func (irc *Client) OnPart(handler func(channel string, username string)) {
+	irc.onPart = append(irc.onPart, handler)
+}
+
 // OnMessage event called when the IRC client receives a chat message.
 func (irc *Client) OnMessage(handler func(message ChatMessage)) {
 	irc.onMessage = append(irc.onMessage, handler)

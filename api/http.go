@@ -42,6 +42,9 @@ func (req HTTPRequest) Do() (HTTPResponse, error) {
 	response := &HTTPResponse{}
 	url := strings.TrimSuffix(req.BaseURL, "/") + "/" + strings.TrimPrefix(req.Path, "/")
 	r, err := http.NewRequest(strings.ToUpper(req.Method), url, bytes.NewBuffer(req.Body))
+	if err != nil {
+		return *response, err
+	}
 	for key, value := range req.Headers {
 		r.Header.Set(key, value)
 	}

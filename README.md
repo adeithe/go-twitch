@@ -1,4 +1,4 @@
-# go-twitch
+# go-twitch [![GoDoc](https://godoc.org/github.com/Adeithe/go-twitch?status.svg)](https://godoc.org/github.com/Adeithe/go-twitch) [![Go Report Card](https://goreportcard.com/badge/github.com/Adeithe/go-twitch)](https://goreportcard.com/report/github.com/Adeithe/go-twitch)
 
 A complete interface for Twitch services.
 

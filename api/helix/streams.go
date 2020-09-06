@@ -1,5 +1,6 @@
 package helix
 
+// StreamOpts stores data about a request to the Twitch Stream API.
 type StreamOpts struct {
 	First      int
 	GameIDs    []string
@@ -10,11 +11,13 @@ type StreamOpts struct {
 	After      string
 }
 
+// StreamData stores data about a response from the Twitch Stream API.
 type StreamData struct {
 	Data       []Stream   `json:"data"`
 	Pagination Pagination `json:"pagination"`
 }
 
+// Stream stores data about a stream returned by the Twitch Stream API.
 type Stream struct {
 	ID        string   `json:"id"`
 	GameID    string   `json:"game_id"`

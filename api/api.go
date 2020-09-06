@@ -6,7 +6,7 @@ type Client struct {
 	bearer string
 }
 
-// IClient interface containing methods for the API Client
+// IClient interface containing methods for the API Client.
 type IClient interface {
 	NewBearer(string) *Client
 	Kraken() *Kraken

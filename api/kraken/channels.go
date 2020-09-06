@@ -1,5 +1,6 @@
 package kraken
 
+// Channel stores data about a channel returned by the Twitch Channel API.
 type Channel struct {
 	ID                           int    `json:"_id"`
 	Login                        string `json:"name"`
