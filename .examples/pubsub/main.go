@@ -17,11 +17,6 @@ func main() {
 
 	ps := twitch.PubSub()
 
-	ps.OnConnect(func() {
-		ps.UseToken("2gbdx6oar67tqtcmt49t3wpcgycthx")
-		ps.Listen(pubsub.ParseTopic(pubsub.ChatModeratorActions, 44322889))
-	})
-
 	ps.OnTopicListen(func(topic string) {
 		fmt.Printf("LISTEN %s\n", topic)
 	})
@@ -42,6 +37,9 @@ func main() {
 	if err := ps.Connect(); err != nil {
 		panic(err)
 	}
+
+	ps.UseToken("2gbdx6oar67tqtcmt49t3wpcgycthx")
+	ps.Listen(pubsub.ParseTopic(pubsub.ChatModeratorActions, 44322889))
 
 	<-sc
 	ps.Close()

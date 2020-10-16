@@ -10,7 +10,7 @@ type StreamOpts struct {
 	Type       string
 }
 
-// SteamData stores data about a response from the Twitch Stream API.
+// StreamData stores data about a response from the Twitch Stream API.
 type StreamData struct {
 	Total int      `json:"_total"`
 	Data  []Stream `json:"streams"`
@@ -34,6 +34,7 @@ type Stream struct {
 	CreatedAt    string        `json:"created_at"`
 }
 
+// StreamPreview stores thumbnail links for a Twitch Stream.
 type StreamPreview struct {
 	Small    string `json:"small"`
 	Medium   string `json:"medium"`

@@ -1,7 +1,5 @@
 package pubsub
 
-import "encoding/json"
-
 // OnDisconnect event called when the PubSub client gets disconnected from the server.
 func (pubsub *Client) OnDisconnect(handler func()) {
 	pubsub.onDisconnect = append(pubsub.onDisconnect, handler)
@@ -23,6 +21,6 @@ func (pubsub *Client) OnTopicResponseError(handler func(topic string, err string
 }
 
 // OnMessage event called when the PubSub client receives a message about a listened topic.
-func (pubsub *Client) OnMessage(handler func(topic string, data json.RawMessage)) {
+func (pubsub *Client) OnMessage(handler func(topic string, data []byte)) {
 	pubsub.onMessage = append(pubsub.onMessage, handler)
 }

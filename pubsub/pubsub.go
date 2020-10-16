@@ -31,7 +31,7 @@ type IClient interface {
 	OnTopicListen(func(string))
 	OnTopicUnlisten(func(string))
 	OnTopicResponseError(func(string, string))
-	OnMessage(func(string, json.RawMessage))
+	OnMessage(func(string, []byte))
 }
 
 // Client used to store data for a PubSub session.
@@ -54,7 +54,7 @@ type Client struct {
 	onTopicListen        []func(string)
 	onTopicUnlisten      []func(string)
 	onTopicResponseError []func(string, string)
-	onMessage            []func(string, json.RawMessage)
+	onMessage            []func(string, []byte)
 }
 
 // IP for the PubSub server

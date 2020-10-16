@@ -41,7 +41,14 @@ func NewRequest(method string, url string, path string) *HTTPRequest {
 func (req HTTPRequest) Do() (HTTPResponse, error) {
 	response := &HTTPResponse{}
 	url := strings.TrimSuffix(req.BaseURL, "/") + "/" + strings.TrimPrefix(req.Path, "/")
-	r, err := http.NewRequest(strings.ToUpper(req.Method), url, bytes.NewBuffer(req.Body))
+	var reqBody *bytes.Buffer
+	if len(req.Body) > 0 {
+		reqBody = bytes.NewBuffer(req.Body)
+		if _, ok := req.Headers["Content-Type"]; !ok {
+			req.Headers["Content-Type"] = "application/json"
+		}
+	}
+	r, err := http.NewRequest(strings.ToUpper(req.Method), url, reqBody)
 	if err != nil {
 		return *response, err
 	}

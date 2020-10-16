@@ -42,8 +42,8 @@ func (pubsub *Client) handleResponse(data MessageData) {
 
 func (pubsub *Client) handleMessage(data MessageData) {
 	type Message struct {
-		Topic string          `json:"topic"`
-		Data  json.RawMessage `json:"message"`
+		Topic string `json:"topic"`
+		Data  string `json:"message"`
 	}
 	msg := &Message{}
 	bytes, err := json.Marshal(data.Data)
@@ -54,6 +54,6 @@ func (pubsub *Client) handleMessage(data MessageData) {
 		return
 	}
 	for _, f := range pubsub.onMessage {
-		f(msg.Topic, msg.Data)
+		f(msg.Topic, []byte(msg.Data))
 	}
 }
