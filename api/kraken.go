@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -21,6 +22,8 @@ type IKraken interface {
 	IsError([]byte) (kraken.Error, bool)
 
 	GetUsers(kraken.UserOpts) (kraken.UserData, error)
+	GetGames(kraken.GameOpts) (kraken.GamesData, error)
+	GetStreamSummary(string) (kraken.StreamSummary, error)
 	GetStreams(kraken.StreamOpts) (kraken.StreamData, error)
 }
 
@@ -52,6 +55,46 @@ func (api Kraken) GetUsers(opts kraken.UserOpts) (kraken.UserData, error) {
 	return users, nil
 }
 
+// GetGames retrieves date about the top games as requested.
+func (api Kraken) GetGames(opts kraken.GameOpts) (kraken.GamesData, error) {
+	params := ""
+	if opts.Limit > 0 {
+		params += fmt.Sprintf("&limit=%d", opts.Limit)
+	}
+	if opts.Offset > 0 {
+		params += fmt.Sprintf("&offset=%d", opts.Offset)
+	}
+	res, err := api.Request(http.MethodGet, fmt.Sprintf("games/top?_t=%d%s", time.Now().Unix(), params), nil)
+	if err != nil {
+		return kraken.GamesData{}, err
+	}
+	games := kraken.GamesData{}
+	if data, ok := api.IsError(res.Body); !ok {
+		return games, fmt.Errorf("%s: %s (status: %d)", data.Error, data.Message, data.Status)
+	}
+	if err := json.Unmarshal(res.Body, &games); err != nil {
+		return games, err
+	}
+	return games, nil
+}
+
+// GetStreamSummary retrieves the number of live channels and active viewers for a category. Empty string for all of Twitch.
+func (api Kraken) GetStreamSummary(game string) (kraken.StreamSummary, error) {
+	game = url.QueryEscape(strings.ToLower(game))
+	res, err := api.Request(http.MethodGet, fmt.Sprintf("streams/summary?_t=%d&game=%s", time.Now().Unix(), game), nil)
+	if err != nil {
+		return kraken.StreamSummary{}, err
+	}
+	summary := kraken.StreamSummary{}
+	if data, ok := api.IsError(res.Body); !ok {
+		return summary, fmt.Errorf("%s: %s (status: %d)", data.Error, data.Message, data.Status)
+	}
+	if err := json.Unmarshal(res.Body, &summary); err != nil {
+		return summary, err
+	}
+	return summary, nil
+}
+
 // GetStreams retrieves data about streams as requested. Limit 100 channel ids.
 func (api Kraken) GetStreams(opts kraken.StreamOpts) (kraken.StreamData, error) {
 	if len(opts.ChannelIDs) > 100 {
@@ -62,7 +105,7 @@ func (api Kraken) GetStreams(opts kraken.StreamOpts) (kraken.StreamData, error) 
 		params += fmt.Sprintf("&channel=%s", strings.Join(opts.ChannelIDs, ","))
 	}
 	if len(opts.Game) > 0 {
-		params += fmt.Sprintf("&game=%s", opts.Game)
+		params += fmt.Sprintf("&game=%s", url.QueryEscape(strings.ToLower(opts.Game)))
 	}
 	if len(opts.Language) > 0 {
 		params += fmt.Sprintf("&language=%s", opts.Language)
