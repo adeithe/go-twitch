@@ -1,8 +1,8 @@
-package api
+package request
 
 import (
 	"bytes"
-	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -15,7 +15,7 @@ type HTTPRequest struct {
 	Path    string
 	Method  string
 	Headers map[string]string
-	Body    json.RawMessage
+	Body    []byte
 }
 
 // HTTPResponse contains data about a previously handled HTTP request
@@ -28,7 +28,7 @@ type HTTPResponse struct {
 var HTTPClient http.Client = http.Client{Timeout: time.Duration(time.Second * 5)}
 
 // NewRequest prepares data for a HTTPRequest
-func NewRequest(method string, url string, path string) *HTTPRequest {
+func New(method string, url string, path string) *HTTPRequest {
 	return &HTTPRequest{
 		BaseURL: url,
 		Path:    path,
@@ -46,6 +46,7 @@ func (req HTTPRequest) Do() (HTTPResponse, error) {
 		reqBody = bytes.NewBuffer(req.Body)
 		if _, ok := req.Headers["Content-Type"]; !ok {
 			req.Headers["Content-Type"] = "application/json"
+			req.Headers["Content-Length"] = fmt.Sprint(len(req.Body))
 		}
 	}
 	r, err := http.NewRequest(strings.ToUpper(req.Method), url, reqBody)

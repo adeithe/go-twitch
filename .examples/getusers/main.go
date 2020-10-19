@@ -22,14 +22,15 @@ func main() {
 		}
 		usernames = append(usernames, username)
 	}
-	users, err := api.Official.Kraken().GetUsers(kraken.UserOpts{
+	client := api.Official.Kraken()
+	users, err := client.GetUsers(kraken.UserOpts{
 		Logins: usernames,
 	})
 	ids := []string{}
 	for _, user := range users.Data {
 		ids = append(ids, user.ID)
 	}
-	streams, err := api.Official.Kraken().GetStreams(kraken.StreamOpts{
+	streams, err := client.GetStreams(kraken.StreamOpts{
 		ChannelIDs: ids,
 	})
 	if err != nil {
