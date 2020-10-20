@@ -16,10 +16,11 @@ type Client struct {
 	Self        User
 }
 
+// IHelix contains all methods available to the Helix API Client.
 type IHelix interface {
 	Request(string, string, interface{}) (request.HTTPResponse, error)
 
-	GetOwnUser() (User, error)
+	GetOwnUser() (*User, error)
 	GetUsers(UserOpts) (*UsersData, error)
 
 	GetStreams(StreamOpts) (*StreamsData, error)

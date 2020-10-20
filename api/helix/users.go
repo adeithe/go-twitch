@@ -35,20 +35,20 @@ type User struct {
 }
 
 // GetOwnUser retrieves a Twitch User object based on the clients OAuth Token.
-func (client *Client) GetOwnUser() (User, error) {
+func (client *Client) GetOwnUser() (*User, error) {
 	if len(client.bearer) < 1 {
-		return User{}, errors.New("a bearer token is required to use this endpoint")
+		return nil, errors.New("a bearer token is required to use this endpoint")
 	}
 	users, err := client.GetUsers(UserOpts{})
 	if err != nil {
-		return User{}, err
+		return nil, err
 	}
-	if len(users.Data) > 0 {
-		user := users.Data[0]
-		client.Self = user
-		return user, nil
+	if len(users.Data) < 1 {
+		return nil, errors.New("unable to get user")
 	}
-	return User{}, errors.New("unable to get user")
+	user := users.Data[0]
+	client.Self = user
+	return &user, nil
 }
 
 // GetUsers retrieves a list of users based on the specified UserOpts.
