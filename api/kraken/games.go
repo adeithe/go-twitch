@@ -35,7 +35,9 @@ type Game struct {
 }
 
 // GetTopGames retrieves games sorted by number of current viewers on Twitch, most popular first.
-func (client Client) GetTopGames(opts GameOpts) (*TopGames, error) {
+//
+// See: https://dev.twitch.tv/docs/v5/reference/games#get-top-games
+func (client *Client) GetTopGames(opts GameOpts) (*TopGames, error) {
 	params := ""
 	if opts.Limit > 0 {
 		params += fmt.Sprintf("&limit=%d", opts.Limit)
@@ -45,9 +47,6 @@ func (client Client) GetTopGames(opts GameOpts) (*TopGames, error) {
 	}
 	res, err := client.Request(http.MethodGet, fmt.Sprintf("games/top?_t=%d%s", time.Now().UTC().Unix(), params), nil)
 	if err != nil {
-		return nil, err
-	}
-	if err := client.IsError(res.Body); err != nil {
 		return nil, err
 	}
 	top := &TopGames{}

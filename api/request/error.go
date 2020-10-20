@@ -1,4 +1,4 @@
-package kraken
+package request
 
 import (
 	"encoding/json"
@@ -13,8 +13,7 @@ type APIError struct {
 }
 
 // IsError returns an error if the Twitch API responded with one.
-// See: https://dev.twitch.tv/docs/v5#errors
-func (client Client) IsError(bytes []byte) error {
+func IsError(bytes []byte) error {
 	var data APIError
 	if err := json.Unmarshal(bytes, &data); err != nil {
 		data = APIError{

@@ -42,15 +42,14 @@ type User struct {
 }
 
 // GetOwnUser retrieves a user object based on the clients OAuth token.
+//
+// See: https://dev.twitch.tv/docs/v5/reference/users#get-user
 func (client *Client) GetOwnUser() (*User, error) {
 	if len(client.token) < 1 {
 		return nil, errors.New("no oauth token is assigned to the client")
 	}
 	res, err := client.Request(http.MethodGet, fmt.Sprintf("user?_t=%d", time.Now().UTC().Unix()), nil)
 	if err != nil {
-		return nil, err
-	}
-	if err := client.IsError(res.Body); err != nil {
 		return nil, err
 	}
 	user := &User{}
@@ -62,7 +61,9 @@ func (client *Client) GetOwnUser() (*User, error) {
 }
 
 // GetUsers retrieves a list of users based on the specified UserOpts.
-func (client Client) GetUsers(opts UserOpts) (*UsersData, error) {
+//
+// See: https://dev.twitch.tv/docs/v5/reference/users#get-users
+func (client *Client) GetUsers(opts UserOpts) (*UsersData, error) {
 	if len(opts.IDs)+len(opts.Logins) > 100 {
 		return nil, errors.New("you can only request a total of 100 users at a time")
 	}
@@ -75,9 +76,6 @@ func (client Client) GetUsers(opts UserOpts) (*UsersData, error) {
 	}
 	res, err := client.Request(http.MethodGet, fmt.Sprintf("users?_t=%d%s", time.Now().UTC().Unix(), params), nil)
 	if err != nil {
-		return nil, err
-	}
-	if err := client.IsError(res.Body); err != nil {
 		return nil, err
 	}
 	users := &UsersData{}

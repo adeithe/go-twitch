@@ -7,7 +7,7 @@ import (
 	"github.com/Adeithe/go-twitch/api/request"
 )
 
-// Client stores an API Client ID an OAuth Token
+// Client stores an API ClientID and OAuth Token
 type Client struct {
 	ID    string
 	token string
@@ -21,7 +21,6 @@ type Client struct {
 // IKraken contains all methods available to the Kraken API Client.
 type IKraken interface {
 	Request(string, string, interface{}) (request.HTTPResponse, error)
-	IsError([]byte) error
 
 	GetCheermotes(BitOpts) (*CheermotesData, error)
 
@@ -29,6 +28,8 @@ type IKraken interface {
 	GetChannelsByID(...string) (*ChannelsData, error)
 
 	GetTopGames(GameOpts) (*TopGames, error)
+
+	GetIngestServers() (*IngestsData, error)
 
 	GetStreamSummary(string) (*StreamSummary, error)
 	GetStreams(StreamOpts) (*StreamsData, error)
@@ -46,6 +47,8 @@ const BaseURL = "https://api.twitch.tv/kraken"
 var _ IKraken = &Client{}
 
 // New Kraken API Client.
+//
+// Deprecated: Twitch API v5 (Kraken) is deprecated. You should use the New Twitch API (Helix) instead.
 func New(id, token string) *Client {
 	client := &Client{ID: id, token: token}
 	if len(client.token) > 0 {
@@ -56,7 +59,7 @@ func New(id, token string) *Client {
 }
 
 // Request Twitch Kraken Endpoints and get an HTTP response back.
-func (client Client) Request(method, path string, body interface{}) (request.HTTPResponse, error) {
+func (client *Client) Request(method, path string, body interface{}) (request.HTTPResponse, error) {
 	req := request.New(method, BaseURL, path)
 	req.Headers["Accept"] = "application/vnd.twitchtv.v5+json"
 	req.Headers["Client-ID"] = client.ID

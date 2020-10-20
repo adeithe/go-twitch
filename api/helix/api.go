@@ -7,13 +7,22 @@ import (
 	"github.com/Adeithe/go-twitch/api/request"
 )
 
+// Client stores an API ClientID and OAuth Token
 type Client struct {
 	ID     string
 	bearer string
+
+	RateLimiter *RateLimiter
+	Self        User
 }
 
 type IHelix interface {
 	Request(string, string, interface{}) (request.HTTPResponse, error)
+
+	GetOwnUser() (User, error)
+	GetUsers(UserOpts) (*UsersData, error)
+
+	GetStreams(StreamOpts) (*StreamsData, error)
 }
 
 // BaseURL is the API path that will never change.
@@ -23,11 +32,16 @@ var _ IHelix = &Client{}
 
 // New Helix API Client.
 func New(id, bearer string) *Client {
-	return &Client{ID: id, bearer: bearer}
+	client := &Client{ID: id, bearer: bearer}
+	client.RateLimiter = &RateLimiter{}
+	if len(bearer) > 0 {
+		client.GetOwnUser()
+	}
+	return client
 }
 
 // Request Twitch Helix Endpoints and get an HTTP response back.
-func (client Client) Request(method, path string, body interface{}) (request.HTTPResponse, error) {
+func (client *Client) Request(method, path string, body interface{}) (request.HTTPResponse, error) {
 	req := request.New(method, BaseURL, path)
 	req.Headers["Client-ID"] = client.ID
 	if len(client.bearer) > 0 {
@@ -38,5 +52,5 @@ func (client Client) Request(method, path string, body interface{}) (request.HTT
 		return request.HTTPResponse{}, err
 	}
 	req.Body = bytes
-	return req.Do()
+	return client.RateLimiter.Enqueue(req)
 }

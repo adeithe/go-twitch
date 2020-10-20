@@ -45,15 +45,14 @@ type Channel struct {
 }
 
 // GetOwnChannel retrieves a channel object based on the clients OAuth token.
+//
+// See: https://dev.twitch.tv/docs/v5/reference/channels#get-channel
 func (client *Client) GetOwnChannel() (*Channel, error) {
 	if len(client.token) < 1 {
 		return nil, errors.New("no oauth token is assigned to the client")
 	}
 	res, err := client.Request(http.MethodGet, fmt.Sprintf("channel?_t=%d", time.Now().UTC().Unix()), nil)
 	if err != nil {
-		return nil, err
-	}
-	if err := client.IsError(res.Body); err != nil {
 		return nil, err
 	}
 	channel := &Channel{}
@@ -65,7 +64,9 @@ func (client *Client) GetOwnChannel() (*Channel, error) {
 }
 
 // GetChannelsByID retrieves a specified channel object.
-func (client Client) GetChannelsByID(ids ...string) (*ChannelsData, error) {
+//
+// See: https://dev.twitch.tv/docs/v5/reference/channels#get-channel-by-id
+func (client *Client) GetChannelsByID(ids ...string) (*ChannelsData, error) {
 	if len(ids) < 1 {
 		return nil, errors.New("you must provide at least 1 channel id")
 	}
@@ -75,9 +76,6 @@ func (client Client) GetChannelsByID(ids ...string) (*ChannelsData, error) {
 	params := fmt.Sprintf("&id=%s", strings.Join(ids, ","))
 	res, err := client.Request(http.MethodGet, fmt.Sprintf("channels?_t=%d%s", time.Now().UTC().Unix(), params), nil)
 	if err != nil {
-		return nil, err
-	}
-	if err := client.IsError(res.Body); err != nil {
 		return nil, err
 	}
 	channels := &ChannelsData{}

@@ -36,16 +36,15 @@ type Cheermote struct {
 }
 
 // GetCheermotes retrieves the list of available cheermotes, animated emotes to which viewers can assign Bits, to cheer in chat.
-func (client Client) GetCheermotes(opts BitOpts) (*CheermotesData, error) {
+//
+// See: https://dev.twitch.tv/docs/v5/reference/bits#get-cheermotes
+func (client *Client) GetCheermotes(opts BitOpts) (*CheermotesData, error) {
 	params := ""
 	if len(opts.ChannelID) > 0 {
 		params += fmt.Sprint("&channel_id=", opts.ChannelID)
 	}
 	res, err := client.Request(http.MethodGet, fmt.Sprintf("bits/actions?_t=%d%s", time.Now().UTC().Unix(), params), nil)
 	if err != nil {
-		return nil, err
-	}
-	if err := client.IsError(res.Body); err != nil {
 		return nil, err
 	}
 	cheermotes := &CheermotesData{}

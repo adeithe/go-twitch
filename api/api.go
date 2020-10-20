@@ -42,6 +42,8 @@ func (client Client) NewBearer(token string) *Client {
 }
 
 // Kraken provides an interface for Twitch Kraken API endpoints.
+//
+// Deprecated: Twitch API v5 (Kraken) is deprecated. You should use the New Twitch API (Helix) instead.
 func (client Client) Kraken() *kraken.Client {
 	return kraken.New(client.ID, client.bearer)
 }

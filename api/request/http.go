@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-// HTTPRequest stores data for a HTTP request
+// HTTPRequest stores data for a HTTP request.
 type HTTPRequest struct {
 	BaseURL string
 	Path    string
@@ -18,16 +18,17 @@ type HTTPRequest struct {
 	Body    []byte
 }
 
-// HTTPResponse contains data about a previously handled HTTP request
+// HTTPResponse contains data about a previously handled HTTP request.
 type HTTPResponse struct {
 	StatusCode int
+	Headers    map[string]string
 	Body       []byte
 }
 
-// HTTPClient used to handle HTTP Requests
+// HTTPClient used to handle HTTP Requests.
 var HTTPClient http.Client = http.Client{Timeout: time.Duration(time.Second * 5)}
 
-// NewRequest prepares data for a HTTPRequest
+// New prepares data for a HTTPRequest.
 func New(method string, url string, path string) *HTTPRequest {
 	return &HTTPRequest{
 		BaseURL: url,
@@ -37,16 +38,16 @@ func New(method string, url string, path string) *HTTPRequest {
 	}
 }
 
-// Do the HTTP Request
+// Do the HTTP Request.
 func (req HTTPRequest) Do() (HTTPResponse, error) {
-	response := &HTTPResponse{}
+	response := &HTTPResponse{Headers: make(map[string]string)}
 	url := strings.TrimSuffix(req.BaseURL, "/") + "/" + strings.TrimPrefix(req.Path, "/")
 	var reqBody *bytes.Buffer
 	if len(req.Body) > 0 {
 		reqBody = bytes.NewBuffer(req.Body)
+		req.Headers["Content-Length"] = fmt.Sprint(len(req.Body))
 		if _, ok := req.Headers["Content-Type"]; !ok {
 			req.Headers["Content-Type"] = "application/json"
-			req.Headers["Content-Length"] = fmt.Sprint(len(req.Body))
 		}
 	}
 	r, err := http.NewRequest(strings.ToUpper(req.Method), url, reqBody)
@@ -60,12 +61,15 @@ func (req HTTPRequest) Do() (HTTPResponse, error) {
 	if err != nil {
 		return *response, err
 	}
-	response.StatusCode = resp.StatusCode
 	defer resp.Body.Close()
+	response.StatusCode = resp.StatusCode
+	for key, value := range resp.Header {
+		response.Headers[key] = strings.Join(value, ",")
+	}
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return *response, err
 	}
 	response.Body = body
-	return *response, nil
+	return *response, IsError(response.Body)
 }

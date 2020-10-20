@@ -53,7 +53,9 @@ type Team struct {
 }
 
 // GetAllTeams retrieves active teams based on the specified TeamOpts.
-func (client Client) GetAllTeams(opts TeamOpts) (*TeamsData, error) {
+//
+// See: https://dev.twitch.tv/docs/v5/reference/teams#get-all-teams
+func (client *Client) GetAllTeams(opts TeamOpts) (*TeamsData, error) {
 	params := ""
 	if opts.Limit > 0 {
 		params += fmt.Sprint("&limit=", opts.Limit)
@@ -65,9 +67,6 @@ func (client Client) GetAllTeams(opts TeamOpts) (*TeamsData, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err := client.IsError(res.Body); err != nil {
-		return nil, err
-	}
 	teams := &TeamsData{}
 	if err := json.Unmarshal(res.Body, &teams); err != nil {
 		return nil, err
@@ -76,15 +75,14 @@ func (client Client) GetAllTeams(opts TeamOpts) (*TeamsData, error) {
 }
 
 // GetTeam retrieves a specified team object by name.
-func (client Client) GetTeam(name string) (*TeamsData, error) {
+//
+// See: https://dev.twitch.tv/docs/v5/reference/teams#get-team
+func (client *Client) GetTeam(name string) (*TeamsData, error) {
 	if len(name) < 1 {
 		return nil, errors.New("no team name provided")
 	}
 	res, err := client.Request(http.MethodGet, fmt.Sprintf("teams/%s?_t=%d", name, time.Now().UTC().Unix()), nil)
 	if err != nil {
-		return nil, err
-	}
-	if err := client.IsError(res.Body); err != nil {
 		return nil, err
 	}
 	teams := &TeamsData{}

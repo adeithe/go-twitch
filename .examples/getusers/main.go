@@ -38,7 +38,7 @@ func main() {
 	}
 	live := make(map[string]string)
 	for _, stream := range streams.Data {
-		live[fmt.Sprintf("%v", stream.Channel.ID)] = "LIVE"
+		live[fmt.Sprintf("%v", stream.Channel.ID)] = strings.ToUpper(stream.Type)
 	}
 	for i, user := range users.Data {
 		live, _ := live[user.ID]

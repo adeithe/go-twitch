@@ -10,12 +10,18 @@ import (
 	"time"
 )
 
+// StreamType parameter used to filter live streams.
 type StreamType string
 
 const (
-	Live     StreamType = "live"
+	// Live on Twitch.
+	Live StreamType = "live"
+	// Playlist appears to always return nothing.
 	Playlist StreamType = "playlist"
-	All      StreamType = "all"
+	// WatchParty streams watching something via Amazon Prime Video.
+	WatchParty StreamType = "watch_party"
+	// All streams on Twitch, no filters.
+	All StreamType = "all"
 )
 
 // StreamOpts stores options for requests to the Twitch Streams API.
@@ -57,14 +63,13 @@ type Stream struct {
 	CreatedAt    string   `json:"created_at"`
 }
 
-// GetStreamSummary retrieves a stream object for the specified user.
-func (client Client) GetStreamSummary(game string) (*StreamSummary, error) {
+// GetStreamSummary retrieves a stream object for the specified game.
+//
+// See: https://dev.twitch.tv/docs/v5/reference/streams#get-streams-summary
+func (client *Client) GetStreamSummary(game string) (*StreamSummary, error) {
 	game = url.QueryEscape(strings.ToLower(game))
 	res, err := client.Request(http.MethodGet, fmt.Sprintf("streams/summary?_t=%d&game=%s", time.Now().UTC().Unix(), game), nil)
 	if err != nil {
-		return nil, err
-	}
-	if err := client.IsError(res.Body); err != nil {
 		return nil, err
 	}
 	summary := &StreamSummary{}
@@ -75,7 +80,9 @@ func (client Client) GetStreamSummary(game string) (*StreamSummary, error) {
 }
 
 // GetStreams retrieves a list of stream objects based on the specified StreamOpts.
-func (client Client) GetStreams(opts StreamOpts) (*StreamsData, error) {
+//
+// See: https://dev.twitch.tv/docs/v5/reference/streams#get-live-streams
+func (client *Client) GetStreams(opts StreamOpts) (*StreamsData, error) {
 	if len(opts.ChannelIDs) > 100 {
 		return nil, errors.New("you can only request a total of 100 streams at a time")
 	}
@@ -100,9 +107,6 @@ func (client Client) GetStreams(opts StreamOpts) (*StreamsData, error) {
 	}
 	res, err := client.Request(http.MethodGet, fmt.Sprintf("streams?_t=%d%s", time.Now().UTC().Unix(), params), nil)
 	if err != nil {
-		return nil, err
-	}
-	if err := client.IsError(res.Body); err != nil {
 		return nil, err
 	}
 	streams := &StreamsData{}
