@@ -2,6 +2,7 @@ package helix
 
 import (
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/Adeithe/go-twitch/api/request"
@@ -16,6 +17,7 @@ type RateLimiter struct {
 	await chan bool
 	open  bool
 	close bool
+	mx    sync.Mutex
 }
 
 // IRateLimiter contains all methods available to the RateLimiter.
@@ -28,6 +30,8 @@ var _ IRateLimiter = &RateLimiter{}
 
 // Enqueue queues a HTTP request for when the Twitch API will allow it to go through.
 func (limiter *RateLimiter) Enqueue(req *request.HTTPRequest) (request.HTTPResponse, error) {
+	limiter.mx.Lock()
+	defer limiter.mx.Unlock()
 	if !limiter.open {
 		limiter.open = true
 		limiter.await = make(chan bool)
