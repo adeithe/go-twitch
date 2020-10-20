@@ -3,6 +3,8 @@ package api
 import (
 	"encoding/json"
 	"errors"
+
+	"github.com/Adeithe/go-twitch/api/request"
 )
 
 type loginData struct {
@@ -47,7 +49,7 @@ func (login *TwitchLogin) Verify(code string) error {
 	if login.ErrorCode != -1 && login.ErrorCode != 3022 {
 		return errors.New("twitchguard code not required")
 	}
-	req := NewRequest("POST", "https://passport.twitch.tv", "login")
+	req := request.New("POST", "https://passport.twitch.tv", "login")
 	req.Headers["Content-Type"] = "application/json"
 	data := loginData{
 		ClientID:     Official.ID,

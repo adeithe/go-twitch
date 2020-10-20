@@ -1,5 +1,10 @@
 package api
 
+import (
+	"github.com/Adeithe/go-twitch/api/helix"
+	"github.com/Adeithe/go-twitch/api/kraken"
+)
+
 // Client used to store data about a Twitch application and/or user.
 type Client struct {
 	ID     string
@@ -9,8 +14,8 @@ type Client struct {
 // IClient interface containing methods for the API Client.
 type IClient interface {
 	NewBearer(string) *Client
-	Kraken() *Kraken
-	Helix() *Helix
+	Kraken() *kraken.Client
+	Helix() *helix.Client
 
 	Login(string, string) (*TwitchLogin, error)
 }
@@ -37,13 +42,15 @@ func (client Client) NewBearer(token string) *Client {
 }
 
 // Kraken provides an interface for Twitch Kraken API endpoints.
-func (client *Client) Kraken() *Kraken {
-	return &Kraken{Client: client}
+//
+// Deprecated: Twitch API v5 (Kraken) is deprecated. You should use the New Twitch API (Helix) instead.
+func (client Client) Kraken() *kraken.Client {
+	return kraken.New(client.ID, client.bearer)
 }
 
 // Helix provides an interface for Twitch Helix API endpoints.
-func (client *Client) Helix() *Helix {
-	return &Helix{Client: client}
+func (client Client) Helix() *helix.Client {
+	return helix.New(client.ID, client.bearer)
 }
 
 // Login will attempt to login via Twitch using a username/password combination.
