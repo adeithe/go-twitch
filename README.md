@@ -28,9 +28,6 @@ func main() {
 
 	// Create a PubSub client
 	ps := twitch.PubSub()
-	if err := ps.Connect(); err != nil {
-		panic(err)
-	}
-	ps.Listen(pubsub.ParseTopic(pubsub.ChatModeratorActions, 44322889))
+	ps.Listen("community-points-channel-v1", 44322889)
 }
 ```
