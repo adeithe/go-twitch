@@ -28,8 +28,8 @@ func main() {
 		fmt.Printf("Shard #%d reconnected!\n", shard)
 	})
 
-	mgr.OnShardMessage(func(shard int, topic string, data []byte) {
-		fmt.Printf("Shard #%d > %s %s\n", shard, topic, strings.TrimSpace(string(data)))
+	mgr.OnShardMessage(func(shard int, msg pubsub.MessageData) {
+		fmt.Printf("Shard #%d > %s %s\n", shard, msg.Topic, strings.TrimSpace(string(msg.Data)))
 	})
 
 	mgr.OnShardLatencyUpdate(func(shard int, latency time.Duration) {

@@ -14,6 +14,8 @@ var (
 	ErrShardIDOutOfBounds = errors.New("shard id out of bounds")
 	// ErrNonceTimeout returned when the server doesnt respond to a nonced message in time
 	ErrNonceTimeout = errors.New("nonced message timeout")
+	// ErrPingTimeout returned when the server takes too long to respond to a ping message
+	ErrPingTimeout = errors.New("server took too long to respond to ping")
 
 	// ErrBadMessage returned when the server receives an invalid message
 	ErrBadMessage = errors.New("server received an invalid message")
@@ -37,8 +39,8 @@ type Packet struct {
 
 // MessageData stores data about a message packet
 type MessageData struct {
-	Topic   string          `json:"topic"`
-	Message json.RawMessage `json:"message"`
+	Topic string          `json:"topic"`
+	Data  json.RawMessage `json:"message"`
 }
 
 // TopicData stores data about a topic

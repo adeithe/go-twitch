@@ -14,19 +14,20 @@ import (
 
 // Conn stores data about a PubSub connection
 type Conn struct {
-	length   int
-	socket   *websocket.Conn
-	lastPing time.Time
-	done     chan bool
+	length int
+	socket *websocket.Conn
+	done   chan bool
 
 	isConnected bool
 	latency     time.Duration
-	active      int
-	pending     map[string]chan error
-	writer      sync.Mutex
-	nonces      sync.Mutex
+	ping        chan bool
 
-	onMessage    []func(string, []byte)
+	active  int
+	pending map[string]chan error
+	nonces  sync.Mutex
+	writer  sync.Mutex
+
+	onMessage    []func(MessageData)
 	onPong       []func(time.Duration)
 	onReconnect  []func()
 	onDisconnect []func()
@@ -48,9 +49,9 @@ type IConn interface {
 	Listen(...string) error
 	ListenWithAuth(string, ...string) error
 	Unlisten(...string) error
-	Ping() error
+	Ping() (time.Duration, error)
 
-	OnMessage(func(string, []byte))
+	OnMessage(func(MessageData))
 	OnPong(func(time.Duration))
 	OnReconnect(func())
 	OnDisconnect(func())
@@ -220,17 +221,28 @@ func (conn *Conn) Unlisten(topics ...string) error {
 }
 
 // Ping the PubSub server
-func (conn *Conn) Ping() error {
-	data, err := json.Marshal(Packet{Type: Ping})
-	if err != nil {
-		return err
+//
+// This operation will block, giving the server up to 5 seconds to respond after correcting for latency before failing
+func (conn *Conn) Ping() (time.Duration, error) {
+	start := time.Now()
+	conn.ping = make(chan bool, 1)
+	if err := conn.WriteMessage(Ping, nil); err != nil {
+		return 0, err
 	}
-	conn.lastPing = time.Now()
-	return conn.Write(websocket.TextMessage, data)
+	select {
+	case <-conn.ping:
+	case <-time.After(time.Second*5 + conn.latency):
+		return 0, ErrPingTimeout
+	}
+	conn.latency = time.Since(start)
+	for _, f := range conn.onPong {
+		go f(conn.latency)
+	}
+	return conn.latency, nil
 }
 
 // OnMessage event called after a message is receieved
-func (conn *Conn) OnMessage(f func(string, []byte)) {
+func (conn *Conn) OnMessage(f func(MessageData)) {
 	conn.onMessage = append(conn.onMessage, f)
 }
 
@@ -292,13 +304,10 @@ func (conn *Conn) reader() {
 				break
 			}
 			for _, f := range conn.onMessage {
-				go f(data.Topic, data.Message)
+				go f(data)
 			}
 		case Pong:
-			conn.latency = time.Since(conn.lastPing)
-			for _, f := range conn.onPong {
-				go f(conn.latency)
-			}
+			close(conn.ping)
 		case Reconnect:
 			conn.Reconnect()
 			return

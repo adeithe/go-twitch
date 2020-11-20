@@ -13,7 +13,7 @@ type Client struct {
 	shards       map[int]*Conn
 
 	onShardConnect       []func(int)
-	onShardMessage       []func(int, string, []byte)
+	onShardMessage       []func(int, MessageData)
 	onShardLatencyUpdate []func(int, time.Duration)
 	onShardReconnect     []func(int)
 	onShardDisconnect    []func(int)
@@ -37,7 +37,7 @@ type IClient interface {
 	Unlisten(...string) error
 
 	OnShardConnect(func(int))
-	OnShardMessage(func(int, string, []byte))
+	OnShardMessage(func(int, MessageData))
 	OnShardLatencyUpdate(func(int, time.Duration))
 	OnShardReconnect(func(int))
 	OnShardDisconnect(func(int))
@@ -92,7 +92,7 @@ func (client *Client) GetNumTopics() (n int) {
 	client.mx.Lock()
 	defer client.mx.Unlock()
 	for _, shard := range client.shards {
-		n += shard.active
+		n += shard.GetNumTopics()
 	}
 	return n
 }
@@ -102,7 +102,7 @@ func (client *Client) GetNextShard() (*Conn, error) {
 	client.mx.Lock()
 	shardID := len(client.shards)
 	for id, conn := range client.shards {
-		if conn.active < conn.length {
+		if conn.GetNumTopics() < conn.length {
 			shardID = id
 			break
 		}
@@ -129,9 +129,9 @@ func (client *Client) GetShard(id int) (*Conn, error) {
 	}
 	if client.shards[id] == nil {
 		conn := &Conn{length: client.topicsLength}
-		conn.OnMessage(func(topic string, data []byte) {
+		conn.OnMessage(func(msg MessageData) {
 			for _, f := range client.onShardMessage {
-				go f(id, topic, data)
+				go f(id, msg)
 			}
 		})
 		conn.OnPong(func(latency time.Duration) {
@@ -157,10 +157,10 @@ func (client *Client) GetShard(id int) (*Conn, error) {
 		if err := conn.Connect(); err != nil {
 			return nil, err
 		}
+		defer conn.Ping()
 		for _, f := range client.onShardConnect {
 			go f(id)
 		}
-		conn.Ping()
 		client.shards[id] = conn
 	}
 	return client.shards[id], nil
@@ -185,7 +185,7 @@ func (client *Client) Listen(topic string, args ...interface{}) error {
 	}
 	if err := shard.Listen(topic); err != nil {
 		if err == ErrShardTooManyTopics {
-			client.SetMaxTopicsPerShard(shard.active)
+			client.SetMaxTopicsPerShard(shard.GetNumTopics())
 			shard, err := client.GetNextShard()
 			if err != nil {
 				return err
@@ -206,7 +206,7 @@ func (client *Client) ListenWithAuth(token string, topic string, args ...interfa
 	}
 	if err := shard.ListenWithAuth(token, topic); err != nil {
 		if err == ErrShardTooManyTopics {
-			client.SetMaxTopicsPerShard(shard.active)
+			client.SetMaxTopicsPerShard(shard.GetNumTopics())
 			shard, err := client.GetNextShard()
 			if err != nil {
 				return err
@@ -229,7 +229,7 @@ func (client *Client) OnShardConnect(f func(int)) {
 }
 
 // OnShardMessage event called after a shard gets a PubSub message
-func (client *Client) OnShardMessage(f func(int, string, []byte)) {
+func (client *Client) OnShardMessage(f func(int, MessageData)) {
 	client.onShardMessage = append(client.onShardMessage, f)
 }
 
