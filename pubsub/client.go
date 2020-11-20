@@ -154,16 +154,19 @@ func (client *Client) GetShard(id int) (*Conn, error) {
 			}
 			client.wg.Done()
 		})
-		if err := conn.Connect(); err != nil {
+		client.shards[id] = conn
+	}
+	shard := client.shards[id]
+	if !shard.IsConnected() {
+		if err := shard.Connect(); err != nil {
 			return nil, err
 		}
-		defer conn.Ping()
+		defer shard.Ping()
 		for _, f := range client.onShardConnect {
 			go f(id)
 		}
-		client.shards[id] = conn
 	}
-	return client.shards[id], nil
+	return shard, nil
 }
 
 // Close all active shards
