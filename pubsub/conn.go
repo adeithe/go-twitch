@@ -348,41 +348,12 @@ func (conn *Conn) reader() {
 		if err := json.Unmarshal(bytes, &msg); err != nil {
 			continue
 		}
-		if len(msg.Nonce) > 0 && conn.pending != nil && len(conn.pending) > 0 {
-			var err error
-			conn.nonces.Lock()
-			c, ok := conn.pending[msg.Nonce]
-			conn.nonces.Unlock()
-			if len(msg.Error) > 0 && ok {
-				switch msg.Error {
-				case BadMessage:
-					err = ErrBadMessage
-				case BadAuth:
-					err = ErrBadAuth
-				case TooManyTopics:
-					err = ErrShardTooManyTopics
-				case BadTopic, InvalidTopic:
-					err = ErrBadTopic
-				case ServerError:
-					err = ErrServer
-				default:
-					fmt.Printf("Uncaught PubSub Error: %s\n", msg.Error)
-					err = ErrUnknown
-				}
-			}
-			c <- err
-		}
+		conn.handleNonce(msg)
 		switch msg.Type {
 		case Response:
 		case Message:
-			data := MessageData{}
 			bytes, _ := json.Marshal(msg.Data)
-			if err := json.Unmarshal(bytes, &data); err != nil {
-				break
-			}
-			for _, f := range conn.onMessage {
-				go f(data)
-			}
+			conn.handleMessage(bytes)
 		case Pong:
 			close(conn.ping)
 		case Reconnect:
@@ -407,5 +378,46 @@ func (conn *Conn) ticker() {
 		case <-time.After(time.Minute * 5):
 			conn.Ping()
 		}
+	}
+}
+
+func (conn *Conn) handleNonce(msg Packet) {
+	if len(msg.Nonce) < 1 && conn.pending == nil && len(conn.pending) < 1 {
+		return
+	}
+	var err error
+	conn.nonces.Lock()
+	c, ok := conn.pending[msg.Nonce]
+	conn.nonces.Unlock()
+	if len(msg.Error) > 0 && ok {
+		switch msg.Error {
+		case BadMessage:
+			err = ErrBadMessage
+		case BadAuth:
+			err = ErrBadAuth
+		case TooManyTopics:
+			err = ErrShardTooManyTopics
+		case BadTopic, InvalidTopic:
+			err = ErrBadTopic
+		case ServerError:
+			err = ErrServer
+		default:
+			fmt.Printf("Uncaught PubSub Error: %s\n", msg.Error)
+			err = ErrUnknown
+		}
+	}
+	c <- err
+}
+
+func (conn *Conn) handleMessage(bytes []byte) {
+	if len(bytes) < 1 {
+		return
+	}
+	var data MessageData
+	if err := json.Unmarshal(bytes, &data); err != nil {
+		return
+	}
+	for _, f := range conn.onMessage {
+		go f(data)
 	}
 }
