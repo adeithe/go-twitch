@@ -1,16 +1,16 @@
 package pubsub
 
 import (
-	"errors"
 	"sync"
 	"time"
 )
 
 // Client stores data about a PubSub shard manager
 type Client struct {
-	length       int
-	topicsLength int
-	shards       map[int]*Conn
+	length        int
+	topicsLength  int
+	shards        map[int]*Conn
+	awaitingClose int
 
 	onShardConnect       []func(int)
 	onShardMessage       []func(int, MessageData)
@@ -94,7 +94,7 @@ func (client *Client) GetNumTopics() (n int) {
 	for _, shard := range client.shards {
 		n += shard.GetNumTopics()
 	}
-	return n
+	return
 }
 
 // GetNextShard returns the first shard that can accept topics
@@ -145,14 +145,16 @@ func (client *Client) GetShard(id int) (*Conn, error) {
 			}
 		})
 		conn.OnDisconnect(func() {
-			client.wg.Add(1)
 			client.mx.Lock()
 			defer client.mx.Unlock()
-			delete(client.shards, id)
 			for _, f := range client.onShardDisconnect {
 				go f(id)
 			}
-			client.wg.Done()
+			if client.awaitingClose > 0 {
+				client.awaitingClose--
+				delete(client.shards, id)
+				client.wg.Done()
+			}
 		})
 		client.shards[id] = conn
 	}
@@ -173,10 +175,13 @@ func (client *Client) GetShard(id int) (*Conn, error) {
 func (client *Client) Close() {
 	client.mx.Lock()
 	for _, shard := range client.shards {
+		client.wg.Add(1)
+		client.awaitingClose++
 		shard.Close()
 	}
 	client.mx.Unlock()
 	client.wg.Wait()
+	client.awaitingClose = 0
 }
 
 // Listen to a topic on the best available shard
@@ -222,8 +227,19 @@ func (client *Client) ListenWithAuth(token string, topic string, args ...interfa
 }
 
 // Unlisten from the provided topics
+//
+// Will return the first error that occurs, if any
 func (client *Client) Unlisten(topics ...string) error {
-	return errors.New("not implemented")
+	client.mx.Lock()
+	defer client.mx.Unlock()
+	for _, shard := range client.shards {
+		for _, topic := range topics {
+			if shard.HasTopic(topic) {
+				return shard.Unlisten(topic)
+			}
+		}
+	}
+	return nil
 }
 
 // OnShardConnect event called after a shard connects to the PubSub server

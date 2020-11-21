@@ -22,10 +22,11 @@ type Conn struct {
 	latency     time.Duration
 	ping        chan bool
 
-	active  int
-	pending map[string]chan error
-	nonces  sync.Mutex
-	writer  sync.Mutex
+	topics    map[string][]string
+	pending   map[string]chan error
+	nonces    sync.Mutex
+	listeners sync.Mutex
+	writer    sync.Mutex
 
 	onMessage    []func(MessageData)
 	onPong       []func(time.Duration)
@@ -45,6 +46,7 @@ type IConn interface {
 	IsConnected() bool
 	SetMaxTopics(int)
 	GetNumTopics() int
+	HasTopic(string) bool
 
 	Listen(...string) error
 	ListenWithAuth(string, ...string) error
@@ -72,12 +74,30 @@ func (conn *Conn) Connect() error {
 	if conn.length < 1 {
 		conn.length = 50
 	}
-	conn.active = 0
 	conn.socket = socket
 	conn.done = make(chan bool)
 	conn.isConnected = true
 	go conn.reader()
 	go conn.ticker()
+	if conn.topics != nil {
+		var wg sync.WaitGroup
+		conn.listeners.Lock()
+		rejoined := make(map[string][]string)
+		for token, topics := range conn.topics {
+			wg.Add(1)
+			go func(token string, topics ...string) {
+				if err := conn.ListenWithAuth(token, topics...); err == nil {
+					rejoined[token] = topics
+				}
+				wg.Done()
+			}(token, topics...)
+		}
+		conn.listeners.Unlock()
+		wg.Wait()
+		conn.listeners.Lock()
+		defer conn.listeners.Unlock()
+		conn.topics = rejoined
+	}
 	return nil
 }
 
@@ -176,21 +196,47 @@ func (conn *Conn) SetMaxTopics(max int) {
 }
 
 // GetNumTopics returns the number of topics the connection is actively listening to
-func (conn *Conn) GetNumTopics() int {
-	return conn.active
+func (conn *Conn) GetNumTopics() (n int) {
+	conn.listeners.Lock()
+	defer conn.listeners.Unlock()
+	if conn.topics != nil {
+		for _, topics := range conn.topics {
+			n += len(topics)
+		}
+	}
+	return
+}
+
+// HasTopic returns true if the connection is actively listening to the provided topic
+func (conn *Conn) HasTopic(topic string) bool {
+	conn.listeners.Lock()
+	defer conn.listeners.Unlock()
+	for _, g := range conn.topics {
+		for _, t := range g {
+			if topic == t {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // Listen to a topic using no authentication token
 //
 // This operation will block, giving the server up to 5 seconds to respond after correcting for latency before failing
 func (conn *Conn) Listen(topics ...string) error {
-	if conn.active+len(topics) > conn.length {
+	if conn.GetNumTopics()+len(topics) > conn.length {
 		return ErrShardTooManyTopics
 	}
 	if err := conn.WriteMessageWithNonce(Listen, nonce.New(), TopicData{Topics: topics}); err != nil {
 		return err
 	}
-	conn.active += len(topics)
+	conn.listeners.Lock()
+	defer conn.listeners.Unlock()
+	if conn.topics == nil {
+		conn.topics = make(map[string][]string)
+	}
+	conn.topics[""] = append(conn.topics[""], topics...)
 	return nil
 }
 
@@ -205,7 +251,12 @@ func (conn *Conn) ListenWithAuth(token string, topics ...string) error {
 	if err := conn.WriteMessageWithNonce(Listen, nonce.New(), data); err != nil {
 		return err
 	}
-	conn.active += len(topics)
+	conn.listeners.Lock()
+	defer conn.listeners.Unlock()
+	if conn.topics == nil {
+		conn.topics = make(map[string][]string)
+	}
+	conn.topics[token] = append(conn.topics[token], topics...)
 	return nil
 }
 
@@ -213,10 +264,36 @@ func (conn *Conn) ListenWithAuth(token string, topics ...string) error {
 //
 // This operation will block, giving the server up to 5 seconds to respond after correcting for latency before failing
 func (conn *Conn) Unlisten(topics ...string) error {
-	if err := conn.WriteMessageWithNonce(Unlisten, nonce.New(), TopicData{Topics: topics}); err != nil {
+	var unlisten []string
+	for _, topic := range topics {
+		if conn.HasTopic(topic) {
+			unlisten = append(unlisten, topic)
+		}
+	}
+	if len(unlisten) < 1 {
+		return nil
+	}
+	conn.listeners.Lock()
+	for token, topics := range conn.topics {
+		var new []string
+		for _, topic := range topics {
+			var b bool
+			for _, t := range unlisten {
+				if topic == t {
+					b = true
+					break
+				}
+			}
+			if !b {
+				new = append(new, topic)
+			}
+		}
+		conn.topics[token] = new
+	}
+	conn.listeners.Unlock()
+	if err := conn.WriteMessageWithNonce(Unlisten, nonce.New(), TopicData{Topics: unlisten}); err != nil {
 		return err
 	}
-	conn.active -= len(topics)
 	return nil
 }
 
