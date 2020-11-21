@@ -1,4 +1,4 @@
-# go-twitch [![GoDoc](https://godoc.org/github.com/Adeithe/go-twitch?status.svg)](https://godoc.org/github.com/Adeithe/go-twitch) [![Go Report Card](https://goreportcard.com/badge/github.com/Adeithe/go-twitch)](https://goreportcard.com/report/github.com/Adeithe/go-twitch)
+# go-twitch [![GoDoc](https://godoc.org/github.com/adeithe/go-twitch?status.svg)](https://godoc.org/github.com/adeithe/go-twitch) [![Go Report Card](https://goreportcard.com/badge/github.com/adeithe/go-twitch)](https://goreportcard.com/report/github.com/adeithe/go-twitch)
 
 A complete interface for Twitch services.
 
@@ -9,7 +9,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/Adeithe/go-twitch"
+	twitch "github.com/Adeithe/go-twitch"
 	"github.com/Adeithe/go-twitch/pubsub"
 )
 
