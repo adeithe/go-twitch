@@ -1,46 +1,64 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
+	"time"
 
 	"github.com/Adeithe/go-twitch"
 	"github.com/Adeithe/go-twitch/pubsub"
 )
 
+var mgr *pubsub.Client
+
 func main() {
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGHUP)
 
-	ps := twitch.PubSub()
+	mgr = twitch.PubSub()
 
-	ps.OnTopicListen(func(topic string) {
-		fmt.Printf("LISTEN %s\n", topic)
+	mgr.OnShardConnect(func(shard int) {
+		fmt.Printf("Shard #%d connected!\n", shard)
 	})
 
-	ps.OnTopicResponseError(func(topic string, err string) {
-		fmt.Printf("LISTEN %s ERROR %s\n", topic, err)
+	mgr.OnShardReconnect(func(shard int) {
+		fmt.Printf("Shard #%d reconnected!\n", shard)
 	})
 
-	ps.OnMessage(func(topic string, data json.RawMessage) {
-		fmt.Printf("%s> %s\n", topic, data)
+	mgr.OnShardMessage(func(shard int, msg pubsub.MessageData) {
+		fmt.Printf("Shard #%d > %s %s\n", shard, msg.Topic, strings.TrimSpace(string(msg.Data)))
 	})
 
-	ps.OnDisconnect(func() {
-		fmt.Println("Disconnected from PubSub!")
-		sc <- syscall.SIGINT
+	mgr.OnShardLatencyUpdate(func(shard int, latency time.Duration) {
+		fmt.Printf("Shard #%d has %.3fs ping!\n", shard, latency.Seconds())
 	})
 
-	if err := ps.Connect(); err != nil {
-		panic(err)
-	}
+	mgr.OnShardDisconnect(func(shard int) {
+		fmt.Printf("Shard #%d disconnected!\n", shard)
+	})
 
-	ps.UseToken("2gbdx6oar67tqtcmt49t3wpcgycthx")
-	ps.Listen(pubsub.ParseTopic(pubsub.ChatModeratorActions, 44322889))
+	channelID := 44322889
+	printErr(mgr.Listen("radio-events-v1", channelID))
+	printErr(mgr.Listen("polls", channelID))
+	printErr(mgr.Listen("hype-train-events-v1", channelID))
+	printErr(mgr.Listen("video-playback-by-id", channelID))
+	printErr(mgr.Listen("stream-chat-room-v1", channelID))
+	printErr(mgr.Listen("community-points-channel-v1", channelID))
+	printErr(mgr.Listen("pv-watch-party-events", channelID))
+	printErr(mgr.Listen("extension-control", channelID))
+
+	fmt.Printf("Started listening to %d topics on %d shards!\n", mgr.GetNumTopics(), mgr.GetNumShards())
 
 	<-sc
-	ps.Close()
+	fmt.Println("Stopping...")
+	mgr.Close()
+}
+
+func printErr(err error) {
+	if err != nil {
+		fmt.Println(err)
+	}
 }
