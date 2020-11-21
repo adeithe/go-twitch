@@ -225,30 +225,17 @@ func (conn *Conn) HasTopic(topic string) bool {
 //
 // This operation will block, giving the server up to 5 seconds to respond after correcting for latency before failing
 func (conn *Conn) Listen(topics ...string) error {
-	if conn.GetNumTopics()+len(topics) > conn.length {
-		return ErrShardTooManyTopics
-	}
-	if err := conn.WriteMessageWithNonce(Listen, nonce.New(), TopicData{Topics: topics}); err != nil {
-		return err
-	}
-	conn.listeners.Lock()
-	defer conn.listeners.Unlock()
-	if conn.topics == nil {
-		conn.topics = make(map[string][]string)
-	}
-	conn.topics[""] = append(conn.topics[""], topics...)
-	return nil
+	return conn.ListenWithAuth("", topics...)
 }
 
 // ListenWithAuth starts listening to a topic using the provided authentication token
 //
 // This operation will block, giving the server up to 5 seconds to respond after correcting for latency before failing
 func (conn *Conn) ListenWithAuth(token string, topics ...string) error {
-	data := TopicData{
-		Topics: topics,
-		Token:  token,
+	if conn.GetNumTopics()+len(topics) > conn.length {
+		return ErrShardTooManyTopics
 	}
-	if err := conn.WriteMessageWithNonce(Listen, nonce.New(), data); err != nil {
+	if err := conn.WriteMessageWithNonce(Listen, nonce.New(), TopicData{topics, token}); err != nil {
 		return err
 	}
 	conn.listeners.Lock()
