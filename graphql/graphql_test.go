@@ -74,9 +74,24 @@ func TestQueryChannelsByName(t *testing.T) {
 	t.Logf("got %d channels", len(channels))
 }
 
+func TestQueryStreams(t *testing.T) {
+	gql := New()
+	streams, err := gql.GetStreams(StreamQueryOpts{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if streams == nil {
+		t.Fatal("expected at least 1 stream got 0")
+	}
+	if len(streams.Data) < 1 {
+		t.Fatalf("expected at least 1 stream got %d", len(streams.Data))
+	}
+	t.Logf("got %d streams", len(streams.Data))
+}
+
 func TestQueryGames(t *testing.T) {
 	gql := New()
-	games, err := gql.GetGames(GameQueryOpts{First: 1})
+	games, err := gql.GetGames(GameQueryOpts{})
 	if err != nil {
 		t.Fatal(err)
 	}

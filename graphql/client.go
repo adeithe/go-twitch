@@ -124,7 +124,7 @@ func (client Client) GetChannelsByName(names ...string) ([]Channel, error) {
 // GetStreams retrieves data about streams available on Twitch
 func (client Client) GetStreams(opts StreamQueryOpts) (*StreamsQuery, error) {
 	if opts.First < 1 || opts.First > 100 {
-		opts.First = 10
+		opts.First = 25
 	}
 	streams := GQLStreamsQuery{}
 	vars := map[string]interface{}{
@@ -141,7 +141,7 @@ func (client Client) GetStreams(opts StreamQueryOpts) (*StreamsQuery, error) {
 // GetGames retrieves data about games available on Twitch
 func (client Client) GetGames(opts GameQueryOpts) (*GamesQuery, error) {
 	if opts.First < 1 || opts.First > 100 {
-		opts.First = 10
+		opts.First = 25
 	}
 	games := GQLGamesQuery{}
 	vars := map[string]interface{}{

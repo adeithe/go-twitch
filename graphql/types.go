@@ -25,12 +25,12 @@ type User struct {
 	ID               graphql.ID
 	Login            string
 	DisplayName      string
+	ChannelURL       string `graphql:"profileURL"`
 	BannerImageURL   string `graphql:"bannerImageURL"`
 	OfflineImageURL  string `graphql:"offlineImageURL"`
 	ChatColor        string
 	Description      string
 	ProfileViewCount int32
-	Channel          *Channel
 	Stream           *Stream
 	Hosting          *struct {
 		ID          graphql.ID
@@ -62,11 +62,9 @@ type Stream struct {
 	ID                  graphql.ID
 	Title               string
 	ViewersCount        int32
-	Channel             *Channel
+	Channel             *Channel `graphql:"broadcaster"`
 	Game                *Game
-	ClipCount           int32
 	BroadcasterSoftware string
-	DelayLengthSeconds  int32
 	AverageFPS          float64 `graphql:"averageFPS"`
 	Bitrate             float64
 	Codec               string
@@ -77,51 +75,43 @@ type Stream struct {
 
 // Channel stores data about a users channel on Twitch
 type Channel struct {
-	ID          graphql.ID
-	Name        string
-	DisplayName string
-	Game        string
-	URL         string
-	Settings    struct {
-		Broadcast struct {
-			Title            string
-			Game             *Game
-			Language         string
-			IsMature         bool
-			LiveNotification *struct {
-				IsDefault bool
-				Text      string `graphql:"liveUpNotification"`
-			} `graphql:"liveUpNotificationInfo"`
-		} `graphql:"broadcastSettings"`
-		Chat struct {
-			Rules                             []string
-			AutoModLevel                      int32
-			IsFastSubsModeEnabled             bool
-			IsOptedOutOfGlobalBannedWordsList bool
-			IsBroadcasterLanguageModeEnabled  bool
-			IsLinksBlocked                    bool  `graphql:"blockLinks"`
-			IsVerifiedAccountRequired         bool  `graphql:"requireVerifiedAccount"`
-			IsSubOnly                         bool  `graphql:"isSubscribersOnlyModeEnabled"`
-			IsEmoteOnly                       bool  `graphql:"isEmoteOnlyModeEnabled"`
-			IsUniqueModeEnabled               bool  `graphql:"isUniqueChatModeEnabled"`
-			SlowModeDurationInSeconds         int32 `graphql:"slowModeDurationSeconds"`
-			FollowersOnlyDurationInMinutes    int32 `graphql:"followersOnlyDurationMinutes"`
-			ChatDelayInMilliseconds           int32 `graphql:"chatDelayMs"`
-		} `graphql:"chatSettings"`
-	} `graphql:"owner"`
-	IsClipsEnabled    bool
-	IsOptedOutOfDrops bool
+	ID                graphql.ID
+	Name              string `graphql:"login"`
+	DisplayName       string
+	URL               string `graphql:"profileURL"`
+	BroadcastSettings struct {
+		Title            string
+		Game             *Game
+		Language         string
+		IsMature         bool
+		LiveNotification *struct {
+			IsDefault bool
+			Text      string `graphql:"liveUpNotification"`
+		} `graphql:"liveUpNotificationInfo"`
+	}
+	ChatSettings struct {
+		Rules                          []string
+		IsFastSubsModeEnabled          bool
+		IsLinksBlocked                 bool  `graphql:"blockLinks"`
+		IsVerifiedAccountRequired      bool  `graphql:"requireVerifiedAccount"`
+		IsSubOnly                      bool  `graphql:"isSubscribersOnlyModeEnabled"`
+		IsEmoteOnly                    bool  `graphql:"isEmoteOnlyModeEnabled"`
+		IsUniqueModeEnabled            bool  `graphql:"isUniqueChatModeEnabled"`
+		SlowModeDurationInSeconds      int32 `graphql:"slowModeDurationSeconds"`
+		FollowersOnlyDurationInMinutes int32 `graphql:"followersOnlyDurationMinutes"`
+		ChatDelayInMilliseconds        int32 `graphql:"chatDelayMs"`
+	}
 }
 
 // Game stores data about a category on Twitch
 type Game struct {
-	ID              graphql.ID
-	Name            string
-	DisplayName     string
-	ChannelsCount   int32
-	ViewersCount    int32
-	FollowersCount  int32
-	PopularityScore int32
-	GiantBombID     graphql.ID `graphql:"giantBombID"`
-	PrestoID        graphql.ID `graphql:"prestoID"`
+	ID                graphql.ID
+	Name              string
+	DisplayName       string
+	BroadcastersCount int32
+	ViewersCount      int32
+	FollowersCount    int32
+	PopularityScore   int32
+	GiantBombID       graphql.ID `graphql:"giantBombID"`
+	PrestoID          graphql.ID `graphql:"prestoID"`
 }

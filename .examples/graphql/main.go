@@ -19,7 +19,7 @@ func main() {
 		str += fmt.Sprintf("ID: %s\n", user.ID)
 		str += fmt.Sprintf("Login: %s\n", user.Login)
 		str += fmt.Sprintf("Display Name: %s\n", user.DisplayName)
-		str += fmt.Sprintf("Profile URL: %s\n", user.Channel.URL)
+		str += fmt.Sprintf("Profile URL: %s\n", user.ChannelURL)
 		str += fmt.Sprintf("Banner URL: %s\n", user.BannerImageURL)
 		str += fmt.Sprintf("Offline Screen URL: %s\n", user.OfflineImageURL)
 		str += fmt.Sprintf("Chat Color: %s\n", user.ChatColor)
@@ -68,15 +68,15 @@ func sts(stream graphql.Stream) []string {
 	str += fmt.Sprintf("\tID: %s\n", stream.Channel.ID)
 	str += fmt.Sprintf("\tLogin: %s\n", stream.Channel.Name)
 	str += fmt.Sprintf("\tDisplay Name: %s\n", stream.Channel.DisplayName)
-	str += fmt.Sprintf("\tLanguage: %s\n", stream.Channel.Settings.Broadcast.Language)
-	str += fmt.Sprintf("\tIs Mature: %t\n", stream.Channel.Settings.Broadcast.IsMature)
+	str += fmt.Sprintf("\tLanguage: %s\n", stream.Channel.BroadcastSettings.Language)
+	str += fmt.Sprintf("\tIs Mature: %t\n", stream.Channel.BroadcastSettings.IsMature)
 
 	if stream.Game != nil {
 		str += fmt.Sprintf("Game:\n")
 		str += fmt.Sprintf("\tID: %s\n", stream.Game.ID)
 		str += fmt.Sprintf("\tName: %s\n", stream.Game.Name)
 		str += fmt.Sprintf("\tDisplay Name: %s\n", stream.Game.DisplayName)
-		str += fmt.Sprintf("\tLive Channels: %d\n", stream.Game.ChannelsCount)
+		str += fmt.Sprintf("\tLive Channels: %d\n", stream.Game.BroadcastersCount)
 		str += fmt.Sprintf("\tViewers: %d\n", stream.Game.ViewersCount)
 		str += fmt.Sprintf("\tFollowers: %d\n", stream.Game.FollowersCount)
 		str += fmt.Sprintf("\tPopularity: %d\n", stream.Game.PopularityScore)
@@ -88,9 +88,7 @@ func sts(stream graphql.Stream) []string {
 		}
 	}
 
-	str += fmt.Sprintf("Clip Count: %d\n", stream.ClipCount)
 	str += fmt.Sprintf("Broadcaster Software: %s\n", stream.BroadcasterSoftware)
-	str += fmt.Sprintf("Delay Length: %d\n", stream.DelayLengthSeconds)
 	str += fmt.Sprintf("Average FPS: %.1f\n", stream.AverageFPS)
 	str += fmt.Sprintf("Bitrate: %.1f\n", stream.Bitrate)
 	str += fmt.Sprintf("Codec: %s\n", stream.Codec)

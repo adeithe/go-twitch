@@ -24,12 +24,12 @@ type GQLUserLoginsQuery struct {
 
 // GQLChannelIDsQuery GraphQL query for 1-100 Channels by their IDs
 type GQLChannelIDsQuery struct {
-	Data []Channel `graphql:"channels(ids: $ids)"`
+	Data []Channel `graphql:"users(ids: $ids)"`
 }
 
 // GQLChannelNamesQuery GraphQL query for 1-100 Channels by name
 type GQLChannelNamesQuery struct {
-	Data []Channel `graphql:"channels(names: $names)"`
+	Data []Channel `graphql:"users(logins: $names)"`
 }
 
 // GQLStreamsQuery GraphQL query for streams on Twitch
