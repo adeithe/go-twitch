@@ -68,7 +68,7 @@ func sts(stream graphql.Stream) []string {
 	str += fmt.Sprintf("\tID: %s\n", stream.Channel.ID)
 	str += fmt.Sprintf("\tLogin: %s\n", stream.Channel.Name)
 	str += fmt.Sprintf("\tDisplay Name: %s\n", stream.Channel.DisplayName)
-	str += fmt.Sprintf("\tLanguage: %t\n", stream.Channel.Settings.Broadcast.Language)
+	str += fmt.Sprintf("\tLanguage: %s\n", stream.Channel.Settings.Broadcast.Language)
 	str += fmt.Sprintf("\tIs Mature: %t\n", stream.Channel.Settings.Broadcast.IsMature)
 
 	if stream.Game != nil {

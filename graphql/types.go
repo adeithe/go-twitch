@@ -8,9 +8,17 @@ import (
 )
 
 var (
+	// ErrTokenNotSet returned when a method requires an authorization token but no token is set
+	ErrTokenNotSet = errors.New("missing authorization token")
 	// ErrTooManyArguments returned when a method receives more arguments than allowed by the GraphQL server
 	ErrTooManyArguments = errors.New("too many arguments provided")
 )
+
+// PageInfo stores data about available uses for a Cursor
+type PageInfo struct {
+	HasNextPage     bool
+	HasPreviousPage bool
+}
 
 // User stores data about a user on Twitch
 type User struct {
