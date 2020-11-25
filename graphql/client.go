@@ -48,13 +48,11 @@ func (client Client) CustomMutation(mutation interface{}, vars map[string]interf
 }
 
 // IsUsernameAvailable returns true if the provided username is not taken on Twitch
-func (client *Client) IsUsernameAvailable(username string) (bool, error) {
+func (client *Client) IsUsernameAvailable(username string) bool {
 	user := GQLUsernameAvailabilityQuery{}
 	vars := map[string]interface{}{"username": graphql.String(username)}
-	if err := client.CustomQuery(&user, vars); err != nil {
-		return false, err
-	}
-	return user.IsAvailable, nil
+	client.CustomQuery(&user, vars)
+	return user.IsAvailable
 }
 
 // GetCurrentUser retrieves the current user based on the clients authentication token
@@ -64,7 +62,7 @@ func (client Client) GetCurrentUser() (*User, error) {
 	}
 	user := GQLCurrentUserQuery{}
 	if err := client.CustomQuery(&user, nil); err != nil {
-		return nil, err
+		return user.Data, err
 	}
 	return user.Data, nil
 }
@@ -77,7 +75,7 @@ func (client Client) GetUsersByID(ids ...string) ([]User, error) {
 	users := GQLUserIDsQuery{}
 	vars := map[string]interface{}{"ids": toIDs(ids...)}
 	if err := client.CustomQuery(&users, vars); err != nil {
-		return []User{}, err
+		return users.Data, err
 	}
 	return users.Data, nil
 }
@@ -90,7 +88,7 @@ func (client Client) GetUsersByLogin(logins ...string) ([]User, error) {
 	users := GQLUserLoginsQuery{}
 	vars := map[string]interface{}{"logins": toStrings(logins...)}
 	if err := client.CustomQuery(&users, vars); err != nil {
-		return []User{}, err
+		return users.Data, err
 	}
 	return users.Data, nil
 }
@@ -103,7 +101,7 @@ func (client Client) GetChannelsByID(ids ...string) ([]Channel, error) {
 	channels := GQLChannelIDsQuery{}
 	vars := map[string]interface{}{"ids": toIDs(ids...)}
 	if err := client.CustomQuery(&channels, vars); err != nil {
-		return []Channel{}, err
+		return channels.Data, err
 	}
 	return channels.Data, nil
 }
@@ -116,7 +114,7 @@ func (client Client) GetChannelsByName(names ...string) ([]Channel, error) {
 	channels := GQLChannelNamesQuery{}
 	vars := map[string]interface{}{"names": toStrings(names...)}
 	if err := client.CustomQuery(&channels, vars); err != nil {
-		return []Channel{}, err
+		return channels.Data, err
 	}
 	return channels.Data, nil
 }
@@ -133,7 +131,7 @@ func (client Client) GetStreams(opts StreamQueryOpts) (*StreamsQuery, error) {
 		"options": opts.Options,
 	}
 	if err := client.CustomQuery(&streams, vars); err != nil {
-		return nil, err
+		return streams.Data, err
 	}
 	return streams.Data, nil
 }
@@ -150,7 +148,7 @@ func (client Client) GetGames(opts GameQueryOpts) (*GamesQuery, error) {
 		"options": opts.Options,
 	}
 	if err := client.CustomQuery(&games, vars); err != nil {
-		return nil, err
+		return games.Data, err
 	}
 	return games.Data, nil
 }

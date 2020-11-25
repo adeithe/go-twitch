@@ -2,13 +2,50 @@ package graphql
 
 import (
 	"fmt"
+	"math/rand"
 	"testing"
+	"time"
 )
 
 const (
 	testUserID    = "44322889"
 	testUserLogin = "dallas"
 )
+
+func TestSetBearer(t *testing.T) {
+	gql := New()
+	gql.SetBearer("abcd123")
+	if gql.bearer != "abcd123" {
+		t.Fatal("bearer token was not set successfully")
+	}
+}
+
+func TestIsUsernameAvailable(t *testing.T) {
+	var available bool
+	var err error
+	gql := New()
+	tries := 5
+	rand.Seed(time.Now().UnixNano())
+	for i := 0; i < tries; i++ {
+		chars := []rune("abcdefghijklmnopqrstuvwxyz0123456789_")
+		username := make([]rune, 20)
+		for i := range username {
+			username[i] = chars[rand.Intn(len(chars))]
+		}
+		available = gql.IsUsernameAvailable(string(username))
+		if available {
+			tries = i
+			break
+		}
+	}
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !available {
+		t.Fatalf("failed to find an available username after %d tries", tries)
+	}
+	t.Logf("found an available username after %d tries", tries+1)
+}
 
 func TestQueryUsersByID(t *testing.T) {
 	gql := New()
