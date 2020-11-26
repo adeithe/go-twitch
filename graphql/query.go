@@ -1,6 +1,10 @@
 package graphql
 
-import "github.com/shurcooL/graphql"
+import (
+	"time"
+
+	"github.com/shurcooL/graphql"
+)
 
 // GQLUsernameAvailabilityQuery GraphQL query to check if a username is available on Twitch
 type GQLUsernameAvailabilityQuery struct {
@@ -42,6 +46,11 @@ type GQLGamesQuery struct {
 	Data *GamesQuery `graphql:"games(first: $first, after: $after, options: $options)"`
 }
 
+// GQLFollowersQuery GraphQL query for a users followers on Twitch
+type GQLFollowersQuery struct {
+	Data *FollowersQuery `graphql:"user(id: $id)"`
+}
+
 // StreamsQuery stores data returned from GQLStreamsQuery
 type StreamsQuery struct {
 	ResponseID   graphql.ID `graphql:"responseID"`
@@ -52,6 +61,19 @@ type StreamsQuery struct {
 		Cursor     Cursor
 	} `graphql:"edges"`
 	PageInfo PageInfo
+}
+
+// FollowersQuery stores data returned from GQLFollowersQuery
+type FollowersQuery struct {
+	Followers struct {
+		TotalCount int32
+		Data       []struct {
+			User       User `graphql:"node"`
+			FollowedAt time.Time
+			Cursor     Cursor
+		} `graphql:"edges"`
+		PageInfo PageInfo
+	} `graphql:"followers(first: $first, after: $after)"`
 }
 
 // GamesQuery stores data returned from GQLGamesQuery

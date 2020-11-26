@@ -7,16 +7,35 @@ import (
 	"time"
 )
 
-const (
-	testUserID    = "44322889"
-	testUserLogin = "dallas"
-)
-
-func TestSetBearer(t *testing.T) {
+func TestClient(t *testing.T) {
 	gql := New()
+	gql.ID = ""
 	gql.SetBearer("abcd123")
 	if gql.bearer != "abcd123" {
 		t.Fatal("bearer token was not set successfully")
+	}
+	if _, err := gql.GetStreams(StreamQueryOpts{First: 1}); err == nil {
+		t.Fatal("expected error did not occur")
+	}
+}
+
+func TestErrors(t *testing.T) {
+	gql := New()
+	var args []string
+	for i := 0; i < 101; i++ {
+		args = append(args, fmt.Sprint(i))
+	}
+	if _, err := gql.GetUsersByID(args...); err == nil {
+		t.Fatal("GetUsersByID didnt return an error")
+	}
+	if _, err := gql.GetUsersByLogin(args...); err == nil {
+		t.Fatal("GetUsersByLogin didnt return an error")
+	}
+	if _, err := gql.GetChannelsByID(args...); err == nil {
+		t.Fatal("GetChannelsByID didnt return an error")
+	}
+	if _, err := gql.GetChannelsByName(args...); err == nil {
+		t.Fatal("GetChannelsByName didnt return an error")
 	}
 }
 
@@ -32,7 +51,7 @@ func TestIsUsernameAvailable(t *testing.T) {
 		for i := range username {
 			username[i] = chars[rand.Intn(len(chars))]
 		}
-		available = gql.IsUsernameAvailable(string(username))
+		available, _ = gql.IsUsernameAvailable(string(username))
 		if available {
 			tries = i
 			break
@@ -47,68 +66,52 @@ func TestIsUsernameAvailable(t *testing.T) {
 	t.Logf("found an available username after %d tries", tries+1)
 }
 
-func TestQueryUsersByID(t *testing.T) {
+func TestQueryUsers(t *testing.T) {
 	gql := New()
-	users, err := gql.GetUsersByID(testUserID)
+	if _, err := gql.GetFollowersForUser(User{}, FollowOpts{}); err == nil {
+		t.Fatalf("expected error did not occur")
+	}
+	users, err := gql.GetUsersByID("44322889")
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(users) != 1 {
-		t.Fatalf("expected 1 user got %d", len(users))
+		t.Fatalf("expected: 1 got: %d", len(users))
 	}
-	user := users[0]
-	if user.Login != testUserLogin {
-		t.Fatalf("expected %s got %s", testUserLogin, user.Login)
-	}
-	t.Logf("got %d users", len(users))
-}
-
-func TestQueryUsersByLogin(t *testing.T) {
-	gql := New()
-	users, err := gql.GetUsersByLogin(testUserLogin)
+	users, err = gql.GetUsersByLogin(users[0].Login)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(users) != 1 {
-		t.Fatalf("expected 1 user got %d", len(users))
+		t.Fatalf("expected: 1 got: %d", len(users))
 	}
-	user := users[0]
-	if fmt.Sprint(user.ID) != testUserID {
-		t.Fatalf("expected %s got %s", testUserID, user.ID)
+	if _, err := gql.GetFollowersForUser(users[0], FollowOpts{}); err != nil {
+		t.Fatal(err)
 	}
-	t.Logf("got %d users", len(users))
 }
 
-func TestQueryChannelsByID(t *testing.T) {
+func TestQueryChannels(t *testing.T) {
 	gql := New()
-	channels, err := gql.GetChannelsByID(testUserID)
+	if _, err := gql.GetFollowersForChannel(Channel{}, FollowOpts{}); err == nil {
+		t.Fatalf("expected error did not occur")
+	}
+	channels, err := gql.GetChannelsByID("44322889")
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(channels) != 1 {
-		t.Fatalf("expected 1 channel got %d", len(channels))
+		t.Fatalf("expected: 1 got: %d", len(channels))
 	}
-	channel := channels[0]
-	if channel.Name != testUserLogin {
-		t.Fatalf("expected %s got %s", testUserLogin, channel.Name)
-	}
-	t.Logf("got %d channels", len(channels))
-}
-
-func TestQueryChannelsByName(t *testing.T) {
-	gql := New()
-	channels, err := gql.GetChannelsByName(testUserLogin)
+	channels, err = gql.GetChannelsByName(channels[0].Name)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(channels) != 1 {
-		t.Fatalf("expected 1 channel got %d", len(channels))
+		t.Fatalf("expected: 1 got: %d", len(channels))
 	}
-	channel := channels[0]
-	if fmt.Sprint(channel.ID) != testUserID {
-		t.Fatalf("expected %s got %s", testUserID, channel.ID)
+	if _, err := gql.GetFollowersForChannel(channels[0], FollowOpts{}); err != nil {
+		t.Fatal(err)
 	}
-	t.Logf("got %d channels", len(channels))
 }
 
 func TestQueryStreams(t *testing.T) {

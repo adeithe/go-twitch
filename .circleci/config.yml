@@ -1,0 +1,32 @@
+version: 2.1
+
+jobs:
+  build:
+    docker:
+      - image: golang:latest
+    working_directory: /go/src/github.com/{{ORG_NAME}}/{{REPO_NAME}}
+    steps:
+      - checkout
+      - run:
+          name: Get dependencies
+          command: |
+            mkdir /tmp/artifacts
+            go get -v -t -d ./...
+      - run:
+          name: Install gometalinter
+          command: |
+            cd $GOPATH
+            curl -L https://git.io/vp6lP | sh
+            go get github.com/gojp/goreportcard/cmd/goreportcard-cli
+      - run:
+          name: Run tests
+          command: | 
+            go fmt ./... > /dev/null
+            go test -v -coverprofile=coverage.out ./...
+            go tool cover -html=coverage.out -o=/tmp/artifacts/coverage.html
+      - run:
+          name: Report Card
+          command: |
+            goreportcard-cli -v
+      - store_artifacts:
+          path: /tmp/artifacts

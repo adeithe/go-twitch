@@ -8,6 +8,8 @@ import (
 )
 
 var (
+	// ErrInvalidArgument returned when an argument is invalid
+	ErrInvalidArgument = errors.New("one or more arguments are invalid")
 	// ErrTokenNotSet returned when a method requires an authorization token but no token is set
 	ErrTokenNotSet = errors.New("missing authorization token")
 	// ErrTooManyArguments returned when a method receives more arguments than allowed by the GraphQL server
@@ -33,25 +35,19 @@ type User struct {
 	ProfileViewCount int32
 	Stream           *Stream
 	Hosting          *struct {
-		ID          graphql.ID
-		Login       string
-		DisplayName string
-		Stream      Stream
-		IsPartner   bool
-		CreatedAt   time.Time
-		UpdatedAt   time.Time
+		Channel
+		Stream Stream
 	}
-	HasPrime bool
-	HasTurbo bool
-	Roles    struct {
+	Roles struct {
 		IsAffiliate           bool
 		IsPartner             bool
 		IsExtensionsDeveloper bool
-		IsExtensionsApprover  bool
 		IsGlobalMod           bool
 		IsStaff               bool
 		IsSiteAdmin           bool
 	}
+	HasPrime  bool
+	HasTurbo  bool
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	DeletedAt time.Time
@@ -60,7 +56,6 @@ type User struct {
 // Stream stores data about a livestream on Twitch
 type Stream struct {
 	ID                  graphql.ID
-	Title               string
 	ViewersCount        int32
 	Channel             *Channel `graphql:"broadcaster"`
 	Game                *Game
@@ -79,6 +74,11 @@ type Channel struct {
 	Name              string `graphql:"login"`
 	DisplayName       string
 	URL               string `graphql:"profileURL"`
+	BannerImageURL    string `graphql:"bannerImageURL"`
+	OfflineImageURL   string `graphql:"offlineImageURL"`
+	ChatColor         string
+	Description       string
+	ProfileViewCount  int32
 	BroadcastSettings struct {
 		Title            string
 		Game             *Game
@@ -101,6 +101,16 @@ type Channel struct {
 		FollowersOnlyDurationInMinutes int32 `graphql:"followersOnlyDurationMinutes"`
 		ChatDelayInMilliseconds        int32 `graphql:"chatDelayMs"`
 	}
+	Roles struct {
+		IsAffiliate           bool
+		IsPartner             bool
+		IsExtensionsDeveloper bool
+		IsGlobalMod           bool
+		IsStaff               bool
+		IsSiteAdmin           bool
+	}
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 // Game stores data about a category on Twitch

@@ -30,11 +30,13 @@ func main() {
 			str += fmt.Sprintf("\tID: %s\n", user.Hosting.ID)
 			str += fmt.Sprintf("\tLogin: %s\n", user.Hosting.DisplayName)
 			str += fmt.Sprintf("\tDisplay Name: %s\n", user.Hosting.DisplayName)
+			str += fmt.Sprintf("\tChannel URL: %s\n", user.Hosting.Channel.URL)
 			str += fmt.Sprintf("\tStream:\n")
 			for _, s := range sts(user.Hosting.Stream) {
 				str += fmt.Sprintf("\t\t%s\n", s)
 			}
-			str += fmt.Sprintf("\tIs Partner: %t\n", user.Hosting.IsPartner)
+			str += fmt.Sprintf("Is Affiliate: %t\n", user.Hosting.Roles.IsAffiliate)
+			str += fmt.Sprintf("\tIs Partner: %t\n", user.Hosting.Roles.IsPartner)
 			str += fmt.Sprintf("\tCreated At: %s\n", user.Hosting.CreatedAt)
 			str += fmt.Sprintf("\tUpdated At: %s\n", user.Hosting.UpdatedAt)
 		} else if user.Stream != nil {
@@ -61,7 +63,7 @@ func main() {
 func sts(stream graphql.Stream) []string {
 	var str string
 	str += fmt.Sprintf("ID: %s\n", stream.ID)
-	str += fmt.Sprintf("Title: %s\n", stream.Title)
+	str += fmt.Sprintf("Title: %s\n", stream.Channel.BroadcastSettings.Title)
 	str += fmt.Sprintf("Viewers Count: %d\n", stream.ViewersCount)
 
 	str += fmt.Sprintf("Channel:\n")

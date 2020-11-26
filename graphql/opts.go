@@ -28,3 +28,9 @@ type GameOptions struct {
 	Locale string
 	Tags   []string
 }
+
+// FollowOpts stores various options for querying followers on Twitch
+type FollowOpts struct {
+	First int32
+	After Cursor
+}
