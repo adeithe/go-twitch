@@ -100,7 +100,6 @@ func (client *Client) GetNumTopics() (n int) {
 // GetNextShard returns the first shard that can accept topics
 func (client *Client) GetNextShard() (*Conn, error) {
 	client.mx.Lock()
-	defer client.mx.Unlock()
 	shardID := len(client.shards)
 	for id, conn := range client.shards {
 		if conn.GetNumTopics() < conn.length {
@@ -108,6 +107,7 @@ func (client *Client) GetNextShard() (*Conn, error) {
 			break
 		}
 	}
+	client.mx.Unlock()
 	return client.GetShard(shardID)
 }
 
