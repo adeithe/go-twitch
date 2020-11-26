@@ -374,9 +374,12 @@ func (conn *Conn) handleNonce(msg Packet) {
 	}
 	var err error
 	conn.nonces.Lock()
+	defer conn.nonces.Unlock()
 	c, ok := conn.pending[msg.Nonce]
-	conn.nonces.Unlock()
-	if len(msg.Error) > 0 && ok {
+	if !ok {
+		return
+	}
+	if len(msg.Error) > 0 {
 		switch msg.Error {
 		case BadMessage:
 			err = ErrBadMessage

@@ -3,6 +3,8 @@ package graphql
 import (
 	"fmt"
 	"math/rand"
+	"os"
+	"strings"
 	"testing"
 	"time"
 )
@@ -142,4 +144,24 @@ func TestQueryGames(t *testing.T) {
 		t.Fatalf("expected at least 1 game got %d", len(games.Data))
 	}
 	t.Logf("got %d games", len(games.Data))
+}
+
+func TestAuthenticated(t *testing.T) {
+	username := strings.ToLower(os.Getenv("TWITCH_USERNAME"))
+	if len(username) < 1 {
+		t.Skipf("TWITCH_USERNAME is not set. Skipping...")
+	}
+	token := os.Getenv("TWITCH_TOKEN")
+	if len(token) < 1 {
+		t.Skipf("TWITCH_TOKEN is not set. Skipping...")
+	}
+	gql := New()
+	gql.SetBearer(token)
+	user, err := gql.GetCurrentUser()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if user.Login != username {
+		t.Fatal("returned user was invalid")
+	}
 }

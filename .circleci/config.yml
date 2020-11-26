@@ -13,17 +13,17 @@ jobs:
             mkdir /tmp/artifacts
             go get -v -t -d ./...
       - run:
+          name: Run tests
+          command: | 
+            go fmt ./... > /dev/null
+            go test -v -coverprofile=coverage.out -timeout=30s ./...
+            go tool cover -html=coverage.out -o=/tmp/artifacts/coverage.html
+      - run:
           name: Install gometalinter
           command: |
             cd $GOPATH
             curl -L https://git.io/vp6lP | sh
             go get github.com/gojp/goreportcard/cmd/goreportcard-cli
-      - run:
-          name: Run tests
-          command: | 
-            go fmt ./... > /dev/null
-            go test -v -coverprofile=coverage.out ./...
-            go tool cover -html=coverage.out -o=/tmp/artifacts/coverage.html
       - run:
           name: Report Card
           command: |

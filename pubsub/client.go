@@ -78,7 +78,7 @@ func (client *Client) SetMaxTopicsPerShard(max int) {
 	defer client.mx.Unlock()
 	client.topicsLength = max
 	for _, shard := range client.shards {
-		shard.length = client.topicsLength
+		shard.SetMaxTopics(client.topicsLength)
 	}
 }
 
@@ -100,6 +100,7 @@ func (client *Client) GetNumTopics() (n int) {
 // GetNextShard returns the first shard that can accept topics
 func (client *Client) GetNextShard() (*Conn, error) {
 	client.mx.Lock()
+	defer client.mx.Unlock()
 	shardID := len(client.shards)
 	for id, conn := range client.shards {
 		if conn.GetNumTopics() < conn.length {
@@ -107,7 +108,6 @@ func (client *Client) GetNextShard() (*Conn, error) {
 			break
 		}
 	}
-	client.mx.Unlock()
 	return client.GetShard(shardID)
 }
 
@@ -191,6 +191,8 @@ func (client *Client) Listen(topic string, args ...interface{}) error {
 	if err != nil {
 		return err
 	}
+	client.mx.Lock()
+	defer client.mx.Unlock()
 	if err := shard.Listen(topic); err != nil {
 		if err == ErrShardTooManyTopics {
 			client.SetMaxTopicsPerShard(shard.GetNumTopics())
@@ -212,6 +214,8 @@ func (client *Client) ListenWithAuth(token string, topic string, args ...interfa
 	if err != nil {
 		return err
 	}
+	client.mx.Lock()
+	defer client.mx.Unlock()
 	if err := shard.ListenWithAuth(token, topic); err != nil {
 		if err == ErrShardTooManyTopics {
 			client.SetMaxTopicsPerShard(shard.GetNumTopics())
@@ -235,7 +239,9 @@ func (client *Client) Unlisten(topics ...string) error {
 	for _, shard := range client.shards {
 		for _, topic := range topics {
 			if shard.HasTopic(topic) {
-				return shard.Unlisten(topic)
+				if err := shard.Unlisten(topic); err != nil {
+					return err
+				}
 			}
 		}
 	}
