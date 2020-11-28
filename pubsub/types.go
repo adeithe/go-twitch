@@ -1,7 +1,6 @@
 package pubsub
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -39,8 +38,8 @@ type Packet struct {
 
 // MessageData stores data about a message packet
 type MessageData struct {
-	Topic string          `json:"topic"`
-	Data  json.RawMessage `json:"message"`
+	Topic string `json:"topic"`
+	Data  string `json:"message"`
 }
 
 // TopicData stores data about a topic

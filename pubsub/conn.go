@@ -28,7 +28,7 @@ type Conn struct {
 	listeners sync.Mutex
 	writer    sync.Mutex
 
-	onMessage    []func(MessageData)
+	onMessage    []func(string, []byte)
 	onPong       []func(time.Duration)
 	onReconnect  []func()
 	onDisconnect []func()
@@ -53,7 +53,7 @@ type IConn interface {
 	Unlisten(...string) error
 	Ping() (time.Duration, error)
 
-	OnMessage(func(MessageData))
+	OnMessage(func(string, []byte))
 	OnPong(func(time.Duration))
 	OnReconnect(func())
 	OnDisconnect(func())
@@ -306,7 +306,7 @@ func (conn *Conn) Ping() (time.Duration, error) {
 }
 
 // OnMessage event called after a message is receieved
-func (conn *Conn) OnMessage(f func(MessageData)) {
+func (conn *Conn) OnMessage(f func(string, []byte)) {
 	conn.onMessage = append(conn.onMessage, f)
 }
 
@@ -403,11 +403,11 @@ func (conn *Conn) handleMessage(bytes []byte) {
 	if len(bytes) < 1 {
 		return
 	}
-	var data MessageData
-	if err := json.Unmarshal(bytes, &data); err != nil {
+	var msg MessageData
+	if err := json.Unmarshal(bytes, &msg); err != nil {
 		return
 	}
 	for _, f := range conn.onMessage {
-		go f(data)
+		go f(msg.Topic, []byte(msg.Data))
 	}
 }

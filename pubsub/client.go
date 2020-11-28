@@ -13,7 +13,7 @@ type Client struct {
 	awaitingClose int
 
 	onShardConnect       []func(int)
-	onShardMessage       []func(int, MessageData)
+	onShardMessage       []func(int, string, []byte)
 	onShardLatencyUpdate []func(int, time.Duration)
 	onShardReconnect     []func(int)
 	onShardDisconnect    []func(int)
@@ -37,7 +37,7 @@ type IClient interface {
 	Unlisten(...string) error
 
 	OnShardConnect(func(int))
-	OnShardMessage(func(int, MessageData))
+	OnShardMessage(func(int, string, []byte))
 	OnShardLatencyUpdate(func(int, time.Duration))
 	OnShardReconnect(func(int))
 	OnShardDisconnect(func(int))
@@ -129,9 +129,9 @@ func (client *Client) GetShard(id int) (*Conn, error) {
 	}
 	if client.shards[id] == nil {
 		conn := &Conn{length: client.topicsLength}
-		conn.OnMessage(func(msg MessageData) {
+		conn.OnMessage(func(topic string, data []byte) {
 			for _, f := range client.onShardMessage {
-				go f(id, msg)
+				go f(id, topic, data)
 			}
 		})
 		conn.OnPong(func(latency time.Duration) {
@@ -254,7 +254,7 @@ func (client *Client) OnShardConnect(f func(int)) {
 }
 
 // OnShardMessage event called after a shard gets a PubSub message
-func (client *Client) OnShardMessage(f func(int, MessageData)) {
+func (client *Client) OnShardMessage(f func(int, string, []byte)) {
 	client.onShardMessage = append(client.onShardMessage, f)
 }
 
