@@ -5,8 +5,10 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/Adeithe/go-twitch"
+	"github.com/Adeithe/go-twitch/irc"
 )
 
 func main() {
@@ -14,17 +16,25 @@ func main() {
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGHUP)
 
 	chat := twitch.IRC()
-	chat.SetLogin("username", "oauth:123123123")
-	chat.OnDisconnect(func() {
-		fmt.Println("Disconnected from IRC!")
-		sc <- syscall.SIGTERM
+
+	chat.OnShardReconnect(func(shardID int) {
+		fmt.Printf("Shard #%d reconnected\n", shardID)
 	})
-	if err := chat.Connect(); err != nil {
-		panic(err)
+
+	chat.OnShardLatencyUpdate(func(shardID int, latency time.Duration) {
+		fmt.Printf("Shard #%d has %dms ping\n", shardID, latency.Milliseconds())
+	})
+
+	chat.OnShardMessage(func(shardID int, msg irc.ChatMessage) {
+		fmt.Printf("#%s %s: %s\n", msg.Channel, msg.Sender.DisplayName, msg.Message)
+	})
+
+	if err := chat.Join("dallas"); err != nil {
+		fmt.Println(err)
 	}
-	chat.Join("channel1")
 	fmt.Println("Connected to IRC!")
 
 	<-sc
+	fmt.Println("Stopping...")
 	chat.Close()
 }
