@@ -64,6 +64,8 @@ func (limiter *RateLimiter) update(headers map[string]string) {
 }
 
 func (limiter *RateLimiter) ticker() {
+	timer := time.NewTimer(time.Second)
+	defer timer.Stop()
 	for {
 		if limiter.close {
 			close(limiter.await)
@@ -75,9 +77,10 @@ func (limiter *RateLimiter) ticker() {
 			time.Sleep(time.Second)
 			continue
 		}
+		timer.Reset(time.Second)
 		select {
 		case limiter.await <- true:
-		case <-time.After(time.Second):
+		case <-timer.C:
 		}
 	}
 }

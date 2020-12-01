@@ -158,10 +158,12 @@ func (conn *Conn) WriteMessageWithNonce(msgType MessageType, nonce string, data 
 	}
 	conn.pending[nonce] = nc
 	conn.nonces.Unlock()
+	timer := time.NewTimer(time.Second*5 + conn.latency)
+	defer timer.Stop()
 	select {
 	case ex := <-nc:
 		err = ex
-	case <-time.After(time.Second*5 + conn.latency):
+	case <-timer.C:
 		err = ErrNonceTimeout
 	}
 	conn.nonces.Lock()
@@ -174,9 +176,11 @@ func (conn *Conn) WriteMessageWithNonce(msgType MessageType, nonce string, data 
 // Close the connection to the PubSub server
 func (conn *Conn) Close() {
 	conn.Write(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
+	timer := time.NewTimer(time.Second)
+	defer timer.Stop()
 	select {
 	case <-conn.done:
-	case <-time.After(time.Second):
+	case <-timer.C:
 		conn.socket.Close()
 		close(conn.done)
 	}
@@ -293,9 +297,11 @@ func (conn *Conn) Ping() (time.Duration, error) {
 	if err := conn.WriteMessage(Ping, nil); err != nil {
 		return 0, err
 	}
+	timer := time.NewTimer(time.Second*5 + conn.latency)
+	defer timer.Stop()
 	select {
 	case <-conn.ping:
-	case <-time.After(time.Second*5 + conn.latency):
+	case <-timer.C:
 		return 0, ErrPingTimeout
 	}
 	conn.latency = time.Since(start)
@@ -358,11 +364,15 @@ func (conn *Conn) reader() {
 }
 
 func (conn *Conn) ticker() {
+	interval := time.Minute * 5
+	timer := time.NewTimer(interval)
+	defer timer.Stop()
 	for {
 		select {
 		case <-conn.done:
 			return
-		case <-time.After(time.Minute * 5):
+		case <-timer.C:
+			timer.Reset(interval)
 			conn.Ping()
 		}
 	}
