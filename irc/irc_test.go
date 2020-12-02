@@ -26,6 +26,9 @@ func TestShardedConnection(t *testing.T) {
 	if err := client.Join(testChannel); err != nil {
 		t.Fatal(err)
 	}
+	if err := client.Leave(testChannel); err != nil {
+		t.Fatal(err)
+	}
 	client.Close()
 }
 
@@ -45,6 +48,9 @@ func TestSingleConnection(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Logf("latency of %dms", latency.Milliseconds())
+	if err := conn.Leave(testChannel); err != nil {
+		t.Fatal(err)
+	}
 	conn.Close()
 }
 
@@ -67,7 +73,7 @@ func TestAuthenticatedConnection(t *testing.T) {
 
 	reader := New()
 	reader.OnShardMessage(func(shardID int, msg ChatMessage) {
-		c <- msg.Message == message
+		c <- msg.Text == message
 	})
 	if err := reader.Join(username); err != nil {
 		t.Fatal(err)
@@ -75,7 +81,7 @@ func TestAuthenticatedConnection(t *testing.T) {
 
 	writer := Conn{}
 	writer.SetLogin(username, token)
-	if err := writer.Say(username, message); err != nil {
+	if err := writer.Sayf(username, "%s", message); err != nil {
 		t.Fatal(err)
 	}
 

@@ -53,7 +53,7 @@ type ChatMessage struct {
 	ID         string
 	Channel    string
 	ChannelID  int
-	Message    string
+	Text       string
 	IsCheer    bool
 	IsAction   bool
 	CreatedAt  time.Time
@@ -111,7 +111,7 @@ func NewChatMessage(msg Message) ChatMessage {
 		Sender:     NewChatSender(msg),
 		ID:         msg.Tags["id"],
 		Channel:    strings.TrimPrefix(msg.Params[0], "#"),
-		Message:    msg.Message,
+		Text:       msg.Message,
 	}
 	if id, err := strconv.Atoi(msg.Tags["room-id"]); err == nil {
 		chatMsg.ChannelID = id
@@ -121,7 +121,7 @@ func NewChatMessage(msg Message) ChatMessage {
 	chatMsg.IsCheer = isCheer
 
 	if strings.HasPrefix(msg.Message, "\u0001ACTION") && strings.HasSuffix(msg.Message, "\u0001") {
-		chatMsg.Message = chatMsg.Message[8 : len(chatMsg.Message)-1]
+		chatMsg.Text = chatMsg.Text[8 : len(chatMsg.Text)-1]
 		chatMsg.IsAction = true
 	}
 	if ts, err := strconv.ParseInt(msg.Tags["tmi-sent-ts"], 10, 64); err == nil {

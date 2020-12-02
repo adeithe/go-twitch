@@ -46,5 +46,5 @@ func onShardLatencyUpdate(shardID int, latency time.Duration) {
 }
 
 func onShardMessage(shardID int, msg irc.ChatMessage) {
-	fmt.Printf("#%s %s: %s\n", msg.Channel, msg.Sender.DisplayName, msg.Message)
+	fmt.Printf("#%s %s: %s\n", msg.Channel, msg.Sender.DisplayName, msg.Text)
 }

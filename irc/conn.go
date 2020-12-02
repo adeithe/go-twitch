@@ -154,9 +154,11 @@ func (conn *Conn) Ping() (time.Duration, error) {
 	if err := conn.SendRaw("PING"); err != nil {
 		return conn.latency, err
 	}
+	timer := time.NewTimer(time.Second*5 + conn.latency)
+	defer timer.Stop()
 	select {
 	case <-conn.ping:
-	case <-time.After(time.Second*5 + conn.latency):
+	case <-timer.C:
 		return conn.latency, ErrPingTimeout
 	}
 	conn.latency = time.Since(start)
