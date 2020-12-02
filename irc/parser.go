@@ -1,31 +1,64 @@
 package irc
 
 import (
-	"fmt"
 	"regexp"
 	"strings"
-
-	"github.com/Adeithe/go-twitch/irc/cmd"
 )
 
-// IRCSource stores data about the sender of an incoming IRC message.
-type IRCSource struct {
+// Command is the command sent in an IRCMessage
+type Command string
+
+const (
+	// CMDPrivMessage is a PRIVMSG command
+	CMDPrivMessage Command = "PRIVMSG"
+	// CMDClearChat is a CLEARCHAT command
+	CMDClearChat Command = "CLEARCHAT"
+	// CMDClearMessage is a CLEARMSG command
+	CMDClearMessage Command = "CLEARMSG"
+	// CMDHostTarget is a HOSTTARGET command
+	CMDHostTarget Command = "HOSTTARGET"
+	// CMDNotice is a NOTICE command
+	CMDNotice Command = "NOTICE"
+	// CMDReconnect is a RECONNECT command
+	CMDReconnect Command = "RECONNECT"
+	// CMDRoomState is a ROOMSTATE command
+	CMDRoomState Command = "ROOMSTATE"
+	// CMDUserNotice is a USERNOTICE command
+	CMDUserNotice Command = "USERNOTICE"
+	// CMDUserState is a USERSTATE command
+	CMDUserState Command = "USERSTATE"
+	// CMDGlobalUserState is a GLOBALUSERSTATE command
+	CMDGlobalUserState Command = "GLOBALUSERSTATE"
+	// CMDJoin is a JOIN command
+	CMDJoin Command = "JOIN"
+	// CMDPart is a PART command
+	CMDPart Command = "PART"
+	// CMDPing is a PING command
+	CMDPing Command = "PING"
+	// CMDPong is a PONG command
+	CMDPong Command = "PONG"
+	// CMDReady is a 376 command
+	CMDReady Command = "376"
+)
+
+// Source is basic info about in IRC message
+type Source struct {
 	Nickname string
 	Username string
 	Host     string
 }
 
-// IRCMessage stores data about a parsed incoming IRC message.
-type IRCMessage struct {
+// Message is an IRC message received by the socket
+type Message struct {
 	Raw     string
-	Command cmd.IRCCommand
-	Sender  IRCSource
+	Command Command
+	Sender  Source
 	Tags    map[string]string
 	Params  []string
 	Message string
 }
 
-// IMessageParser is an interface for IRCMessage
+// IMessageParser is a generic parser for an IRC message
 type IMessageParser interface {
 	Parse() error
 
@@ -33,20 +66,30 @@ type IMessageParser interface {
 	sender(string)
 }
 
-var _ IMessageParser = &IRCMessage{}
+var escapeChars = []struct {
+	from string
+	to   string
+}{
+	{`\s`, ` `},
+	{`\n`, ``},
+	{`\r`, ``},
+	{`\:`, `;`},
+	{`\\`, `\`},
+}
 
-// NewParsedMessage returns a parsed IRCMessage based on the provided raw data.
-func NewParsedMessage(raw string) (IRCMessage, error) {
-	msg := &IRCMessage{Raw: raw}
+// NewParsedMessage parses raw data from the IRC server and returns an IRCMessage
+func NewParsedMessage(raw string) (Message, error) {
+	msg := &Message{Raw: raw}
 	if err := msg.Parse(); err != nil {
 		return *msg, err
 	}
 	return *msg, nil
 }
 
-// Parse takes the raw data provided in NewParsedMessage and stores the data accordingly.
-// This is done automatically when running NewParsedMessage but can be run again at any time.
-func (msg *IRCMessage) Parse() error {
+// Parse takes the raw data in an IRCMessage and stores it accordingly
+//
+// This is done automatically when running NewParsedMessage but can be run again at any time
+func (msg *Message) Parse() error {
 	var index int
 	parts := strings.Split(msg.Raw, " ")
 
@@ -56,7 +99,7 @@ func (msg *IRCMessage) Parse() error {
 	}
 
 	if index >= len(parts) {
-		return fmt.Errorf("parseError: partial message")
+		return ErrPartialMessage
 	}
 
 	if strings.HasPrefix(parts[index], ":") {
@@ -65,10 +108,10 @@ func (msg *IRCMessage) Parse() error {
 	}
 
 	if index >= len(parts) {
-		return fmt.Errorf("parseError: no command")
+		return ErrNoCommand
 	}
 
-	msg.Command = cmd.IRCCommand(parts[index])
+	msg.Command = Command(parts[index])
 	index++
 
 	if index >= len(parts) {
@@ -84,22 +127,10 @@ func (msg *IRCMessage) Parse() error {
 		params = append(params, v)
 	}
 	msg.Params = params
-
 	return nil
 }
 
-var escapeChars = []struct {
-	from string
-	to   string
-}{
-	{`\s`, ` `},
-	{`\n`, ``},
-	{`\r`, ``},
-	{`\:`, `;`},
-	{`\\`, `\`},
-}
-
-func (msg *IRCMessage) tags(raw string) {
+func (msg *Message) tags(raw string) {
 	tags := make(map[string]string)
 	for _, tag := range strings.Split(raw, ";") {
 		pair := strings.SplitN(tag, "=", 2)
@@ -116,10 +147,10 @@ func (msg *IRCMessage) tags(raw string) {
 	msg.Tags = tags
 }
 
-func (msg *IRCMessage) sender(raw string) {
+func (msg *Message) sender(raw string) {
 	regex := regexp.MustCompile(`!|@`)
 	sourceData := regex.Split(raw, -1)
-	sender := &IRCSource{}
+	sender := Source{}
 	if len(sourceData) > 0 {
 		switch len(sourceData) {
 		case 1:
@@ -128,11 +159,11 @@ func (msg *IRCMessage) sender(raw string) {
 			sender.Nickname = sourceData[0]
 			sender.Username = sourceData[0]
 			sender.Host = sourceData[1]
-		default:
+		case 3:
 			sender.Nickname = sourceData[0]
 			sender.Username = sourceData[1]
 			sender.Host = sourceData[2]
 		}
 	}
-	msg.Sender = *sender
+	msg.Sender = sender
 }
