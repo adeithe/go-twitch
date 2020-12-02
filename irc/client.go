@@ -44,7 +44,7 @@ type IClient interface {
 // New IRC Client
 //
 // The client uses a sharding system to allow applications to listen to large numbers of Twitch chatrooms with
-// minimized backlogs of message handling. The client will seperate channels into groups of 100 by default.
+// minimized backlogs of message handling. The client will separate channels into groups of 100 by default.
 //
 // See: https://dev.twitch.tv/docs/irc
 func New() *Client {
@@ -89,7 +89,7 @@ func (client *Client) GetShard(id int) (*Conn, error) {
 		client.shards = make(map[int]*Conn)
 	}
 	if client.shards[id] == nil {
-		conn := &Conn{}
+		conn := &Conn{isShard: true}
 		conn.OnMessage(func(msg ChatMessage) {
 			for _, f := range client.onShardMessage {
 				go f(id, msg)

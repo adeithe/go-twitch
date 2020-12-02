@@ -19,12 +19,12 @@ type Conn struct {
 
 	attempts    int
 	socket      net.Conn
+	isShard     bool
 	isConnected bool
 	latency     time.Duration
 	channels    map[string]bool
 	ping        chan bool
 
-	onReady         []func()
 	onReconnect     []func()
 	onDisconnect    []func()
 	onLatencyUpdate []func(time.Duration)
@@ -39,7 +39,7 @@ type Conn struct {
 
 // IConn is a generic IRC connection
 type IConn interface {
-	SetLogin(string, string)
+	SetLogin(string, string) error
 	IsConnected() bool
 	IsInChannel(string) bool
 
@@ -47,9 +47,11 @@ type IConn interface {
 	SendRaw(...string) error
 	Ping() (time.Duration, error)
 	Join(...string) error
+	Say(string, string) error
+	Sayf(string, string, ...interface{}) error
 	Leave(...string) error
 	Reconnect() error
-	Close() error
+	Close()
 
 	OnReady(func())
 	OnDisconnect(func())
@@ -64,12 +66,18 @@ type IConn interface {
 const IP = "irc.chat.twitch.tv"
 
 // SetLogin sets the username and authentication token for the connection
-func (conn *Conn) SetLogin(username, token string) {
-	conn.Username = username
+//
+// Will return an error if the connection is already open
+func (conn *Conn) SetLogin(username, token string) error {
+	if conn.IsConnected() {
+		return ErrAlreadyConnected
+	}
+	conn.Username = strings.ToLower(username)
 	if strings.HasPrefix(strings.ToLower(token), "oauth:") {
 		token = token[6:]
 	}
 	conn.token = token
+	return nil
 }
 
 // IsConnected returns true if the connection is active
@@ -99,12 +107,12 @@ func (conn *Conn) Connect() error {
 	if err != nil {
 		return err
 	}
-	conn.socket = socket
-	conn.isConnected = true
-	go conn.reader()
 	if len(conn.Username) < 1 || len(conn.token) < 1 {
 		conn.SetLogin("justinfan123", "Kappa123")
 	}
+	conn.socket = socket
+	conn.isConnected = true
+	go conn.reader()
 	return conn.SendRaw(
 		"CAP REQ :twitch.tv/membership twitch.tv/tags twitch.tv/commands",
 
@@ -149,7 +157,6 @@ func (conn *Conn) Ping() (time.Duration, error) {
 	select {
 	case <-conn.ping:
 	case <-time.After(time.Second*5 + conn.latency):
-		close(conn.ping)
 		return conn.latency, ErrPingTimeout
 	}
 	conn.latency = time.Since(start)
@@ -167,6 +174,26 @@ func (conn *Conn) Join(channels ...string) error {
 		}
 	}
 	return nil
+}
+
+// Say sends a message in the provided channel if authenticated
+//
+// If using a shards, you must create a single connection and use it as a writer
+func (conn *Conn) Say(channel string, message string) error {
+	if conn.isShard {
+		return ErrShardedMessageSend
+	}
+	if strings.HasPrefix(strings.ToLower(conn.Username), "justinfan") {
+		return ErrNotAuthenticated
+	}
+	return conn.SendRaw(fmt.Sprintf("PRIVMSG #%s :%s", strings.TrimPrefix(channel, "#"), message))
+}
+
+// Sayf sends a formatted message in the provided channel if authenticated
+//
+// If using a shards, you must create a single connection and use it as a writer
+func (conn *Conn) Sayf(channel string, format string, a ...interface{}) error {
+	return conn.Say(channel, fmt.Sprintf(format, a...))
 }
 
 // Leave attempts to leave a channel
@@ -187,9 +214,7 @@ func (conn *Conn) Leave(channels ...string) error {
 // Equivalent to Connect if the connection is not already open
 func (conn *Conn) Reconnect() error {
 	if conn.IsConnected() {
-		if err := conn.Close(); err != nil {
-			return err
-		}
+		conn.Close()
 	}
 	if err := conn.Connect(); err != nil {
 		return err
@@ -201,16 +226,15 @@ func (conn *Conn) Reconnect() error {
 }
 
 // Close disconnects from the IRC server
-func (conn *Conn) Close() error {
+func (conn *Conn) Close() {
 	if !conn.IsConnected() {
-		return nil
+		return
 	}
-	return conn.socket.Close()
-}
-
-// OnReady event called when the connection is established and ready
-func (conn *Conn) OnReady(f func()) {
-	conn.onReady = append(conn.onReady, f)
+	conn.socket.Close()
+	timer := time.NewTimer(time.Second)
+	defer timer.Stop()
+	<-timer.C
+	return
 }
 
 // OnReconnect event called when the connection is reopened
