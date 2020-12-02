@@ -1,7 +1,7 @@
 version: 2.1
 
 jobs:
-  build:
+  run-tests:
     docker:
       - image: golang:latest
     working_directory: /go/src/github.com/{{ORG_NAME}}/{{REPO_NAME}}
@@ -11,13 +11,30 @@ jobs:
           name: Get dependencies
           command: |
             mkdir /tmp/artifacts
+            mkdir /tmp/insights
             go get -v -t -d ./...
       - run:
-          name: Run tests
+          name: Run Tests
           command: | 
             go fmt ./... > /dev/null
-            go test -v -coverprofile=coverage.out -timeout=30s ./...
+            go test -v -coverprofile=coverage.out -timeout=30s ./... > test.out
             go tool cover -html=coverage.out -o=/tmp/artifacts/coverage.html
+            cat test.out | go-junit-report > /tmp/insights/report.xml
+            cat test.out
+      - store_artifacts:
+          path: /tmp/artifacts
+      - store_test_results:
+          path: /tmp/insights
+  report-card:
+    docker:
+      - image: golang:latest
+    working_directory: /go/src/github.com/{{ORG_NAME}}/{{REPO_NAME}}
+    steps:
+      - checkout
+      - run:
+          name: Get dependencies
+          command: |
+            go get -v -t -d ./...
       - run:
           name: Install gometalinter
           command: |
@@ -28,5 +45,9 @@ jobs:
           name: Report Card
           command: |
             goreportcard-cli -v
-      - store_artifacts:
-          path: /tmp/artifacts
+
+workflows:
+  build:
+    jobs:
+      - run-tests
+      - report-card
