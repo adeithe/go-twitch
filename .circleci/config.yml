@@ -13,15 +13,14 @@ jobs:
             mkdir /tmp/artifacts
             mkdir /tmp/insights
             go get -v -t -d ./...
-            go get github.com/jstemmer/go-junit-report
+            go get github.com/tebeka/go2xunit
       - run:
           name: Run Tests
           command: | 
             go fmt ./... > /dev/null
-            go test -v -coverprofile=coverage.out -timeout=30s ./... > test.out
-            go tool cover -html=coverage.out -o=/tmp/artifacts/coverage.html
-            cat test.out | go-junit-report > /tmp/insights/report.xml
-            cat test.out
+            2>&1 go test -v -coverprofile=coverage.out -timeout=30s ./... | tee test.out
+            go tool cover -html=coverage.out -o=/tmp/artifacts/coverage.html ; rm coverage.out
+            go2xunit -fail -input test.out -output /tmp/insights/report.xml ; rm test.out
       - store_artifacts:
           path: /tmp/artifacts
       - store_test_results:
