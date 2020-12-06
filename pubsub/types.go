@@ -26,6 +26,9 @@ var (
 	ErrServer = errors.New("something went wrong on the servers end")
 	// ErrUnknown returned when the server sends back an error that wasnt handled by the reader
 	ErrUnknown = errors.New("server sent back an unknown error")
+
+	// ErrInvalidNonceGenerator returned when a provided nonce generator can not be used
+	ErrInvalidNonceGenerator = errors.New("nonce generator is invalid")
 )
 
 // Packet stores data about a message sent to/from the PubSub server
@@ -86,6 +89,9 @@ const (
 	// ServerError something went wrong on the servers side
 	ServerError MessageError = "ERR_SERVER"
 )
+
+// NonceGenerator any function that returns a string that is different every time
+type NonceGenerator func() string
 
 // ParseTopic returns a topic string with the provided arguments
 func ParseTopic(str string, args ...interface{}) string {

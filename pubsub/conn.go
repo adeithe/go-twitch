@@ -22,6 +22,7 @@ type Conn struct {
 	latency     time.Duration
 	ping        chan bool
 
+	generator NonceGenerator
 	topics    map[string][]string
 	pending   map[string]chan error
 	nonces    sync.Mutex
@@ -44,6 +45,7 @@ type IConn interface {
 	Close()
 
 	IsConnected() bool
+	SetNonceGenerator(NonceGenerator) error
 	SetMaxTopics(int)
 	GetNumTopics() int
 	HasTopic(string) bool
@@ -73,6 +75,9 @@ func (conn *Conn) Connect() error {
 	}
 	if conn.length < 1 {
 		conn.length = 50
+	}
+	if conn.generator == nil {
+		conn.generator = nonce.WichmannHill
 	}
 	conn.socket = socket
 	conn.done = make(chan bool)
@@ -191,6 +196,31 @@ func (conn *Conn) IsConnected() bool {
 	return conn.isConnected
 }
 
+// SetNonceGenerator changes the nonce generator that will be used
+//
+// A valid NonceGenerator is a function that takes no arguments and returns a string that is different every time it is called.
+// Nonce strings must be at least 5 characters long.
+func (conn *Conn) SetNonceGenerator(gen NonceGenerator) error {
+	if gen == nil {
+		return ErrInvalidNonceGenerator
+	}
+	s := []string{gen()}
+	if len(s[0]) > 0 || len(s[0]) < 5 {
+		return ErrInvalidNonceGenerator
+	}
+	for i := 0; i < 24; i++ {
+		str := gen()
+		for _, a := range s {
+			if str == a {
+				return ErrInvalidNonceGenerator
+			}
+		}
+		s = append(s, str)
+	}
+	conn.generator = gen
+	return nil
+}
+
 // SetMaxTopics changes the maximum number of topics the connection can listen to
 func (conn *Conn) SetMaxTopics(max int) {
 	if max < 1 {
@@ -239,7 +269,7 @@ func (conn *Conn) ListenWithAuth(token string, topics ...string) error {
 	if conn.GetNumTopics()+len(topics) > conn.length {
 		return ErrShardTooManyTopics
 	}
-	if err := conn.WriteMessageWithNonce(Listen, nonce.New(), TopicData{topics, token}); err != nil {
+	if err := conn.WriteMessageWithNonce(Listen, conn.generator(), TopicData{topics, token}); err != nil {
 		return err
 	}
 	conn.listeners.Lock()
@@ -282,7 +312,7 @@ func (conn *Conn) Unlisten(topics ...string) error {
 		conn.topics[token] = new
 	}
 	conn.listeners.Unlock()
-	if err := conn.WriteMessageWithNonce(Unlisten, nonce.New(), TopicData{Topics: unlisten}); err != nil {
+	if err := conn.WriteMessageWithNonce(Unlisten, conn.generator(), TopicData{Topics: unlisten}); err != nil {
 		return err
 	}
 	return nil
