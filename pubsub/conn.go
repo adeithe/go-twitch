@@ -205,7 +205,7 @@ func (conn *Conn) SetNonceGenerator(gen NonceGenerator) error {
 		return ErrInvalidNonceGenerator
 	}
 	s := []string{gen()}
-	if len(s[0]) > 0 || len(s[0]) < 5 {
+	if len(s[0]) < 5 {
 		return ErrInvalidNonceGenerator
 	}
 	for i := 0; i < 24; i++ {

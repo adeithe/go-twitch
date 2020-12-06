@@ -4,9 +4,11 @@ import (
 	"math"
 )
 
-var chars = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+var (
+	chars = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
 
-var whS1, whS2, whS3 int = 100, 100, 100
+	whS1, whS2, whS3 int = 100, 100, 100
+)
 
 // WichmannHill nonce generated randomly using the Wichmann-Hill algorithm.
 // https://en.wikipedia.org/wiki/Wichmann%E2%80%93Hill
