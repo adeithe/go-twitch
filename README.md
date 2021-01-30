@@ -18,7 +18,8 @@ package main
 import (
 	"fmt"
 
-	twitch "github.com/Adeithe/go-twitch"
+	"github.com/Adeithe/go-twitch"
+	"github.com/Adeithe/go-twitch/irc"
 )
 
 func main() {
@@ -26,13 +27,22 @@ func main() {
 	api := twitch.API("p0gch4mp101fy451do9uod1s1x9i4a")
 	user := api.NewBearer("2gbdx6oar67tqtcmt49t3wpcgycthx")
 
-	// Create a IRC client
-	irc := twitch.IRC()
-	irc.SetLogin("username", "oauth:123123123") // Skip this to login anonymously
-	if err := irc.Connect(); err != nil {
+	// Create a sharded IRC client
+	shards := twitch.IRC()
+	shards.OnShardMessage(func(shardID int, msg irc.ChatMessage) {
+		// Handle messages sent in chat
+	})
+	if err := shards.Join("channel1", "channel2", "channel3"); err != nil {
 		panic(err)
 	}
-	irc.Join("channel1", "channel2", "channel3")
+
+	// Create an IRC client for writing messages
+	conn := &irc.Conn{}
+	conn.SetLogin("username", "oauth:123123123")
+	if err := conn.Connect(); err != nil {
+		panic(err)
+	}
+	conn.Say("channel", "message to write in chat")
 
 	// Create a PubSub client
 	ps := twitch.PubSub()

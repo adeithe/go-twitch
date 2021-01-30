@@ -40,6 +40,7 @@ type Conn struct {
 // IConn is a generic IRC connection
 type IConn interface {
 	SetLogin(string, string) error
+	IsShard() bool
 	IsConnected() bool
 	IsInChannel(string) bool
 
@@ -78,6 +79,11 @@ func (conn *Conn) SetLogin(username, token string) error {
 	}
 	conn.token = token
 	return nil
+}
+
+// IsShard returns true if the connection was created by a shard manager.
+func (conn *Conn) IsShard() bool {
+	return conn.isShard
 }
 
 // IsConnected returns true if the connection is active

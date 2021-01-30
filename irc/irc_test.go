@@ -33,7 +33,7 @@ func TestShardedConnection(t *testing.T) {
 }
 
 func TestSingleConnection(t *testing.T) {
-	conn := Conn{}
+	conn := &Conn{}
 	if err := conn.Join(testChannel); err != nil {
 		t.Fatal(err)
 	}

@@ -41,8 +41,10 @@ type ChatSender struct {
 	UserID       int
 	Color        string
 	Badges       map[string]string
-	IsSubscriber bool
+	BadgeInfo    map[string]string
 	IsModerator  bool
+	IsVIP        bool
+	IsSubscriber bool
 	Type         string
 }
 
@@ -79,6 +81,7 @@ func NewChatSender(msg Message) ChatSender {
 		DisplayName: msg.Sender.Nickname,
 		Color:       msg.Tags["color"],
 		Badges:      make(map[string]string),
+		BadgeInfo:   make(map[string]string),
 		Type:        msg.Tags["user-type"],
 	}
 	if name, ok := msg.Tags["display-name"]; ok {
@@ -98,11 +101,20 @@ func NewChatSender(msg Message) ChatSender {
 		}
 	}
 
-	_, subBadge := sender.Badges["subscriber"]
-	sender.IsSubscriber = subBadge || msg.Tags["subscriber"] == "1"
+	if len(msg.Tags["badge-info"]) > 0 {
+		badges := strings.Split(msg.Tags["badge-info"], ",")
+		if len(badges) > 0 {
+			for _, badge := range badges {
+				data := strings.Split(badge, "/")
+				sender.BadgeInfo[data[0]] = data[1]
+			}
+		}
+	}
 
-	_, modBadge := sender.Badges["moderator"]
-	sender.IsModerator = modBadge || msg.Tags["mod"] == "1"
+	_, sender.IsModerator = sender.Badges["moderator"]
+	_, sender.IsVIP = sender.Badges["vip"]
+	_, sender.IsSubscriber = sender.Badges["subscriber"]
+
 	return sender
 }
 
