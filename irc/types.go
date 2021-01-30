@@ -88,15 +88,15 @@ func NewChatSender(msg Message) ChatSender {
 		sender.UserID = id
 	}
 
-    if len(msg.Tags["badges"]) > 0 {
+	if len(msg.Tags["badges"]) > 0 {
 		badges := strings.Split(msg.Tags["badges"], ",")
 		if len(badges) > 0 {
 			for _, badge := range badges {
-			data := strings.Split(badge, "/")
-			    sender.Badges[data[0]] = data[1]
+				data := strings.Split(badge, "/")
+				sender.Badges[data[0]] = data[1]
 			}
-	    }
-    }
+		}
+	}
 
 	_, subBadge := sender.Badges["subscriber"]
 	sender.IsSubscriber = subBadge || msg.Tags["subscriber"] == "1"
