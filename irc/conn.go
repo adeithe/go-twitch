@@ -13,16 +13,16 @@ import (
 
 // Conn is a single connection to the Twitch IRC service
 type Conn struct {
-	Username string
-	token    string
-	state    UserState
+	UserState GlobalUserState
+	Username  string
+	token     string
 
 	attempts    int
 	socket      net.Conn
 	isShard     bool
 	isConnected bool
 	latency     time.Duration
-	channels    map[string]bool
+	channels    map[string]*RoomState
 	ping        chan bool
 
 	onReconnect     []func()
@@ -30,6 +30,7 @@ type Conn struct {
 	onLatencyUpdate []func(time.Duration)
 	onChannelJoin   []func(string, string)
 	onChannelLeave  []func(string, string)
+	onChannelUpdate []func(RoomState)
 	onMessage       []func(ChatMessage)
 	onRawMessage    []func(Message)
 
@@ -42,7 +43,7 @@ type IConn interface {
 	SetLogin(string, string) error
 	IsShard() bool
 	IsConnected() bool
-	IsInChannel(string) bool
+	GetChannel(string) (RoomState, bool)
 
 	Connect() error
 	SendRaw(...string) error
@@ -54,14 +55,17 @@ type IConn interface {
 	Reconnect() error
 	Close()
 
-	OnReady(func())
-	OnDisconnect(func())
+	OnMessage(func(ChatMessage))
 	OnLatencyUpdate(func(time.Duration))
 	OnChannelJoin(func(string, string))
 	OnChannelLeave(func(string, string))
-	OnMessage(func(ChatMessage))
+	OnChannelUpdate(func(RoomState))
 	OnRawMessage(func(Message))
+	OnReconnect(func())
+	OnDisconnect(func())
 }
+
+var _ IConn = &Conn{}
 
 // IP for the IRC server
 const IP = "irc.chat.twitch.tv"
@@ -91,16 +95,12 @@ func (conn *Conn) IsConnected() bool {
 	return conn.isConnected
 }
 
-// IsInChannel returns true if this connection is listening to the provided channel
-func (conn *Conn) IsInChannel(channel string) bool {
+// GetChannel returns true if this connection is listening to the provided channel along with its RoomState
+func (conn *Conn) GetChannel(channel string) (RoomState, bool) {
 	conn.listeners.Lock()
 	defer conn.listeners.Unlock()
-	for c := range conn.channels {
-		if strings.ToLower(channel) == c {
-			return true
-		}
-	}
-	return false
+	c, ok := conn.channels[strings.ToLower(channel)]
+	return *c, ok
 }
 
 // Connect attempts to open a connection to the IRC server
@@ -245,16 +245,6 @@ func (conn *Conn) Close() {
 	return
 }
 
-// OnReconnect event called when the connection is reopened
-func (conn *Conn) OnReconnect(f func()) {
-	conn.onReconnect = append(conn.onReconnect, f)
-}
-
-// OnDisconnect event called when the connection was closed
-func (conn *Conn) OnDisconnect(f func()) {
-	conn.onDisconnect = append(conn.onDisconnect, f)
-}
-
 // OnLatencyUpdate event called after the latency to server has been updated
 func (conn *Conn) OnLatencyUpdate(f func(time.Duration)) {
 	conn.onLatencyUpdate = append(conn.onLatencyUpdate, f)
@@ -270,6 +260,11 @@ func (conn *Conn) OnChannelLeave(f func(string, string)) {
 	conn.onChannelLeave = append(conn.onChannelLeave, f)
 }
 
+// OnChannelUpdate event called after a chatrooms state has been modified
+func (conn *Conn) OnChannelUpdate(f func(RoomState)) {
+	conn.onChannelUpdate = append(conn.onChannelUpdate, f)
+}
+
 // OnMessage event called after a message is received
 func (conn *Conn) OnMessage(f func(ChatMessage)) {
 	conn.onMessage = append(conn.onMessage, f)
@@ -278,6 +273,16 @@ func (conn *Conn) OnMessage(f func(ChatMessage)) {
 // OnRawMessage event called after a raw IRC message has been handled
 func (conn *Conn) OnRawMessage(f func(Message)) {
 	conn.onRawMessage = append(conn.onRawMessage, f)
+}
+
+// OnReconnect event called when the connection is reopened
+func (conn *Conn) OnReconnect(f func()) {
+	conn.onReconnect = append(conn.onReconnect, f)
+}
+
+// OnDisconnect event called when the connection was closed
+func (conn *Conn) OnDisconnect(f func()) {
+	conn.onDisconnect = append(conn.onDisconnect, f)
 }
 
 func (conn *Conn) reader() {
@@ -305,9 +310,16 @@ func (conn *Conn) reader() {
 		case CMDRoomState:
 			conn.listeners.Lock()
 			if conn.channels == nil {
-				conn.channels = make(map[string]bool)
+				conn.channels = make(map[string]*RoomState)
 			}
-			conn.channels[strings.TrimPrefix(msg.Params[0], "#")] = true
+			if _, ok := conn.channels[strings.TrimPrefix(msg.Params[0], "#")]; !ok {
+				conn.channels[strings.TrimPrefix(msg.Params[0], "#")] = &RoomState{}
+			}
+			state := conn.channels[strings.TrimPrefix(msg.Params[0], "#")]
+			NewRoomState(msg, state)
+			for _, f := range conn.onChannelUpdate {
+				go f(*state)
+			}
 			conn.listeners.Unlock()
 		case CMDJoin:
 			for _, f := range conn.onChannelJoin {
@@ -319,9 +331,16 @@ func (conn *Conn) reader() {
 			}
 
 		case CMDGlobalUserState:
-			conn.state = NewUserState(msg)
+			conn.UserState = NewGlobalUserState(msg)
 		case CMDUserState:
-			conn.state = NewUserState(msg)
+			conn.listeners.Lock()
+			if conn.channels == nil {
+				conn.channels = make(map[string]*RoomState)
+			}
+			if channel, ok := conn.channels[strings.TrimPrefix(msg.Params[0], "#")]; ok {
+				channel.UserState = NewUserState(msg)
+			}
+			conn.listeners.Unlock()
 
 		case CMDHostTarget:
 

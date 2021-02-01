@@ -11,11 +11,13 @@ type Client struct {
 	shards        map[int]*Conn
 	awaitingClose int
 
-	onShardReconnect     []func(int)
 	onShardMessage       []func(int, ChatMessage)
 	onShardLatencyUpdate []func(int, time.Duration)
 	onShardChannelJoin   []func(int, string, string)
 	onShardChannelLeave  []func(int, string, string)
+	onShardChannelUpdate []func(int, RoomState)
+	onShardRawMessage    []func(int, Message)
+	onShardReconnect     []func(int)
 	onShardDisconnect    []func(int)
 
 	mx sync.Mutex
@@ -33,11 +35,13 @@ type IClient interface {
 	Leave(...string) error
 	Close()
 
-	OnShardReconnect(func(int))
 	OnShardMessage(func(int, ChatMessage))
 	OnShardLatencyUpdate(func(int, time.Duration))
 	OnShardChannelJoin(func(int, string, string))
 	OnShardChannelLeave(func(int, string, string))
+	OnShardChannelUpdate(func(int, RoomState))
+	OnShardRawMessage(func(int, Message))
+	OnShardReconnect(func(int))
 	OnShardDisconnect(func(int))
 }
 
@@ -110,6 +114,16 @@ func (client *Client) GetShard(id int) (*Conn, error) {
 				go f(id, channel, username)
 			}
 		})
+		conn.OnChannelUpdate(func(state RoomState) {
+			for _, f := range client.onShardChannelUpdate {
+				go f(id, state)
+			}
+		})
+		conn.OnRawMessage(func(msg Message) {
+			for _, f := range client.onShardRawMessage {
+				go f(id, msg)
+			}
+		})
 		conn.OnReconnect(func() {
 			for _, f := range client.onShardReconnect {
 				go f(id)
@@ -138,7 +152,7 @@ func (client *Client) IsInChannel(channel string) bool {
 	client.mx.Lock()
 	defer client.mx.Unlock()
 	for _, shard := range client.shards {
-		if shard.IsInChannel(channel) {
+		if _, ok := shard.GetChannel(channel); ok {
 			return true
 		}
 	}
@@ -166,7 +180,7 @@ func (client *Client) Leave(channels ...string) error {
 	client.mx.Lock()
 	for _, shard := range client.shards {
 		for _, channel := range channels {
-			if shard.IsInChannel(channel) {
+			if _, ok := shard.GetChannel(channel); ok {
 				if err := shard.Leave(channel); err != nil {
 					return err
 				}
@@ -190,11 +204,6 @@ func (client *Client) Close() {
 	client.awaitingClose = 0
 }
 
-// OnShardReconnect event called after a shards connection is reopened
-func (client *Client) OnShardReconnect(f func(int)) {
-	client.onShardReconnect = append(client.onShardReconnect, f)
-}
-
 // OnShardMessage event called after a shard receives a chat message
 func (client *Client) OnShardMessage(f func(int, ChatMessage)) {
 	client.onShardMessage = append(client.onShardMessage, f)
@@ -213,6 +222,21 @@ func (client *Client) OnShardChannelJoin(f func(int, string, string)) {
 // OnShardChannelLeave event called after a user leaves a chatroom
 func (client *Client) OnShardChannelLeave(f func(int, string, string)) {
 	client.onShardChannelLeave = append(client.onShardChannelLeave, f)
+}
+
+// OnShardChannelUpdate event called after a chatrooms state has been modified
+func (client *Client) OnShardChannelUpdate(f func(int, RoomState)) {
+	client.onShardChannelUpdate = append(client.onShardChannelUpdate, f)
+}
+
+// OnShardRawMessage event called after a shard receives an IRC message
+func (client *Client) OnShardRawMessage(f func(int, Message)) {
+	client.onShardRawMessage = append(client.onShardRawMessage, f)
+}
+
+// OnShardReconnect event called after a shards connection is reopened
+func (client *Client) OnShardReconnect(f func(int)) {
+	client.onShardReconnect = append(client.onShardReconnect, f)
 }
 
 // OnShardDisconnect event called after a shards connection is closed

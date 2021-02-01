@@ -8,7 +8,10 @@ import (
 	"time"
 )
 
-const (
+var (
+	envUsername = os.Getenv("TWITCH_USERNAME")
+	envToken    = os.Getenv("TWITCH_TOKEN")
+
 	testChannel = "dallas"
 )
 
@@ -55,12 +58,10 @@ func TestSingleConnection(t *testing.T) {
 }
 
 func TestAuthenticatedConnection(t *testing.T) {
-	username := os.Getenv("TWITCH_USERNAME")
-	if len(username) < 1 {
+	if len(envUsername) < 1 {
 		t.Skipf("TWITCH_USERNAME is not set. Skipping...")
 	}
-	token := os.Getenv("TWITCH_TOKEN")
-	if len(token) < 1 {
+	if len(envToken) < 1 {
 		t.Skipf("TWITCH_TOKEN is not set. Skipping...")
 	}
 
@@ -75,13 +76,13 @@ func TestAuthenticatedConnection(t *testing.T) {
 	reader.OnShardMessage(func(shardID int, msg ChatMessage) {
 		c <- msg.Text == message
 	})
-	if err := reader.Join(username); err != nil {
+	if err := reader.Join(envUsername); err != nil {
 		t.Fatal(err)
 	}
 
 	writer := Conn{}
-	writer.SetLogin(username, token)
-	if err := writer.Sayf(username, "%s", message); err != nil {
+	writer.SetLogin(envUsername, envToken)
+	if err := writer.Sayf(envUsername, "%s", message); err != nil {
 		t.Fatal(err)
 	}
 

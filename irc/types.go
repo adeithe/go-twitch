@@ -26,26 +26,58 @@ var (
 	ErrNoCommand = errors.New("parseError: no command")
 )
 
-// UserState is the state of the authenticated user
-type UserState struct {
-	UserID      int
+// GlobalUserState is the state of the authenticated user that does not change across channels
+type GlobalUserState struct {
+	ID          int
 	DisplayName string
 	Color       string
+	Badges      map[string]string
+	BadgeInfo   map[string]string
 	EmoteSets   []string
+	Type        string
+}
+
+// UserState is the state of the authenticated user in a channels chatroom
+type UserState struct {
+	ID            int
+	DisplayName   string
+	Color         string
+	Badges        map[string]string
+	BadgeInfo     map[string]string
+	EmoteSets     []string
+	IsBroadcaster bool
+	IsModerator   bool
+	IsVIP         bool
+	IsSubscriber  bool
+	Type          string
+}
+
+// RoomState is the current state of a channels chatroom
+type RoomState struct {
+	UserState         UserState
+	ID                int
+	Name              string
+	isEmoteOnly       bool
+	isSubscribersOnly bool
+	isRitualsEnabled  bool
+	isR9KModeEnabled  bool
+	followersOnly     float64
+	slowMode          float64
 }
 
 // ChatSender is a user that sent a message in a channels chatroom
 type ChatSender struct {
-	Username     string
-	DisplayName  string
-	UserID       int
-	Color        string
-	Badges       map[string]string
-	BadgeInfo    map[string]string
-	IsModerator  bool
-	IsVIP        bool
-	IsSubscriber bool
-	Type         string
+	ID            int
+	Username      string
+	DisplayName   string
+	Color         string
+	Badges        map[string]string
+	BadgeInfo     map[string]string
+	IsBroadcaster bool
+	IsModerator   bool
+	IsVIP         bool
+	IsSubscriber  bool
+	Type          string
 }
 
 // ChatMessage is a message sent in a channels chatroom
@@ -61,15 +93,68 @@ type ChatMessage struct {
 	CreatedAt  time.Time
 }
 
-// NewUserState parses the state of an authenticated user
-func NewUserState(msg Message) UserState {
-	state := UserState{
-		DisplayName: msg.Tags["display-name"],
-		Color:       msg.Tags["color"],
+// NewGlobalUserState parses the state of an authenticated user
+func NewGlobalUserState(msg Message) (state GlobalUserState) {
+	user := NewChatSender(msg)
+	state = GlobalUserState{
+		ID:          user.ID,
+		DisplayName: user.DisplayName,
+		Color:       user.Color,
+		Badges:      user.Badges,
+		BadgeInfo:   user.BadgeInfo,
 		EmoteSets:   strings.Split(msg.Tags["emote-sets"], ","),
+		Type:        user.Type,
 	}
-	if id, err := strconv.Atoi(msg.Tags["user-id"]); err == nil {
-		state.UserID = id
+	return
+}
+
+// NewUserState parses the state of an authenticated user in a channels chatroom
+func NewUserState(msg Message) (state UserState) {
+	user := NewChatSender(msg)
+	state = UserState{
+		ID:            user.ID,
+		DisplayName:   user.DisplayName,
+		Color:         user.Color,
+		Badges:        user.Badges,
+		BadgeInfo:     user.BadgeInfo,
+		EmoteSets:     strings.Split(msg.Tags["emote-sets"], ","),
+		IsBroadcaster: user.IsBroadcaster,
+		IsModerator:   user.IsModerator,
+		IsVIP:         user.IsVIP,
+		IsSubscriber:  user.IsSubscriber,
+		Type:          user.Type,
+	}
+	return
+}
+
+// NewRoomState parses the state of a channels chatroom and stores it to the provided pointer
+func NewRoomState(msg Message, state *RoomState) *RoomState {
+	if state == nil {
+		state = &RoomState{}
+	}
+	state.Name = strings.TrimPrefix(msg.Params[0], "#")
+	if val, ok := msg.Tags["room-id"]; ok {
+		if id, err := strconv.Atoi(val); err == nil {
+			state.ID = id
+		}
+	}
+	if val, ok := msg.Tags["emote-only"]; ok {
+		state.isEmoteOnly = val == "1"
+	}
+	if val, ok := msg.Tags["subs-only"]; ok {
+		state.isSubscribersOnly = val == "1"
+	}
+	if val, ok := msg.Tags["rituals"]; ok {
+		state.isRitualsEnabled = val == "1"
+	}
+	if val, ok := msg.Tags["r9k"]; ok {
+		state.isR9KModeEnabled = val == "1"
+	}
+	if val, ok := msg.Tags["followers-only"]; ok {
+		state.followersOnly, _ = strconv.ParseFloat(val, 64)
+	}
+	if val, ok := msg.Tags["slow"]; ok {
+		state.slowMode, _ = strconv.ParseFloat(val, 64)
 	}
 	return state
 }
@@ -88,7 +173,7 @@ func NewChatSender(msg Message) ChatSender {
 		sender.DisplayName = name
 	}
 	if id, err := strconv.Atoi(msg.Tags["user-id"]); err == nil {
-		sender.UserID = id
+		sender.ID = id
 	}
 
 	if len(msg.Tags["badges"]) > 0 {
@@ -111,6 +196,7 @@ func NewChatSender(msg Message) ChatSender {
 		}
 	}
 
+	_, sender.IsBroadcaster = sender.Badges["broadcaster"]
 	_, sender.IsModerator = sender.Badges["moderator"]
 	_, sender.IsVIP = sender.Badges["vip"]
 	_, sender.IsSubscriber = sender.Badges["subscriber"]
@@ -142,4 +228,42 @@ func NewChatMessage(msg Message) ChatMessage {
 		chatMsg.CreatedAt = time.Unix(0, ts*1e6)
 	}
 	return chatMsg
+}
+
+// IsEmoteOnly returns true if users without VIP or moderator privileges are only permitted to send emotes
+func (state RoomState) IsEmoteOnly() bool {
+	return state.isEmoteOnly
+}
+
+// IsSubscribersOnly returns true if users without VIP or moderator privileges must be subscribed to send messages
+func (state RoomState) IsSubscribersOnly() bool {
+	return state.isSubscribersOnly
+}
+
+// IsRitualsEnabled returns true if users are able to signal to the chatroom that they are new to the community
+func (state RoomState) IsRitualsEnabled() bool {
+	return state.isRitualsEnabled
+}
+
+// IsR9KModeEnabled returns true if messages must contain more than 9 unique characters to be sent successfully
+func (state RoomState) IsR9KModeEnabled() bool {
+	return state.isR9KModeEnabled
+}
+
+// IsFollowersOnly returns true if users must be following for a set duration before sending messages
+func (state RoomState) IsFollowersOnly() (enabled bool, duration time.Duration) {
+	enabled = state.followersOnly >= 0
+	if state.followersOnly > 0 {
+		duration = time.Duration(state.followersOnly) * time.Minute
+	}
+	return
+}
+
+// IsSlowModeEnabled returns true if non-moderators must wait a set duration between sending messages
+func (state RoomState) IsSlowModeEnabled() (enabled bool, duration time.Duration) {
+	enabled = state.slowMode > 0
+	if state.slowMode > 0 {
+		duration = time.Duration(state.slowMode) * time.Minute
+	}
+	return
 }
