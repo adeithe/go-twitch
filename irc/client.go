@@ -29,7 +29,7 @@ type IClient interface {
 	SetMaxChannelsPerShard(int)
 	GetNextShard() (*Conn, error)
 	GetShard(int) (*Conn, error)
-	IsInChannel(string) bool
+	GetChannel(string) (RoomState, bool)
 
 	Join(...string) error
 	Leave(...string) error
@@ -44,6 +44,8 @@ type IClient interface {
 	OnShardReconnect(func(int))
 	OnShardDisconnect(func(int))
 }
+
+var _ IClient = &Client{}
 
 // New IRC Client
 //
@@ -147,22 +149,22 @@ func (client *Client) GetShard(id int) (*Conn, error) {
 	return shard, nil
 }
 
-// IsInChannel returns true if any shard is listening to the provided channel
-func (client *Client) IsInChannel(channel string) bool {
+// GetChannel returns true if any shard is listening to the provided channel along with its RoomState
+func (client *Client) GetChannel(channel string) (RoomState, bool) {
 	client.mx.Lock()
 	defer client.mx.Unlock()
 	for _, shard := range client.shards {
-		if _, ok := shard.GetChannel(channel); ok {
-			return true
+		if state, ok := shard.GetChannel(channel); ok {
+			return state, ok
 		}
 	}
-	return false
+	return RoomState{}, false
 }
 
 // Join attempts to join a channel on an available shard
 func (client *Client) Join(channels ...string) error {
 	for _, channel := range channels {
-		if !client.IsInChannel(channel) {
+		if _, ok := client.GetChannel(channel); ok {
 			shard, err := client.GetNextShard()
 			if err != nil {
 				return err

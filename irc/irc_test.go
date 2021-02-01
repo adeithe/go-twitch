@@ -21,7 +21,7 @@ func TestShardedConnection(t *testing.T) {
 	if err := client.Join(testChannel); err != nil {
 		t.Fatal(err)
 	}
-	if client.IsInChannel(testChannel) {
+	if _, ok := client.GetChannel(testChannel); ok {
 		if err := client.Leave(testChannel); err != nil {
 			t.Fatal(err)
 		}
