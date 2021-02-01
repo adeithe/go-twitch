@@ -17,6 +17,7 @@ type Client struct {
 	onShardChannelJoin          []func(int, string, string)
 	onShardChannelLeave         []func(int, string, string)
 	onShardChannelUpdate        []func(int, RoomState)
+	onShardChannelUserNotice    []func(int, UserNotice)
 	onShardChannelMessageDelete []func(int, ChatMessageDelete)
 	onShardChannelBan           []func(int, ChatBan)
 	onShardRawMessage           []func(int, Message)
@@ -44,6 +45,7 @@ type IClient interface {
 	OnShardChannelJoin(func(int, string, string))
 	OnShardChannelLeave(func(int, string, string))
 	OnShardChannelUpdate(func(int, RoomState))
+	OnShardChannelUserNotice(func(int, UserNotice))
 	OnShardChannelMessageDelete(func(int, ChatMessageDelete))
 	OnShardChannelBan(func(int, ChatBan))
 	OnShardRawMessage(func(int, Message))
@@ -196,6 +198,11 @@ func (client *Client) OnShardChannelUpdate(f func(int, RoomState)) {
 	client.onShardChannelUpdate = append(client.onShardChannelUpdate, f)
 }
 
+// OnShardChannelUserNotice event called after a generic user event occurrs in a channels chatroom
+func (client *Client) OnShardChannelUserNotice(f func(int, UserNotice)) {
+	client.onShardChannelUserNotice = append(client.onShardChannelUserNotice, f)
+}
+
 // OnShardChannelMessageDelete event called after a message was deleted in a channels chatroom
 func (client *Client) OnShardChannelMessageDelete(f func(int, ChatMessageDelete)) {
 	client.onShardChannelMessageDelete = append(client.onShardChannelMessageDelete, f)
@@ -221,7 +228,7 @@ func (client *Client) OnShardDisconnect(f func(int)) {
 	client.onShardDisconnect = append(client.onShardDisconnect, f)
 }
 
-//gocyclo:ignore
+//nolint: gocyclo
 func (client *Client) addEventHandlers(id int, conn *Conn) {
 	conn.OnMessage(func(msg ChatMessage) {
 		for _, f := range client.onShardMessage {
@@ -251,6 +258,11 @@ func (client *Client) addEventHandlers(id int, conn *Conn) {
 	conn.OnChannelUpdate(func(state RoomState) {
 		for _, f := range client.onShardChannelUpdate {
 			go f(id, state)
+		}
+	})
+	conn.OnChannelUserNotice(func(notice UserNotice) {
+		for _, f := range client.onShardChannelUserNotice {
+			go f(id, notice)
 		}
 	})
 	conn.OnChannelMessageDelete(func(delete ChatMessageDelete) {

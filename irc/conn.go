@@ -30,6 +30,7 @@ type Conn struct {
 	onChannelJoin          []func(string, string)
 	onChannelLeave         []func(string, string)
 	onChannelUpdate        []func(RoomState)
+	onChannelUserNotice    []func(UserNotice)
 	onChannelMessageDelete []func(ChatMessageDelete)
 	onChannelBan           []func(ChatBan)
 	onMessage              []func(ChatMessage)
@@ -65,6 +66,7 @@ type IConn interface {
 	OnChannelJoin(func(string, string))
 	OnChannelLeave(func(string, string))
 	OnChannelUpdate(func(RoomState))
+	OnChannelUserNotice(func(UserNotice))
 	OnChannelMessageDelete(func(ChatMessageDelete))
 	OnChannelBan(func(ChatBan))
 	OnMessage(func(ChatMessage))
@@ -284,6 +286,11 @@ func (conn *Conn) OnChannelUpdate(f func(RoomState)) {
 	conn.onChannelUpdate = append(conn.onChannelUpdate, f)
 }
 
+// OnChannelUserNotice event called after a generic user event occurrs in a channels chatroom
+func (conn *Conn) OnChannelUserNotice(f func(UserNotice)) {
+	conn.onChannelUserNotice = append(conn.onChannelUserNotice, f)
+}
+
 // OnChannelMessageDelete event called after a message was deleted in a channels chatroom
 func (conn *Conn) OnChannelMessageDelete(f func(ChatMessageDelete)) {
 	conn.onChannelMessageDelete = append(conn.onChannelMessageDelete, f)
@@ -314,7 +321,7 @@ func (conn *Conn) OnDisconnect(f func()) {
 	conn.onDisconnect = append(conn.onDisconnect, f)
 }
 
-//gocyclo:ignore
+//nolint: gocyclo
 func (conn *Conn) reader() {
 	reader := textproto.NewReader(bufio.NewReader(conn.socket))
 	for {
@@ -375,6 +382,10 @@ func (conn *Conn) reader() {
 		case CMDHostTarget:
 
 		case CMDUserNotice:
+			notice := NewUserNotice(msg)
+			for _, f := range conn.onChannelUserNotice {
+				go f(notice)
+			}
 
 		case CMDClearChat:
 			ban := NewChatBan(msg)

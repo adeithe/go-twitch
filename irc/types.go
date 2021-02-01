@@ -28,9 +28,9 @@ var (
 
 // ServerNotice is a message sent from the IRC server with general notices
 type ServerNotice struct {
-	ID      string
 	Channel string
 	Message string
+	Type    string
 }
 
 // GlobalUserState is the state of the authenticated user that does not change across channels
@@ -70,6 +70,16 @@ type RoomState struct {
 	isR9KModeEnabled  bool
 	followersOnly     float64
 	slowMode          float64
+}
+
+// UserNotice is a generic user based event in a channels chatroom
+type UserNotice struct {
+	IRCMessage Message
+	Sender     ChatSender
+	ID         string
+	Message    string
+	Type       string
+	CreatedAt  time.Time
 }
 
 // ChatSender is a user that sent a message in a channels chatroom
@@ -122,9 +132,9 @@ type ChatMessageDelete struct {
 // NewServerNotice parses a notice message sent from the IRC server
 func NewServerNotice(msg Message) ServerNotice {
 	notice := ServerNotice{
-		ID:      msg.Tags["msg-id"],
 		Channel: strings.TrimPrefix(msg.Params[0], "#"),
 		Message: msg.Text,
+		Type:    msg.Tags["msg-id"],
 	}
 	return notice
 }
@@ -195,6 +205,24 @@ func NewRoomState(msg Message, state *RoomState) *RoomState {
 	return state
 }
 
+// NewUserNotice parses a generic user based event in a channels chatroom
+func NewUserNotice(msg Message) UserNotice {
+	notice := UserNotice{
+		IRCMessage: msg,
+		Sender:     NewChatSender(msg),
+		ID:         msg.Tags["id"],
+		Message:    msg.Tags["system-msg"],
+		Type:       msg.Tags["msg-id"],
+	}
+	if ts, err := toParsedTimestamp(msg.Tags["tmi-sent-ts"]); err == nil {
+		notice.CreatedAt = ts
+	}
+	for _, escape := range escapeChars {
+		notice.Message = strings.ReplaceAll(notice.Message, escape.from, escape.to)
+	}
+	return notice
+}
+
 // NewChatSender parses the sender for a message in a channels chatroom
 func NewChatSender(msg Message) ChatSender {
 	sender := ChatSender{
@@ -204,6 +232,9 @@ func NewChatSender(msg Message) ChatSender {
 		Badges:      make(map[string]string),
 		BadgeInfo:   make(map[string]string),
 		Type:        msg.Tags["user-type"],
+	}
+	if name, ok := msg.Tags["login"]; ok {
+		sender.Username = name
 	}
 	if name, ok := msg.Tags["display-name"]; ok {
 		sender.DisplayName = name
@@ -253,9 +284,6 @@ func NewChatMessage(msg Message) ChatMessage {
 		chatMsg.ChannelID = id
 	}
 
-	_, isCheer := msg.Tags["bits"]
-	chatMsg.IsCheer = isCheer
-
 	if strings.HasPrefix(msg.Text, "\u0001ACTION") && strings.HasSuffix(msg.Text, "\u0001") {
 		chatMsg.Text = chatMsg.Text[8 : len(chatMsg.Text)-1]
 		chatMsg.IsAction = true
@@ -263,6 +291,9 @@ func NewChatMessage(msg Message) ChatMessage {
 	if ts, err := toParsedTimestamp(msg.Tags["tmi-sent-ts"]); err == nil {
 		chatMsg.CreatedAt = ts
 	}
+
+	_, chatMsg.IsCheer = msg.Tags["bits"]
+
 	return chatMsg
 }
 
