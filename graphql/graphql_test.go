@@ -9,6 +9,11 @@ import (
 	"time"
 )
 
+var (
+	envUsername = os.Getenv("TWITCH_USERNAME")
+	envToken    = os.Getenv("TWITCH_TOKEN")
+)
+
 func TestClient(t *testing.T) {
 	gql := New()
 	gql.ID = ""
@@ -147,21 +152,19 @@ func TestQueryGames(t *testing.T) {
 }
 
 func TestAuthenticated(t *testing.T) {
-	username := strings.ToLower(os.Getenv("TWITCH_USERNAME"))
-	if len(username) < 1 {
+	if len(envUsername) < 1 {
 		t.Skipf("TWITCH_USERNAME is not set. Skipping...")
 	}
-	token := os.Getenv("TWITCH_TOKEN")
-	if len(token) < 1 {
+	if len(envToken) < 1 {
 		t.Skipf("TWITCH_TOKEN is not set. Skipping...")
 	}
 	gql := New()
-	gql.SetBearer(token)
+	gql.SetBearer(envToken)
 	user, err := gql.GetCurrentUser()
 	if err != nil {
 		t.Fatal(err)
 	}
-	if user.Login != username {
+	if user.Login != strings.ToLower(envUsername) {
 		t.Fatal("returned user was invalid")
 	}
 }

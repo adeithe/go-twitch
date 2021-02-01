@@ -92,6 +92,9 @@ func TestAuthenticatedConnection(t *testing.T) {
 
 	writer := Conn{}
 	writer.SetLogin(envUsername, envToken)
+	if err := writer.Connect(); err != nil {
+		t.Fatal(err)
+	}
 	if err := writer.Sayf(envUsername, "%s", message); err != nil {
 		t.Fatal(err)
 	}

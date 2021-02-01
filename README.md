@@ -7,7 +7,7 @@ A complete interface for Twitch services.
 ### Installing
 
 ```sh
-$ go get -u github.com/Adeithe/go-twith
+$ go get -u github.com/Adeithe/go-twitch
 ```
 
 ### Usage
