@@ -100,6 +100,9 @@ func (conn *Conn) GetChannel(channel string) (RoomState, bool) {
 	conn.listeners.Lock()
 	defer conn.listeners.Unlock()
 	c, ok := conn.channels[strings.ToLower(channel)]
+	if !ok {
+		return RoomState{}, ok
+	}
 	return *c, ok
 }
 

@@ -164,7 +164,7 @@ func (client *Client) GetChannel(channel string) (RoomState, bool) {
 // Join attempts to join a channel on an available shard
 func (client *Client) Join(channels ...string) error {
 	for _, channel := range channels {
-		if _, ok := client.GetChannel(channel); ok {
+		if _, ok := client.GetChannel(channel); !ok {
 			shard, err := client.GetNextShard()
 			if err != nil {
 				return err

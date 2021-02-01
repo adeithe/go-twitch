@@ -70,14 +70,24 @@ func TestAuthenticatedConnection(t *testing.T) {
 		t.Fatal(err)
 	}
 	message := hex.EncodeToString(bytes)
+	r := make(chan bool, 1)
 	c := make(chan bool, 1)
 
 	reader := New()
+	reader.OnShardChannelUpdate(func(shardID int, msg RoomState) {
+		r <- true
+	})
 	reader.OnShardMessage(func(shardID int, msg ChatMessage) {
 		c <- msg.Text == message
 	})
 	if err := reader.Join(envUsername); err != nil {
 		t.Fatal(err)
+	}
+
+	select {
+	case <-r:
+	case <-time.After(time.Second * 30):
+		t.Fatal("failed to prepare chatroom reader")
 	}
 
 	writer := Conn{}
