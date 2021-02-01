@@ -26,6 +26,13 @@ var (
 	ErrNoCommand = errors.New("parseError: no command")
 )
 
+// ServerNotice is a message sent from the IRC server with general notices
+type ServerNotice struct {
+	ID      string
+	Channel string
+	Message string
+}
+
 // GlobalUserState is the state of the authenticated user that does not change across channels
 type GlobalUserState struct {
 	ID          int
@@ -91,6 +98,35 @@ type ChatMessage struct {
 	IsCheer    bool
 	IsAction   bool
 	CreatedAt  time.Time
+}
+
+// ChatBan is a timeout or permanent ban that was issued on a user in a chatroom
+type ChatBan struct {
+	ChannelName string
+	ChannelID   int
+	TargetName  string
+	TargetID    int
+	duration    int
+	CreatedAt   time.Time
+}
+
+// ChatMessageDelete is a message that was deleted from the chatroom
+type ChatMessageDelete struct {
+	ChannelName      string
+	TargetID         string
+	TargetSenderName string
+	Text             string
+	CreatedAt        time.Time
+}
+
+// NewServerNotice parses a notice message sent from the IRC server
+func NewServerNotice(msg Message) ServerNotice {
+	notice := ServerNotice{
+		ID:      msg.Tags["msg-id"],
+		Channel: strings.TrimPrefix(msg.Params[0], "#"),
+		Message: msg.Text,
+	}
+	return notice
 }
 
 // NewGlobalUserState parses the state of an authenticated user
@@ -211,7 +247,7 @@ func NewChatMessage(msg Message) ChatMessage {
 		Sender:     NewChatSender(msg),
 		ID:         msg.Tags["id"],
 		Channel:    strings.TrimPrefix(msg.Params[0], "#"),
-		Text:       msg.Message,
+		Text:       msg.Text,
 	}
 	if id, err := strconv.Atoi(msg.Tags["room-id"]); err == nil {
 		chatMsg.ChannelID = id
@@ -220,14 +256,49 @@ func NewChatMessage(msg Message) ChatMessage {
 	_, isCheer := msg.Tags["bits"]
 	chatMsg.IsCheer = isCheer
 
-	if strings.HasPrefix(msg.Message, "\u0001ACTION") && strings.HasSuffix(msg.Message, "\u0001") {
+	if strings.HasPrefix(msg.Text, "\u0001ACTION") && strings.HasSuffix(msg.Text, "\u0001") {
 		chatMsg.Text = chatMsg.Text[8 : len(chatMsg.Text)-1]
 		chatMsg.IsAction = true
 	}
-	if ts, err := strconv.ParseInt(msg.Tags["tmi-sent-ts"], 10, 64); err == nil {
-		chatMsg.CreatedAt = time.Unix(0, ts*1e6)
+	if ts, err := toParsedTimestamp(msg.Tags["tmi-sent-ts"]); err == nil {
+		chatMsg.CreatedAt = ts
 	}
 	return chatMsg
+}
+
+// NewChatBan parses a ban or timeout in a channels chatroom
+func NewChatBan(msg Message) ChatBan {
+	ban := ChatBan{
+		ChannelName: strings.TrimPrefix(msg.Params[0], "#"),
+		TargetName:  msg.Text,
+	}
+	if id, err := strconv.Atoi(msg.Tags["room-id"]); err == nil {
+		ban.ChannelID = id
+	}
+	if id, err := strconv.Atoi(msg.Tags["target-user-id"]); err == nil {
+		ban.TargetID = id
+	}
+	if n, err := strconv.Atoi(msg.Tags["ban-duration"]); err == nil {
+		ban.duration = n
+	}
+	if ts, err := toParsedTimestamp(msg.Tags["tmi-sent-ts"]); err == nil {
+		ban.CreatedAt = ts
+	}
+	return ban
+}
+
+// NewChatMessageDelete parses a notice that a message was deleted
+func NewChatMessageDelete(msg Message) ChatMessageDelete {
+	delete := ChatMessageDelete{
+		ChannelName:      strings.TrimPrefix(msg.Params[0], "#"),
+		TargetID:         msg.Tags["target-msg-id"],
+		TargetSenderName: msg.Tags["login"],
+		Text:             msg.Text,
+	}
+	if ts, err := toParsedTimestamp(msg.Tags["tmi-sent-ts"]); err == nil {
+		delete.CreatedAt = ts
+	}
+	return delete
 }
 
 // IsEmoteOnly returns true if users without VIP or moderator privileges are only permitted to send emotes
@@ -266,4 +337,30 @@ func (state RoomState) IsSlowModeEnabled() (enabled bool, duration time.Duration
 		duration = time.Duration(state.slowMode) * time.Minute
 	}
 	return
+}
+
+// IsTemporary returns true if a ban is set to expire after a set amount of time
+func (ban ChatBan) IsTemporary() bool {
+	return ban.duration > 0
+}
+
+// Duration returns the duration of a temporary ban
+func (ban ChatBan) Duration() time.Duration {
+	if ban.duration < 1 {
+		return 0
+	}
+	return time.Duration(ban.duration) * time.Second
+}
+
+// Expiration returns the time that a temporary ban will expire
+func (ban ChatBan) Expiration() time.Time {
+	return ban.CreatedAt.Add(time.Duration(ban.duration) * time.Second)
+}
+
+func toParsedTimestamp(ts string) (time.Time, error) {
+	i, err := strconv.ParseInt(ts, 10, 64)
+	if err != nil {
+		return time.Now(), err
+	}
+	return time.Unix(0, i*1e6), nil
 }

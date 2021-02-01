@@ -11,14 +11,17 @@ type Client struct {
 	shards        map[int]*Conn
 	awaitingClose int
 
-	onShardMessage       []func(int, ChatMessage)
-	onShardLatencyUpdate []func(int, time.Duration)
-	onShardChannelJoin   []func(int, string, string)
-	onShardChannelLeave  []func(int, string, string)
-	onShardChannelUpdate []func(int, RoomState)
-	onShardRawMessage    []func(int, Message)
-	onShardReconnect     []func(int)
-	onShardDisconnect    []func(int)
+	onShardMessage              []func(int, ChatMessage)
+	onShardServerNotice         []func(int, ServerNotice)
+	onShardLatencyUpdate        []func(int, time.Duration)
+	onShardChannelJoin          []func(int, string, string)
+	onShardChannelLeave         []func(int, string, string)
+	onShardChannelUpdate        []func(int, RoomState)
+	onShardChannelMessageDelete []func(int, ChatMessageDelete)
+	onShardChannelBan           []func(int, ChatBan)
+	onShardRawMessage           []func(int, Message)
+	onShardReconnect            []func(int)
+	onShardDisconnect           []func(int)
 
 	mx sync.Mutex
 	wg sync.WaitGroup
@@ -36,10 +39,13 @@ type IClient interface {
 	Close()
 
 	OnShardMessage(func(int, ChatMessage))
+	OnShardServerNotice(func(int, ServerNotice))
 	OnShardLatencyUpdate(func(int, time.Duration))
 	OnShardChannelJoin(func(int, string, string))
 	OnShardChannelLeave(func(int, string, string))
 	OnShardChannelUpdate(func(int, RoomState))
+	OnShardChannelMessageDelete(func(int, ChatMessageDelete))
+	OnShardChannelBan(func(int, ChatBan))
 	OnShardRawMessage(func(int, Message))
 	OnShardReconnect(func(int))
 	OnShardDisconnect(func(int))
@@ -96,53 +102,7 @@ func (client *Client) GetShard(id int) (*Conn, error) {
 	}
 	if client.shards[id] == nil {
 		conn := &Conn{isShard: true}
-		conn.OnMessage(func(msg ChatMessage) {
-			for _, f := range client.onShardMessage {
-				go f(id, msg)
-			}
-		})
-		conn.OnLatencyUpdate(func(latency time.Duration) {
-			for _, f := range client.onShardLatencyUpdate {
-				go f(id, latency)
-			}
-		})
-		conn.OnChannelJoin(func(channel, username string) {
-			for _, f := range client.onShardChannelJoin {
-				go f(id, channel, username)
-			}
-		})
-		conn.OnChannelLeave(func(channel, username string) {
-			for _, f := range client.onShardChannelLeave {
-				go f(id, channel, username)
-			}
-		})
-		conn.OnChannelUpdate(func(state RoomState) {
-			for _, f := range client.onShardChannelUpdate {
-				go f(id, state)
-			}
-		})
-		conn.OnRawMessage(func(msg Message) {
-			for _, f := range client.onShardRawMessage {
-				go f(id, msg)
-			}
-		})
-		conn.OnReconnect(func() {
-			for _, f := range client.onShardReconnect {
-				go f(id)
-			}
-		})
-		conn.OnDisconnect(func() {
-			for _, f := range client.onShardDisconnect {
-				go f(id)
-			}
-			if client.awaitingClose > 0 {
-				client.mx.Lock()
-				defer client.mx.Unlock()
-				client.awaitingClose--
-				delete(client.shards, id)
-				client.wg.Done()
-			}
-		})
+		client.addEventHandlers(id, conn)
 		client.shards[id] = conn
 	}
 	shard := client.shards[id]
@@ -211,6 +171,11 @@ func (client *Client) OnShardMessage(f func(int, ChatMessage)) {
 	client.onShardMessage = append(client.onShardMessage, f)
 }
 
+// OnShardServerNotice event called when the IRC server sends a notice message
+func (client *Client) OnShardServerNotice(f func(int, ServerNotice)) {
+	client.onShardServerNotice = append(client.onShardServerNotice, f)
+}
+
 // OnShardLatencyUpdate event called after a shards latency is updated
 func (client *Client) OnShardLatencyUpdate(f func(int, time.Duration)) {
 	client.onShardLatencyUpdate = append(client.onShardLatencyUpdate, f)
@@ -231,6 +196,16 @@ func (client *Client) OnShardChannelUpdate(f func(int, RoomState)) {
 	client.onShardChannelUpdate = append(client.onShardChannelUpdate, f)
 }
 
+// OnShardChannelMessageDelete event called after a message was deleted in a channels chatroom
+func (client *Client) OnShardChannelMessageDelete(f func(int, ChatMessageDelete)) {
+	client.onShardChannelMessageDelete = append(client.onShardChannelMessageDelete, f)
+}
+
+// OnShardChannelBan event called after a user was banned or timed out in a channels chatoom
+func (client *Client) OnShardChannelBan(f func(int, ChatBan)) {
+	client.onShardChannelBan = append(client.onShardChannelBan, f)
+}
+
 // OnShardRawMessage event called after a shard receives an IRC message
 func (client *Client) OnShardRawMessage(f func(int, Message)) {
 	client.onShardRawMessage = append(client.onShardRawMessage, f)
@@ -244,4 +219,70 @@ func (client *Client) OnShardReconnect(f func(int)) {
 // OnShardDisconnect event called after a shards connection is closed
 func (client *Client) OnShardDisconnect(f func(int)) {
 	client.onShardDisconnect = append(client.onShardDisconnect, f)
+}
+
+//gocyclo:ignore
+func (client *Client) addEventHandlers(id int, conn *Conn) {
+	conn.OnMessage(func(msg ChatMessage) {
+		for _, f := range client.onShardMessage {
+			go f(id, msg)
+		}
+	})
+	conn.OnServerNotice(func(notice ServerNotice) {
+		for _, f := range client.onShardServerNotice {
+			go f(id, notice)
+		}
+	})
+	conn.OnLatencyUpdate(func(latency time.Duration) {
+		for _, f := range client.onShardLatencyUpdate {
+			go f(id, latency)
+		}
+	})
+	conn.OnChannelJoin(func(channel, username string) {
+		for _, f := range client.onShardChannelJoin {
+			go f(id, channel, username)
+		}
+	})
+	conn.OnChannelLeave(func(channel, username string) {
+		for _, f := range client.onShardChannelLeave {
+			go f(id, channel, username)
+		}
+	})
+	conn.OnChannelUpdate(func(state RoomState) {
+		for _, f := range client.onShardChannelUpdate {
+			go f(id, state)
+		}
+	})
+	conn.OnChannelMessageDelete(func(delete ChatMessageDelete) {
+		for _, f := range client.onShardChannelMessageDelete {
+			go f(id, delete)
+		}
+	})
+	conn.OnChannelBan(func(ban ChatBan) {
+		for _, f := range client.onShardChannelBan {
+			go f(id, ban)
+		}
+	})
+	conn.OnRawMessage(func(msg Message) {
+		for _, f := range client.onShardRawMessage {
+			go f(id, msg)
+		}
+	})
+	conn.OnReconnect(func() {
+		for _, f := range client.onShardReconnect {
+			go f(id)
+		}
+	})
+	conn.OnDisconnect(func() {
+		for _, f := range client.onShardDisconnect {
+			go f(id)
+		}
+		if client.awaitingClose > 0 {
+			client.mx.Lock()
+			defer client.mx.Unlock()
+			client.awaitingClose--
+			delete(client.shards, id)
+			client.wg.Done()
+		}
+	})
 }

@@ -1,8 +1,8 @@
 package irc
 
 import (
-	"crypto/rand"
 	"encoding/hex"
+	"math/rand"
 	"os"
 	"testing"
 	"time"
@@ -14,6 +14,10 @@ var (
 
 	testChannel = "dallas"
 )
+
+func init() {
+	rand.Seed(time.Now().Unix())
+}
 
 func TestShardedConnection(t *testing.T) {
 	client := New()
@@ -50,6 +54,7 @@ func TestSingleConnection(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	t.Logf("set username to %s", conn.Username)
 	t.Logf("latency of %dms", latency.Milliseconds())
 	if err := conn.Leave(testChannel); err != nil {
 		t.Fatal(err)

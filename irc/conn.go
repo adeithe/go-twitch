@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"crypto/tls"
 	"fmt"
+	"math/rand"
 	"net"
 	"net/textproto"
 	"strings"
@@ -23,19 +24,23 @@ type Conn struct {
 	isConnected bool
 	latency     time.Duration
 	channels    map[string]*RoomState
-	ping        chan bool
 
-	onReconnect     []func()
-	onDisconnect    []func()
-	onLatencyUpdate []func(time.Duration)
-	onChannelJoin   []func(string, string)
-	onChannelLeave  []func(string, string)
-	onChannelUpdate []func(RoomState)
-	onMessage       []func(ChatMessage)
-	onRawMessage    []func(Message)
+	onServerNotice         []func(ServerNotice)
+	onLatencyUpdate        []func(time.Duration)
+	onChannelJoin          []func(string, string)
+	onChannelLeave         []func(string, string)
+	onChannelUpdate        []func(RoomState)
+	onChannelMessageDelete []func(ChatMessageDelete)
+	onChannelBan           []func(ChatBan)
+	onMessage              []func(ChatMessage)
+	onRawMessage           []func(Message)
+	onReconnect            []func()
+	onDisconnect           []func()
 
-	listeners sync.Mutex
-	writer    sync.Mutex
+	pingC      chan bool
+	pingMx     sync.Mutex
+	channelsMx sync.Mutex
+	writerMx   sync.Mutex
 }
 
 // IConn is a generic IRC connection
@@ -55,11 +60,14 @@ type IConn interface {
 	Reconnect() error
 	Close()
 
-	OnMessage(func(ChatMessage))
+	OnServerNotice(func(ServerNotice))
 	OnLatencyUpdate(func(time.Duration))
 	OnChannelJoin(func(string, string))
 	OnChannelLeave(func(string, string))
 	OnChannelUpdate(func(RoomState))
+	OnChannelMessageDelete(func(ChatMessageDelete))
+	OnChannelBan(func(ChatBan))
+	OnMessage(func(ChatMessage))
 	OnRawMessage(func(Message))
 	OnReconnect(func())
 	OnDisconnect(func())
@@ -97,8 +105,11 @@ func (conn *Conn) IsConnected() bool {
 
 // GetChannel returns true if this connection is listening to the provided channel along with its RoomState
 func (conn *Conn) GetChannel(channel string) (RoomState, bool) {
-	conn.listeners.Lock()
-	defer conn.listeners.Unlock()
+	conn.channelsMx.Lock()
+	defer conn.channelsMx.Unlock()
+	if conn.channels == nil {
+		return RoomState{}, false
+	}
 	c, ok := conn.channels[strings.ToLower(channel)]
 	if !ok {
 		return RoomState{}, ok
@@ -117,7 +128,7 @@ func (conn *Conn) Connect() error {
 		return err
 	}
 	if len(conn.Username) < 1 || len(conn.token) < 1 {
-		conn.SetLogin("justinfan123", "Kappa123")
+		conn.SetLogin(fmt.Sprintf("justinfan%d", rand.Intn(99999)-100), "Kappa123")
 	}
 	conn.socket = socket
 	conn.isConnected = true
@@ -139,8 +150,8 @@ func (conn *Conn) SendRaw(raw ...string) error {
 			return err
 		}
 	}
-	conn.writer.Lock()
-	defer conn.writer.Unlock()
+	conn.writerMx.Lock()
+	defer conn.writerMx.Unlock()
 	for _, msg := range raw {
 		if _, err := conn.socket.Write([]byte(msg + "\r\n")); err != nil {
 			return err
@@ -153,20 +164,20 @@ func (conn *Conn) SendRaw(raw ...string) error {
 //
 // This operation will block, giving the server up to 5 seconds to respond after correcting for latency before failing
 func (conn *Conn) Ping() (time.Duration, error) {
-	conn.listeners.Lock()
-	defer conn.listeners.Unlock()
+	conn.pingMx.Lock()
+	defer conn.pingMx.Unlock()
 	if !conn.IsConnected() {
 		return 0, ErrNotConnected
 	}
+	conn.pingC = make(chan bool, 1)
 	start := time.Now()
-	conn.ping = make(chan bool, 1)
 	if err := conn.SendRaw("PING"); err != nil {
 		return conn.latency, err
 	}
 	timer := time.NewTimer(time.Second*5 + conn.latency)
 	defer timer.Stop()
 	select {
-	case <-conn.ping:
+	case <-conn.pingC:
 	case <-timer.C:
 		return conn.latency, ErrPingTimeout
 	}
@@ -213,9 +224,9 @@ func (conn *Conn) Leave(channels ...string) error {
 		if err := conn.SendRaw(fmt.Sprintf("PART #%s", strings.TrimPrefix(channel, "#"))); err != nil {
 			return err
 		}
-		conn.listeners.Lock()
+		conn.channelsMx.Lock()
 		delete(conn.channels, channel)
-		conn.listeners.Unlock()
+		conn.channelsMx.Unlock()
 	}
 	return nil
 }
@@ -248,6 +259,11 @@ func (conn *Conn) Close() {
 	return
 }
 
+// OnServerNotice event called when the IRC server sends a notice message
+func (conn *Conn) OnServerNotice(f func(ServerNotice)) {
+	conn.onServerNotice = append(conn.onServerNotice, f)
+}
+
 // OnLatencyUpdate event called after the latency to server has been updated
 func (conn *Conn) OnLatencyUpdate(f func(time.Duration)) {
 	conn.onLatencyUpdate = append(conn.onLatencyUpdate, f)
@@ -266,6 +282,16 @@ func (conn *Conn) OnChannelLeave(f func(string, string)) {
 // OnChannelUpdate event called after a chatrooms state has been modified
 func (conn *Conn) OnChannelUpdate(f func(RoomState)) {
 	conn.onChannelUpdate = append(conn.onChannelUpdate, f)
+}
+
+// OnChannelMessageDelete event called after a message was deleted in a channels chatroom
+func (conn *Conn) OnChannelMessageDelete(f func(ChatMessageDelete)) {
+	conn.onChannelMessageDelete = append(conn.onChannelMessageDelete, f)
+}
+
+// OnChannelBan event called after a user was banned or timed out in a channels chatoom
+func (conn *Conn) OnChannelBan(f func(ChatBan)) {
+	conn.onChannelBan = append(conn.onChannelBan, f)
 }
 
 // OnMessage event called after a message is received
@@ -288,6 +314,7 @@ func (conn *Conn) OnDisconnect(f func()) {
 	conn.onDisconnect = append(conn.onDisconnect, f)
 }
 
+//gocyclo:ignore
 func (conn *Conn) reader() {
 	reader := textproto.NewReader(bufio.NewReader(conn.socket))
 	for {
@@ -308,10 +335,10 @@ func (conn *Conn) reader() {
 		case CMDPing:
 			go conn.Ping()
 		case CMDPong:
-			close(conn.ping)
+			close(conn.pingC)
 
 		case CMDRoomState:
-			conn.listeners.Lock()
+			conn.channelsMx.Lock()
 			if conn.channels == nil {
 				conn.channels = make(map[string]*RoomState)
 			}
@@ -323,7 +350,7 @@ func (conn *Conn) reader() {
 			for _, f := range conn.onChannelUpdate {
 				go f(*state)
 			}
-			conn.listeners.Unlock()
+			conn.channelsMx.Unlock()
 		case CMDJoin:
 			for _, f := range conn.onChannelJoin {
 				go f(strings.TrimPrefix(msg.Params[0], "#"), msg.Sender.Username)
@@ -336,23 +363,35 @@ func (conn *Conn) reader() {
 		case CMDGlobalUserState:
 			conn.UserState = NewGlobalUserState(msg)
 		case CMDUserState:
-			conn.listeners.Lock()
+			conn.channelsMx.Lock()
 			if conn.channels == nil {
 				conn.channels = make(map[string]*RoomState)
 			}
 			if channel, ok := conn.channels[strings.TrimPrefix(msg.Params[0], "#")]; ok {
 				channel.UserState = NewUserState(msg)
 			}
-			conn.listeners.Unlock()
+			conn.channelsMx.Unlock()
 
 		case CMDHostTarget:
 
 		case CMDUserNotice:
 
 		case CMDClearChat:
+			ban := NewChatBan(msg)
+			for _, f := range conn.onChannelBan {
+				go f(ban)
+			}
 		case CMDClearMessage:
+			delete := NewChatMessageDelete(msg)
+			for _, f := range conn.onChannelMessageDelete {
+				go f(delete)
+			}
 
 		case CMDNotice:
+			notice := NewServerNotice(msg)
+			for _, f := range conn.onServerNotice {
+				go f(notice)
+			}
 
 		case CMDPrivMessage:
 			msg := NewChatMessage(msg)

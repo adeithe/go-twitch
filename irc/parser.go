@@ -55,7 +55,7 @@ type Message struct {
 	Sender  Source
 	Tags    map[string]string
 	Params  []string
-	Message string
+	Text    string
 }
 
 // IMessageParser is a generic parser for an IRC message
@@ -121,7 +121,7 @@ func (msg *Message) Parse() error {
 	var params []string
 	for i, v := range parts[index:] {
 		if strings.HasPrefix(v, ":") {
-			msg.Message = strings.TrimPrefix(strings.Join(parts[index+i:], " "), ":")
+			msg.Text = strings.TrimPrefix(strings.Join(parts[index+i:], " "), ":")
 			break
 		}
 		params = append(params, v)
