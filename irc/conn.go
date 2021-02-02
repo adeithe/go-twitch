@@ -321,8 +321,6 @@ func (conn *Conn) OnDisconnect(f func()) {
 	conn.onDisconnect = append(conn.onDisconnect, f)
 }
 
-//nolint: gocyclo
-//gocyclo:ignore
 func (conn *Conn) reader() {
 	reader := textproto.NewReader(bufio.NewReader(conn.socket))
 	for {
@@ -334,91 +332,97 @@ func (conn *Conn) reader() {
 		if err != nil {
 			continue
 		}
-		switch msg.Command {
-		case CMDReady:
-			go conn.Ping()
-		case CMDReconnect:
-			conn.Reconnect()
-			return
-		case CMDPing:
-			go conn.Ping()
-		case CMDPong:
-			close(conn.pingC)
-
-		case CMDRoomState:
-			conn.channelsMx.Lock()
-			if conn.channels == nil {
-				conn.channels = make(map[string]*RoomState)
-			}
-			if _, ok := conn.channels[strings.TrimPrefix(msg.Params[0], "#")]; !ok {
-				conn.channels[strings.TrimPrefix(msg.Params[0], "#")] = &RoomState{}
-			}
-			state := conn.channels[strings.TrimPrefix(msg.Params[0], "#")]
-			NewRoomState(msg, state)
-			for _, f := range conn.onChannelUpdate {
-				go f(*state)
-			}
-			conn.channelsMx.Unlock()
-		case CMDJoin:
-			for _, f := range conn.onChannelJoin {
-				go f(strings.TrimPrefix(msg.Params[0], "#"), msg.Sender.Username)
-			}
-		case CMDPart:
-			for _, f := range conn.onChannelLeave {
-				go f(strings.TrimPrefix(msg.Params[0], "#"), msg.Sender.Username)
-			}
-
-		case CMDGlobalUserState:
-			conn.UserState = NewGlobalUserState(msg)
-		case CMDUserState:
-			conn.channelsMx.Lock()
-			if conn.channels == nil {
-				conn.channels = make(map[string]*RoomState)
-			}
-			if channel, ok := conn.channels[strings.TrimPrefix(msg.Params[0], "#")]; ok {
-				state := NewChannelUserState(msg)
-				state.ID = conn.UserState.ID // Workaround for channel user states never sending the users ID
-				channel.UserState = state
-			}
-			conn.channelsMx.Unlock()
-
-		case CMDHostTarget:
-
-		case CMDUserNotice:
-			notice := NewUserNotice(msg)
-			for _, f := range conn.onChannelUserNotice {
-				go f(notice)
-			}
-
-		case CMDClearChat:
-			ban := NewChatBan(msg)
-			for _, f := range conn.onChannelBan {
-				go f(ban)
-			}
-		case CMDClearMessage:
-			delete := NewChatMessageDelete(msg)
-			for _, f := range conn.onChannelMessageDelete {
-				go f(delete)
-			}
-
-		case CMDNotice:
-			notice := NewServerNotice(msg)
-			for _, f := range conn.onServerNotice {
-				go f(notice)
-			}
-
-		case CMDPrivMessage:
-			msg := NewChatMessage(msg)
-			for _, f := range conn.onMessage {
-				go f(msg)
-			}
-		}
-		for _, f := range conn.onRawMessage {
-			go f(msg)
-		}
+		go conn.handle(msg)
 	}
 	conn.isConnected = false
 	for _, f := range conn.onDisconnect {
 		go f()
+	}
+}
+
+//nolint: gocyclo
+//gocyclo:ignore
+func (conn *Conn) handle(msg Message) {
+	switch msg.Command {
+	case CMDReady:
+		conn.Ping()
+	case CMDReconnect:
+		conn.Reconnect()
+		return
+	case CMDPing:
+		conn.Ping()
+	case CMDPong:
+		close(conn.pingC)
+
+	case CMDRoomState:
+		conn.channelsMx.Lock()
+		if conn.channels == nil {
+			conn.channels = make(map[string]*RoomState)
+		}
+		if _, ok := conn.channels[strings.TrimPrefix(msg.Params[0], "#")]; !ok {
+			conn.channels[strings.TrimPrefix(msg.Params[0], "#")] = &RoomState{}
+		}
+		state := conn.channels[strings.TrimPrefix(msg.Params[0], "#")]
+		NewRoomState(msg, state)
+		for _, f := range conn.onChannelUpdate {
+			go f(*state)
+		}
+		conn.channelsMx.Unlock()
+	case CMDJoin:
+		for _, f := range conn.onChannelJoin {
+			go f(strings.TrimPrefix(msg.Params[0], "#"), msg.Sender.Username)
+		}
+	case CMDPart:
+		for _, f := range conn.onChannelLeave {
+			go f(strings.TrimPrefix(msg.Params[0], "#"), msg.Sender.Username)
+		}
+
+	case CMDGlobalUserState:
+		conn.UserState = NewGlobalUserState(msg)
+	case CMDUserState:
+		conn.channelsMx.Lock()
+		if conn.channels == nil {
+			conn.channels = make(map[string]*RoomState)
+		}
+		if channel, ok := conn.channels[strings.TrimPrefix(msg.Params[0], "#")]; ok {
+			state := NewChannelUserState(msg)
+			state.ID = conn.UserState.ID // Workaround for channel user states never sending the users ID
+			channel.UserState = state
+		}
+		conn.channelsMx.Unlock()
+
+	case CMDHostTarget:
+
+	case CMDUserNotice:
+		notice := NewUserNotice(msg)
+		for _, f := range conn.onChannelUserNotice {
+			go f(notice)
+		}
+
+	case CMDClearChat:
+		ban := NewChatBan(msg)
+		for _, f := range conn.onChannelBan {
+			go f(ban)
+		}
+	case CMDClearMessage:
+		delete := NewChatMessageDelete(msg)
+		for _, f := range conn.onChannelMessageDelete {
+			go f(delete)
+		}
+
+	case CMDNotice:
+		notice := NewServerNotice(msg)
+		for _, f := range conn.onServerNotice {
+			go f(notice)
+		}
+
+	case CMDPrivMessage:
+		msg := NewChatMessage(msg)
+		for _, f := range conn.onMessage {
+			go f(msg)
+		}
+	}
+	for _, f := range conn.onRawMessage {
+		go f(msg)
 	}
 }
