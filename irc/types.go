@@ -28,41 +28,41 @@ var (
 
 // ServerNotice is a message sent from the IRC server with general notices
 type ServerNotice struct {
-	Channel string
-	Message string
-	Type    string
+	IRCMessage Message
+	Channel    string
+	Message    string
+	Type       string
 }
 
-// GlobalUserState is the state of the authenticated user that does not change across channels
-type GlobalUserState struct {
-	ID          int
+// UserState is a generic state of an authenticated user
+type UserState struct {
+	ID          int64
 	DisplayName string
 	Color       string
 	Badges      map[string]string
 	BadgeInfo   map[string]string
-	EmoteSets   []string
+	EmoteSets   []int64
 	Type        string
 }
 
-// UserState is the state of the authenticated user in a channels chatroom
-type UserState struct {
-	ID            int
-	DisplayName   string
-	Color         string
-	Badges        map[string]string
-	BadgeInfo     map[string]string
-	EmoteSets     []string
+// GlobalUserState is the state of the authenticated user that does not change across channels
+type GlobalUserState struct {
+	UserState
+}
+
+// ChannelUserState is the state of the authenticated user in a channels chatroom
+type ChannelUserState struct {
+	UserState
 	IsBroadcaster bool
 	IsModerator   bool
 	IsVIP         bool
 	IsSubscriber  bool
-	Type          string
 }
 
 // RoomState is the current state of a channels chatroom
 type RoomState struct {
-	UserState         UserState
-	ID                int
+	UserState         ChannelUserState
+	ID                int64
 	Name              string
 	isEmoteOnly       bool
 	isSubscribersOnly bool
@@ -84,7 +84,7 @@ type UserNotice struct {
 
 // ChatSender is a user that sent a message in a channels chatroom
 type ChatSender struct {
-	ID            int
+	ID            int64
 	Username      string
 	DisplayName   string
 	Color         string
@@ -103,7 +103,7 @@ type ChatMessage struct {
 	Sender     ChatSender
 	ID         string
 	Channel    string
-	ChannelID  int
+	ChannelID  int64
 	Text       string
 	IsCheer    bool
 	IsAction   bool
@@ -112,16 +112,18 @@ type ChatMessage struct {
 
 // ChatBan is a timeout or permanent ban that was issued on a user in a chatroom
 type ChatBan struct {
+	IRCMessage  Message
 	ChannelName string
-	ChannelID   int
+	ChannelID   int64
 	TargetName  string
-	TargetID    int
+	TargetID    int64
 	duration    int
 	CreatedAt   time.Time
 }
 
 // ChatMessageDelete is a message that was deleted from the chatroom
 type ChatMessageDelete struct {
+	IRCMessage       Message
 	ChannelName      string
 	TargetID         string
 	TargetSenderName string
@@ -132,43 +134,50 @@ type ChatMessageDelete struct {
 // NewServerNotice parses a notice message sent from the IRC server
 func NewServerNotice(msg Message) ServerNotice {
 	notice := ServerNotice{
-		Channel: strings.TrimPrefix(msg.Params[0], "#"),
-		Message: msg.Text,
-		Type:    msg.Tags["msg-id"],
+		IRCMessage: msg,
+		Channel:    strings.TrimPrefix(msg.Params[0], "#"),
+		Message:    msg.Text,
+		Type:       msg.Tags["msg-id"],
 	}
 	return notice
 }
 
-// NewGlobalUserState parses the state of an authenticated user
-func NewGlobalUserState(msg Message) (state GlobalUserState) {
+// NewUserState parses a generic state of an authenticated user
+func NewUserState(msg Message) (state UserState) {
 	user := NewChatSender(msg)
-	state = GlobalUserState{
+	state = UserState{
 		ID:          user.ID,
 		DisplayName: user.DisplayName,
 		Color:       user.Color,
 		Badges:      user.Badges,
 		BadgeInfo:   user.BadgeInfo,
-		EmoteSets:   strings.Split(msg.Tags["emote-sets"], ","),
 		Type:        user.Type,
+	}
+	for _, set := range strings.Split(msg.Tags["emote-sets"], ",") {
+		if i, err := toParsedID(set); err == nil {
+			state.EmoteSets = append(state.EmoteSets, i)
+		}
 	}
 	return
 }
 
-// NewUserState parses the state of an authenticated user in a channels chatroom
-func NewUserState(msg Message) (state UserState) {
+// NewGlobalUserState parses the global state of an authenticated user
+func NewGlobalUserState(msg Message) (state GlobalUserState) {
+	state = GlobalUserState{
+		UserState: NewUserState(msg),
+	}
+	return
+}
+
+// NewChannelUserState parses the state of an authenticated user in a channels chatroom
+func NewChannelUserState(msg Message) (state ChannelUserState) {
 	user := NewChatSender(msg)
-	state = UserState{
-		ID:            user.ID,
-		DisplayName:   user.DisplayName,
-		Color:         user.Color,
-		Badges:        user.Badges,
-		BadgeInfo:     user.BadgeInfo,
-		EmoteSets:     strings.Split(msg.Tags["emote-sets"], ","),
+	state = ChannelUserState{
+		UserState:     NewUserState(msg),
 		IsBroadcaster: user.IsBroadcaster,
 		IsModerator:   user.IsModerator,
 		IsVIP:         user.IsVIP,
 		IsSubscriber:  user.IsSubscriber,
-		Type:          user.Type,
 	}
 	return
 }
@@ -180,7 +189,7 @@ func NewRoomState(msg Message, state *RoomState) *RoomState {
 	}
 	state.Name = strings.TrimPrefix(msg.Params[0], "#")
 	if val, ok := msg.Tags["room-id"]; ok {
-		if id, err := strconv.Atoi(val); err == nil {
+		if id, err := toParsedID(val); err == nil {
 			state.ID = id
 		}
 	}
@@ -239,7 +248,7 @@ func NewChatSender(msg Message) ChatSender {
 	if name, ok := msg.Tags["display-name"]; ok {
 		sender.DisplayName = name
 	}
-	if id, err := strconv.Atoi(msg.Tags["user-id"]); err == nil {
+	if id, err := toParsedID(msg.Tags["user-id"]); err == nil {
 		sender.ID = id
 	}
 
@@ -280,7 +289,7 @@ func NewChatMessage(msg Message) ChatMessage {
 		Channel:    strings.TrimPrefix(msg.Params[0], "#"),
 		Text:       msg.Text,
 	}
-	if id, err := strconv.Atoi(msg.Tags["room-id"]); err == nil {
+	if id, err := toParsedID(msg.Tags["room-id"]); err == nil {
 		chatMsg.ChannelID = id
 	}
 
@@ -300,13 +309,14 @@ func NewChatMessage(msg Message) ChatMessage {
 // NewChatBan parses a ban or timeout in a channels chatroom
 func NewChatBan(msg Message) ChatBan {
 	ban := ChatBan{
+		IRCMessage:  msg,
 		ChannelName: strings.TrimPrefix(msg.Params[0], "#"),
 		TargetName:  msg.Text,
 	}
-	if id, err := strconv.Atoi(msg.Tags["room-id"]); err == nil {
+	if id, err := toParsedID(msg.Tags["room-id"]); err == nil {
 		ban.ChannelID = id
 	}
-	if id, err := strconv.Atoi(msg.Tags["target-user-id"]); err == nil {
+	if id, err := toParsedID(msg.Tags["target-user-id"]); err == nil {
 		ban.TargetID = id
 	}
 	if n, err := strconv.Atoi(msg.Tags["ban-duration"]); err == nil {
@@ -321,6 +331,7 @@ func NewChatBan(msg Message) ChatBan {
 // NewChatMessageDelete parses a notice that a message was deleted
 func NewChatMessageDelete(msg Message) ChatMessageDelete {
 	delete := ChatMessageDelete{
+		IRCMessage:       msg,
 		ChannelName:      strings.TrimPrefix(msg.Params[0], "#"),
 		TargetID:         msg.Tags["target-msg-id"],
 		TargetSenderName: msg.Tags["login"],
@@ -386,6 +397,10 @@ func (ban ChatBan) Duration() time.Duration {
 // Expiration returns the time that a temporary ban will expire
 func (ban ChatBan) Expiration() time.Time {
 	return ban.CreatedAt.Add(time.Duration(ban.duration) * time.Second)
+}
+
+func toParsedID(str string) (int64, error) {
+	return strconv.ParseInt(str, 10, 64)
 }
 
 func toParsedTimestamp(ts string) (time.Time, error) {

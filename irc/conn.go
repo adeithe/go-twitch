@@ -322,6 +322,7 @@ func (conn *Conn) OnDisconnect(f func()) {
 }
 
 //nolint: gocyclo
+//gocyclo:ignore
 func (conn *Conn) reader() {
 	reader := textproto.NewReader(bufio.NewReader(conn.socket))
 	for {
@@ -375,7 +376,9 @@ func (conn *Conn) reader() {
 				conn.channels = make(map[string]*RoomState)
 			}
 			if channel, ok := conn.channels[strings.TrimPrefix(msg.Params[0], "#")]; ok {
-				channel.UserState = NewUserState(msg)
+				state := NewChannelUserState(msg)
+				state.ID = conn.UserState.ID // Workaround for channel user states never sending the users ID
+				channel.UserState = state
 			}
 			conn.channelsMx.Unlock()
 
