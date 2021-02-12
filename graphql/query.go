@@ -41,6 +41,16 @@ type GQLStreamsQuery struct {
 	Data *StreamsQuery `graphql:"streams(first: $first, after: $after, options: $options)"`
 }
 
+// GQLUserVideosQuery GraphQL query for a users videos on Twitch
+type GQLUserVideosQuery struct {
+	Data *UserVideosQuery `graphql:"user(id: $id)"`
+}
+
+// GQLClipQuery GraphQL query for a clip on Twitch
+type GQLClipQuery struct {
+	Data *Clip `graphql:"clip(slug: $slug)"`
+}
+
 // GQLGamesQuery GraphQL query for games on Twitch
 type GQLGamesQuery struct {
 	Data *GamesQuery `graphql:"games(first: $first, after: $after, options: $options)"`
@@ -74,6 +84,17 @@ type FollowersQuery struct {
 		} `graphql:"edges"`
 		PageInfo PageInfo
 	} `graphql:"followers(first: $first, after: $after)"`
+}
+
+// UserVideosQuery stores data returned from GQLUserVideosQuery
+type UserVideosQuery struct {
+	Videos struct {
+		TotalCount int32
+		Data       []struct {
+			Video  Video `graphql:"node"`
+			Cursor Cursor
+		} `graphql:"edges"`
+	} `graphql:"videos(first: $first, after: $after, sort: TIME)"`
 }
 
 // GamesQuery stores data returned from GQLGamesQuery

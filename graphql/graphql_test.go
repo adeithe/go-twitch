@@ -128,7 +128,7 @@ func TestQueryStreams(t *testing.T) {
 		t.Fatal(err)
 	}
 	if streams == nil {
-		t.Fatal("expected at least 1 stream got 0")
+		t.Fatal("streams query returned nil")
 	}
 	if len(streams.Data) < 1 {
 		t.Fatalf("expected at least 1 stream got %d", len(streams.Data))
@@ -143,7 +143,7 @@ func TestQueryGames(t *testing.T) {
 		t.Fatal(err)
 	}
 	if games == nil {
-		t.Fatal("expected at least 1 game got 0")
+		t.Fatal("games query returned nil")
 	}
 	if len(games.Data) < 1 {
 		t.Fatalf("expected at least 1 game got %d", len(games.Data))

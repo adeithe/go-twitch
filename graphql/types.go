@@ -113,6 +113,40 @@ type Channel struct {
 	UpdatedAt time.Time
 }
 
+// Video stores data about a streams VOD on Twitch.
+type Video struct {
+	ID                 string
+	Title              string
+	Description        string
+	ViewCount          int32
+	AnimatedPreviewURL string `graphql:"animatedPreviewURL"`
+	SeekPreviewsURL    string `graphql:"seekPreviewsURL"`
+	Owner              User
+	Game               Game
+	Tags               []string
+	OffsetSeconds      int32
+	LengthInSeconds    int32 `graphql:"lengthSeconds"`
+	PublishedAt        time.Time
+	CreatedAt          time.Time
+	UpdatedAt          time.Time
+}
+
+// Clip stores data about a section of a Twitch stream.
+type Clip struct {
+	ID                 string
+	Slug               string
+	Title              string
+	ViewCount          int32
+	Broadcaster        User
+	Author             User `graphql:"curator"`
+	Game               Game
+	Video              *Video
+	URL                string
+	DurationSeconds    int32
+	VideoOffsetSeconds int32
+	CreatedAt          time.Time
+}
+
 // Game stores data about a category on Twitch
 type Game struct {
 	ID                graphql.ID

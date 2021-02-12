@@ -348,7 +348,6 @@ func (conn *Conn) handle(msg Message) {
 		conn.Ping()
 	case CMDReconnect:
 		conn.Reconnect()
-		return
 	case CMDPing:
 		conn.Ping()
 	case CMDPong:

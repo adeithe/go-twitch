@@ -125,6 +125,29 @@ func (client Client) GetStreams(opts StreamQueryOpts) (*StreamsQuery, error) {
 	return streams.Data, err
 }
 
+// GetVideosByUser retrieves videos
+func (client Client) GetVideosByUser(user User, opts VideoQueryOpts) (*UserVideosQuery, error) {
+	if opts.First < 1 || opts.First > 100 {
+		opts.First = 25
+	}
+	videos := GQLUserVideosQuery{}
+	vars := map[string]interface{}{
+		"id":    user.ID,
+		"first": graphql.Int(opts.First),
+		"after": opts.After,
+	}
+	err := client.CustomQuery(&videos, vars)
+	return videos.Data, err
+}
+
+// GetClip retrieves data about a clip available on Twitch
+func (client Client) GetClip(slug string) (*Clip, error) {
+	clip := GQLClipQuery{}
+	vars := map[string]interface{}{"slug": slug}
+	err := client.CustomQuery(&clip, vars)
+	return clip.Data, err
+}
+
 // GetGames retrieves data about games available on Twitch
 func (client Client) GetGames(opts GameQueryOpts) (*GamesQuery, error) {
 	if opts.First < 1 || opts.First > 100 {

@@ -16,6 +16,12 @@ type StreamOptions struct {
 	Tags   []string
 }
 
+// VideoQueryOpts stores various options for querying videos on Twitch
+type VideoQueryOpts struct {
+	First int32
+	After Cursor
+}
+
 // GameQueryOpts stores various options for querying games on Twitch
 type GameQueryOpts struct {
 	First   int32
