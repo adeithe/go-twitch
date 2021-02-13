@@ -35,8 +35,20 @@ type GameOptions struct {
 	Tags   []string
 }
 
-// FollowOpts stores various options for querying followers on Twitch
-type FollowOpts struct {
+// FollowQueryOpts stores various options for querying followers on Twitch
+type FollowQueryOpts struct {
+	First int32
+	After Cursor
+}
+
+// ModsQueryOpts stores various options for querying mods on Twitch
+type ModsQueryOpts struct {
+	First int32
+	After Cursor
+}
+
+// VIPsQueryOpts stores various options for querying vips on Twitch
+type VIPsQueryOpts struct {
 	First int32
 	After Cursor
 }

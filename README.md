@@ -1,4 +1,4 @@
-# go-twitch [![GoDoc](https://godoc.org/github.com/adeithe/go-twitch?status.svg)](https://godoc.org/github.com/adeithe/go-twitch) [![Go Report Card](https://goreportcard.com/badge/github.com/adeithe/go-twitch)](https://goreportcard.com/report/github.com/adeithe/go-twitch) [![CircleCI](https://circleci.com/gh/Adeithe/go-twitch/tree/master.svg?style=svg)](https://circleci.com/gh/Adeithe/go-twitch/tree/master)
+# go-twitch [![GoDoc](https://godoc.org/github.com/Adeithe/go-twitch?status.svg)](https://godoc.org/github.com/Adeithe/go-twitch) [![Go Report Card](https://goreportcard.com/badge/github.com/Adeithe/go-twitch)](https://goreportcard.com/report/github.com/Adeithe/go-twitch) [![CircleCI](https://circleci.com/gh/Adeithe/go-twitch/tree/master.svg?style=svg)](https://circleci.com/gh/Adeithe/go-twitch/tree/master)
 
 A complete interface for Twitch services.
 

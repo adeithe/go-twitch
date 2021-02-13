@@ -41,9 +41,9 @@ type GQLStreamsQuery struct {
 	Data *StreamsQuery `graphql:"streams(first: $first, after: $after, options: $options)"`
 }
 
-// GQLUserVideosQuery GraphQL query for a users videos on Twitch
-type GQLUserVideosQuery struct {
-	Data *UserVideosQuery `graphql:"user(id: $id)"`
+// GQLVideosQuery GraphQL query for videos on Twitch
+type GQLVideosQuery struct {
+	Data *VideosQuery `graphql:"videos(first: $first, after: $after)"`
 }
 
 // GQLClipQuery GraphQL query for a clip on Twitch
@@ -58,14 +58,37 @@ type GQLGamesQuery struct {
 
 // GQLFollowersQuery GraphQL query for a users followers on Twitch
 type GQLFollowersQuery struct {
-	Data *FollowersQuery `graphql:"user(id: $id)"`
+	Data *struct {
+		Followers *FollowersQuery `graphql:"followers(first: $first, after: $after)"`
+	} `graphql:"user(id: $id)"`
+}
+
+// GQLModsQuery GraphQL query for getting mods for a user on Twitch
+type GQLModsQuery struct {
+	Data *struct {
+		Mods *ModsQuery `graphql:"mods(first: $first, after: $after)"`
+	} `graphql:"user(id: $id)"`
+}
+
+// GQLVIPsQuery GraphQL query for getting VIPs for a user on Twitch
+type GQLVIPsQuery struct {
+	Data *struct {
+		VIPs *VIPsQuery `graphql:"vips(first: $first, after: $after)"`
+	} `graphql:"user(id: $id)"`
+}
+
+// GQLUserVideosQuery GraphQL query for a users videos on Twitch
+type GQLUserVideosQuery struct {
+	Data *struct {
+		Videos *VideosQuery `graphql:"videos(first: $first, after: $after, sort: TIME)"`
+	} `graphql:"user(id: $id)"`
 }
 
 // StreamsQuery stores data returned from GQLStreamsQuery
 type StreamsQuery struct {
 	ResponseID   graphql.ID `graphql:"responseID"`
 	GenerationID graphql.ID `graphql:"generationID"`
-	Data         []struct {
+	Streams      []struct {
 		TrackingID graphql.ID `graphql:"trackingID"`
 		Stream     Stream     `graphql:"node"`
 		Cursor     Cursor
@@ -73,33 +96,51 @@ type StreamsQuery struct {
 	PageInfo PageInfo
 }
 
-// FollowersQuery stores data returned from GQLFollowersQuery
-type FollowersQuery struct {
-	Followers struct {
-		TotalCount int32
-		Data       []struct {
-			User       User `graphql:"node"`
-			FollowedAt time.Time
-			Cursor     Cursor
-		} `graphql:"edges"`
-		PageInfo PageInfo
-	} `graphql:"followers(first: $first, after: $after)"`
+// ModsQuery stores data returned from GQLUserModsQuery and GQLChannelModsQuery
+type ModsQuery struct {
+	Mods []struct {
+		User      User `graphql:"node"`
+		IsActive  bool
+		GrantedAt time.Time
+		Cursor    Cursor
+	} `graphql:"edges"`
+	PageInfo PageInfo
 }
 
-// UserVideosQuery stores data returned from GQLUserVideosQuery
-type UserVideosQuery struct {
-	Videos struct {
-		TotalCount int32
-		Data       []struct {
-			Video  Video `graphql:"node"`
-			Cursor Cursor
-		} `graphql:"edges"`
-	} `graphql:"videos(first: $first, after: $after, sort: TIME)"`
+// VIPsQuery stores data returned from GQLUserVIPsQuery and GQLChannelVIPsQuery
+type VIPsQuery struct {
+	VIPs []struct {
+		User      User `graphql:"node"`
+		GrantedAt time.Time
+		Cursor    Cursor
+	} `graphql:"edges"`
+	PageInfo PageInfo
+}
+
+// FollowersQuery stores data returned from GQLFollowersQuery
+type FollowersQuery struct {
+	TotalCount int32
+	Followers  []struct {
+		User       User `graphql:"node"`
+		FollowedAt time.Time
+		Cursor     Cursor
+	} `graphql:"edges"`
+	PageInfo PageInfo
+}
+
+// VideosQuery stores data returned from GQLUserVideosQuery
+type VideosQuery struct {
+	TotalCount int32
+	Videos     []struct {
+		Video  Video `graphql:"node"`
+		Cursor Cursor
+	} `graphql:"edges"`
+	PageInfo PageInfo
 }
 
 // GamesQuery stores data returned from GQLGamesQuery
 type GamesQuery struct {
-	Data []struct {
+	Games []struct {
 		TrackingID graphql.ID `graphql:"trackingID"`
 		Game       Game       `graphql:"node"`
 		Cursor     Cursor

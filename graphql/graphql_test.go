@@ -75,7 +75,7 @@ func TestIsUsernameAvailable(t *testing.T) {
 
 func TestQueryUsers(t *testing.T) {
 	gql := New()
-	if _, err := gql.GetFollowersForUser(User{}, FollowOpts{}); err == nil {
+	if _, err := gql.GetFollowersForUser(User{}, FollowQueryOpts{}); err == nil {
 		t.Fatalf("expected error did not occur")
 	}
 	users, err := gql.GetUsersByID("44322889")
@@ -92,14 +92,14 @@ func TestQueryUsers(t *testing.T) {
 	if len(users) != 1 {
 		t.Fatalf("expected: 1 got: %d", len(users))
 	}
-	if _, err := gql.GetFollowersForUser(users[0], FollowOpts{}); err != nil {
+	if _, err := gql.GetFollowersForUser(users[0], FollowQueryOpts{}); err != nil {
 		t.Fatal(err)
 	}
 }
 
 func TestQueryChannels(t *testing.T) {
 	gql := New()
-	if _, err := gql.GetFollowersForChannel(Channel{}, FollowOpts{}); err == nil {
+	if _, err := gql.GetFollowersForChannel(Channel{}, FollowQueryOpts{}); err == nil {
 		t.Fatalf("expected error did not occur")
 	}
 	channels, err := gql.GetChannelsByID("44322889")
@@ -116,39 +116,39 @@ func TestQueryChannels(t *testing.T) {
 	if len(channels) != 1 {
 		t.Fatalf("expected: 1 got: %d", len(channels))
 	}
-	if _, err := gql.GetFollowersForChannel(channels[0], FollowOpts{}); err != nil {
+	if _, err := gql.GetFollowersForChannel(channels[0], FollowQueryOpts{}); err != nil {
 		t.Fatal(err)
 	}
 }
 
 func TestQueryStreams(t *testing.T) {
 	gql := New()
-	streams, err := gql.GetStreams(StreamQueryOpts{})
+	data, err := gql.GetStreams(StreamQueryOpts{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if streams == nil {
+	if data == nil {
 		t.Fatal("streams query returned nil")
 	}
-	if len(streams.Data) < 1 {
-		t.Fatalf("expected at least 1 stream got %d", len(streams.Data))
+	if len(data.Streams) < 1 {
+		t.Fatalf("expected at least 1 stream got %d", len(data.Streams))
 	}
-	t.Logf("got %d streams", len(streams.Data))
+	t.Logf("got %d streams", len(data.Streams))
 }
 
 func TestQueryGames(t *testing.T) {
 	gql := New()
-	games, err := gql.GetGames(GameQueryOpts{})
+	data, err := gql.GetGames(GameQueryOpts{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if games == nil {
+	if data == nil {
 		t.Fatal("games query returned nil")
 	}
-	if len(games.Data) < 1 {
-		t.Fatalf("expected at least 1 game got %d", len(games.Data))
+	if len(data.Games) < 1 {
+		t.Fatalf("expected at least 1 game got %d", len(data.Games))
 	}
-	t.Logf("got %d games", len(games.Data))
+	t.Logf("got %d games", len(data.Games))
 }
 
 func TestAuthenticated(t *testing.T) {
