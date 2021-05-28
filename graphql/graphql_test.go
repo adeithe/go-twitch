@@ -1,6 +1,7 @@
 package graphql
 
 import (
+	"context"
 	"fmt"
 	"math/rand"
 	"os"
@@ -21,7 +22,7 @@ func TestClient(t *testing.T) {
 	if gql.bearer != "abcd123" {
 		t.Fatal("bearer token was not set successfully")
 	}
-	if _, err := gql.GetStreams(StreamQueryOpts{First: 1}); err == nil {
+	if _, err := gql.GetStreams(context.Background(), StreamQueryOpts{First: 1}); err == nil {
 		t.Fatal("expected error did not occur")
 	}
 }
@@ -32,16 +33,16 @@ func TestErrors(t *testing.T) {
 	for i := 0; i < 101; i++ {
 		args = append(args, fmt.Sprint(i))
 	}
-	if _, err := gql.GetUsersByID(args...); err == nil {
+	if _, err := gql.GetUsersByID(context.Background(), args...); err == nil {
 		t.Fatal("GetUsersByID didnt return an error")
 	}
-	if _, err := gql.GetUsersByLogin(args...); err == nil {
+	if _, err := gql.GetUsersByLogin(context.Background(), args...); err == nil {
 		t.Fatal("GetUsersByLogin didnt return an error")
 	}
-	if _, err := gql.GetChannelsByID(args...); err == nil {
+	if _, err := gql.GetChannelsByID(context.Background(), args...); err == nil {
 		t.Fatal("GetChannelsByID didnt return an error")
 	}
-	if _, err := gql.GetChannelsByName(args...); err == nil {
+	if _, err := gql.GetChannelsByName(context.Background(), args...); err == nil {
 		t.Fatal("GetChannelsByName didnt return an error")
 	}
 }
@@ -58,7 +59,7 @@ func TestIsUsernameAvailable(t *testing.T) {
 		for i := range username {
 			username[i] = chars[rand.Intn(len(chars))]
 		}
-		available, _ = gql.IsUsernameAvailable(string(username))
+		available, _ = gql.IsUsernameAvailable(context.Background(), string(username))
 		if available {
 			tries = i
 			break
@@ -75,55 +76,55 @@ func TestIsUsernameAvailable(t *testing.T) {
 
 func TestQueryUsers(t *testing.T) {
 	gql := New()
-	if _, err := gql.GetFollowersForUser(User{}, FollowQueryOpts{}); err == nil {
+	if _, err := gql.GetFollowersForUser(context.Background(), User{}, FollowQueryOpts{}); err == nil {
 		t.Fatalf("expected error did not occur")
 	}
-	users, err := gql.GetUsersByID("44322889")
+	users, err := gql.GetUsersByID(context.Background(), "44322889")
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(users) != 1 {
 		t.Fatalf("expected: 1 got: %d", len(users))
 	}
-	users, err = gql.GetUsersByLogin(users[0].Login)
+	users, err = gql.GetUsersByLogin(context.Background(), users[0].Login)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(users) != 1 {
 		t.Fatalf("expected: 1 got: %d", len(users))
 	}
-	if _, err := gql.GetFollowersForUser(users[0], FollowQueryOpts{}); err != nil {
+	if _, err := gql.GetFollowersForUser(context.Background(), users[0], FollowQueryOpts{}); err != nil {
 		t.Fatal(err)
 	}
 }
 
 func TestQueryChannels(t *testing.T) {
 	gql := New()
-	if _, err := gql.GetFollowersForChannel(Channel{}, FollowQueryOpts{}); err == nil {
+	if _, err := gql.GetFollowersForChannel(context.Background(), Channel{}, FollowQueryOpts{}); err == nil {
 		t.Fatalf("expected error did not occur")
 	}
-	channels, err := gql.GetChannelsByID("44322889")
+	channels, err := gql.GetChannelsByID(context.Background(), "44322889")
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(channels) != 1 {
 		t.Fatalf("expected: 1 got: %d", len(channels))
 	}
-	channels, err = gql.GetChannelsByName(channels[0].Name)
+	channels, err = gql.GetChannelsByName(context.Background(), channels[0].Name)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(channels) != 1 {
 		t.Fatalf("expected: 1 got: %d", len(channels))
 	}
-	if _, err := gql.GetFollowersForChannel(channels[0], FollowQueryOpts{}); err != nil {
+	if _, err := gql.GetFollowersForChannel(context.Background(), channels[0], FollowQueryOpts{}); err != nil {
 		t.Fatal(err)
 	}
 }
 
 func TestQueryStreams(t *testing.T) {
 	gql := New()
-	data, err := gql.GetStreams(StreamQueryOpts{})
+	data, err := gql.GetStreams(context.Background(), StreamQueryOpts{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -138,7 +139,7 @@ func TestQueryStreams(t *testing.T) {
 
 func TestQueryGames(t *testing.T) {
 	gql := New()
-	data, err := gql.GetGames(GameQueryOpts{})
+	data, err := gql.GetGames(context.Background(), GameQueryOpts{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -160,7 +161,7 @@ func TestAuthenticated(t *testing.T) {
 	}
 	gql := New()
 	gql.SetBearer(envToken)
-	user, err := gql.GetCurrentUser()
+	user, err := gql.GetCurrentUser(context.Background())
 	if err != nil {
 		t.Fatal(err)
 	}

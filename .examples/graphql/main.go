@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -10,7 +11,7 @@ import (
 func main() {
 	gql := graphql.New()
 
-	users, err := gql.GetUsersByID("44322889")
+	users, err := gql.GetUsersByID(context.Background(), "44322889")
 	if err != nil {
 		panic(err)
 	}
