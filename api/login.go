@@ -8,12 +8,11 @@ import (
 )
 
 type loginData struct {
-	ClientID     string  `json:"client_id"`
-	Username     string  `json:"username"`
-	Password     string  `json:"password"`
-	Verification string  `json:"twitchguard_code,omitempty"`
-	Undelete     bool    `json:"undelete_user"`
-	Captcha      captcha `json:"captcha,omitempty"`
+	ClientID string  `json:"client_id"`
+	Username string  `json:"username"`
+	Password string  `json:"password"`
+	Undelete bool    `json:"undelete_user"`
+	Captcha  captcha `json:"captcha,omitempty"`
 }
 
 type captcha struct {
@@ -46,20 +45,39 @@ var _ ITwitchLogin = &TwitchLogin{}
 
 // Verify may need to be called if 2FA is enabled
 func (login *TwitchLogin) Verify(code string) error {
-	if login.ErrorCode != -1 && login.ErrorCode != 3022 {
-		return errors.New("twitchguard code not required")
+	var marshalFunc func(string, loginData) ([]byte, error)
+
+	switch login.ErrorCode {
+	// unknown
+	case -1:
+		marshalFunc = marshalTwitchguardData
+
+	// authy
+	case 3011:
+		marshalFunc = marshalAuthyData
+
+	// twitchguard
+	case 3022:
+		marshalFunc = marshalTwitchguardData
+
+	default:
+		return errors.New("verification code not required")
 	}
+
+	body, err := marshalFunc(code, loginData{
+		ClientID: Official.ID,
+		Username: login.Username,
+		Password: login.password,
+		Captcha:  captcha{login.CaptchaProof},
+	})
+	if err != nil {
+		return err
+	}
+
 	req := request.New("POST", "https://passport.twitch.tv", "login")
 	req.Headers["Content-Type"] = "application/json"
-	data := loginData{
-		ClientID:     Official.ID,
-		Username:     login.Username,
-		Password:     login.password,
-		Verification: code,
-		Captcha:      captcha{login.CaptchaProof},
-	}
-	body, _ := json.Marshal(data)
 	req.Body = body
+
 	res, err := req.Do()
 	if err != nil {
 		return err
@@ -73,6 +91,7 @@ func (login *TwitchLogin) Verify(code string) error {
 		login.ErrorShort = "login success"
 		login.CaptchaProof = ""
 	}
+
 	return nil
 }
 
@@ -100,4 +119,24 @@ func (login TwitchLogin) GetErrorCode() int {
 // Returns an empty string if the login process is not yet finished.
 func (login TwitchLogin) GetAccessToken() string {
 	return login.AccessToken
+}
+
+func marshalTwitchguardData(code string, ld loginData) ([]byte, error) {
+	return json.Marshal(struct {
+		loginData
+		Verification string `json:"twitchguard_code"`
+	}{
+		loginData:    ld,
+		Verification: code,
+	})
+}
+
+func marshalAuthyData(code string, ld loginData) ([]byte, error) {
+	return json.Marshal(struct {
+		loginData
+		Verification string `json:"authy_token"`
+	}{
+		loginData:    ld,
+		Verification: code,
+	})
 }
