@@ -8,16 +8,16 @@ import (
 )
 
 var (
+	// ErrNotConnected returned when the connection is closed
+	ErrNotConnected = errors.New("connection is closed")
+	// ErrAlreadyConnected returned when a connection tries to connect but is already running
+	ErrAlreadyConnected = errors.New("client is already connected")
 	// ErrShardIDOutOfBounds returned when an invalid shard id is provided
 	ErrShardIDOutOfBounds = errors.New("shard id out of bounds")
 	// ErrShardedMessageSend returned when a sharded connection tries to send a message
 	ErrShardedMessageSend = errors.New("messages can not be sent on a sharded connection")
-	// ErrNotConnected returned when the connection is closed
-	ErrNotConnected = errors.New("connection is closed")
 	// ErrNotAuthenticated returned when authentication is required but not set
 	ErrNotAuthenticated = errors.New("not authenticated")
-	// ErrAlreadyConnected returned when a connection tries to connect but is already running
-	ErrAlreadyConnected = errors.New("client is already connected")
 	// ErrPingTimeout returned when the server takes too long to respond to a ping message
 	ErrPingTimeout = errors.New("server took too long to respond to ping")
 	// ErrPartialMessage returned when a raw message is not complete
