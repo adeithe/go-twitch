@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/Adeithe/go-twitch/api"
 	"github.com/shurcooL/graphql"
 )
 
@@ -23,8 +22,11 @@ const URL = "https://gql.twitch.tv/gql"
 // New Twitch GraphQL Client
 //
 // This uses the official Twitch client by default and therefore should be used sparingly or not at all.
+//
+// Deprecated: Will be removed in a future release.
 func New() (client *Client) {
-	client = &Client{ID: api.Official.ID}
+	fmt.Println("WARNING: The GraphQL package is deprecated and will be removed in a future release.")
+	client = &Client{ID: "kimne78kx3ncx6brgo4mv6wki5h1ko"}
 	client.graphql = graphql.NewClient(URL, &http.Client{Transport: httpTransport{client, http.DefaultTransport}})
 	return
 }
