@@ -1,10 +1,6 @@
 package graphql
 
-import (
-	"net/http"
-
-	"github.com/Adeithe/go-twitch/api"
-)
+import "net/http"
 
 type httpTransport struct {
 	client  *Client
