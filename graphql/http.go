@@ -22,7 +22,7 @@ type httpTransport struct {
 // The Request's URL and Header fields must be initialized.
 func (t httpTransport) RoundTrip(r *http.Request) (*http.Response, error) {
 	if len(t.client.ID) < 1 {
-		t.client.ID = api.Official.ID
+		t.client.ID = "kimne78kx3ncx6brgo4mv6wki5h1ko"
 	}
 	r.Header.Set("Client-ID", t.client.ID)
 	if len(t.client.bearer) > 0 {
