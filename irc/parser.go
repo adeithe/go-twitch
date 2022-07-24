@@ -1,169 +1,143 @@
 package irc
 
 import (
+	"errors"
 	"regexp"
 	"strings"
 )
 
-// Command is the command sent in an IRCMessage
-type Command string
+var (
+	// ErrInvalidTags returned when the tags string is invalid.
+	ErrInvalidTags = errors.New("invalid tags string")
+	// ErrInvalidSource returned when the source string is invalid.
+	ErrInvalidSource = errors.New("invalid source")
+	// ErrPartialMessage returned when the raw message is incomplete.
+	ErrPartialMessage = errors.New("partial message")
+	// ErrNoCommand returned when the raw message has no command.
+	ErrNoCommand = errors.New("no irc command")
 
-const (
-	// CMDPrivMessage is a PRIVMSG command
-	CMDPrivMessage Command = "PRIVMSG"
-	// CMDClearChat is a CLEARCHAT command
-	CMDClearChat Command = "CLEARCHAT"
-	// CMDClearMessage is a CLEARMSG command
-	CMDClearMessage Command = "CLEARMSG"
-	// CMDHostTarget is a HOSTTARGET command
-	CMDHostTarget Command = "HOSTTARGET"
-	// CMDNotice is a NOTICE command
-	CMDNotice Command = "NOTICE"
-	// CMDReconnect is a RECONNECT command
-	CMDReconnect Command = "RECONNECT"
-	// CMDRoomState is a ROOMSTATE command
-	CMDRoomState Command = "ROOMSTATE"
-	// CMDUserNotice is a USERNOTICE command
-	CMDUserNotice Command = "USERNOTICE"
-	// CMDUserState is a USERSTATE command
-	CMDUserState Command = "USERSTATE"
-	// CMDGlobalUserState is a GLOBALUSERSTATE command
-	CMDGlobalUserState Command = "GLOBALUSERSTATE"
-	// CMDJoin is a JOIN command
-	CMDJoin Command = "JOIN"
-	// CMDPart is a PART command
-	CMDPart Command = "PART"
-	// CMDPing is a PING command
-	CMDPing Command = "PING"
-	// CMDPong is a PONG command
-	CMDPong Command = "PONG"
-	// CMDReady is a 376 command
-	CMDReady Command = "376"
+	senderRegexp = regexp.MustCompile(`!|@`)
+	escapeChars  = []struct {
+		from string
+		to   string
+	}{
+		{`\s`, ` `},
+		{`\n`, ``},
+		{`\r`, ``},
+		{`\:`, `;`},
+		{`\\`, `\`},
+	}
 )
 
-// Source is basic info about in IRC message
-type Source struct {
-	Nickname string
-	Username string
-	Host     string
-}
-
-// Message is an IRC message received by the socket
-type Message struct {
-	Raw     string
-	Command Command
-	Sender  Source
-	Tags    map[string]string
-	Params  []string
-	Text    string
-}
-
-// IMessageParser is a generic parser for an IRC message
-type IMessageParser interface {
-	Parse() error
-
-	tags(string)
-	sender(string)
-}
-
-var escapeChars = []struct {
-	from string
-	to   string
-}{
-	{`\s`, ` `},
-	{`\n`, ``},
-	{`\r`, ``},
-	{`\:`, `;`},
-	{`\\`, `\`},
-}
-
-// NewParsedMessage parses raw data from the IRC server and returns an IRCMessage
-func NewParsedMessage(raw string) (Message, error) {
-	msg := &Message{Raw: raw}
-	if err := msg.Parse(); err != nil {
-		return *msg, err
-	}
-	return *msg, nil
-}
-
-// Parse takes the raw data in an IRCMessage and stores it accordingly
+// ParseMessage parses an IRC message as received by Twitch.
+// In most cases this is handled for you and received in the form of an event.
 //
-// This is done automatically when running NewParsedMessage but can be run again at any time
-func (msg *Message) Parse() error {
-	var index int
-	parts := strings.Split(msg.Raw, " ")
+// See: https://dev.twitch.tv/docs/irc/send-receive-messages#receiving-chat-messages
+func ParseMessage(raw string) (*Message, error) {
+	var i int
+	parts := strings.Split(raw, " ")
 
-	if strings.HasPrefix(parts[index], "@") {
-		msg.tags(strings.TrimPrefix(parts[index], "@"))
-		index++
+	msg := &Message{Raw: raw}
+	if strings.HasPrefix(raw, "@") {
+		tags, err := ParseTags(parts[i])
+		if err != nil {
+			return nil, err
+		}
+		msg.Tags = tags
+		i++
 	}
 
-	if index >= len(parts) {
-		return ErrPartialMessage
+	if i >= len(parts) {
+		return nil, ErrPartialMessage
 	}
 
-	if strings.HasPrefix(parts[index], ":") {
-		msg.sender(strings.TrimPrefix(parts[index], ":"))
-		index++
+	if strings.HasPrefix(parts[i], ":") {
+		source, err := ParseSource(parts[i])
+		if err != nil {
+			return nil, err
+		}
+		msg.Source = *source
+		i++
 	}
 
-	if index >= len(parts) {
-		return ErrNoCommand
+	if i >= len(parts) {
+		return nil, ErrNoCommand
 	}
 
-	msg.Command = Command(parts[index])
-	index++
+	msg.Command = IRCCommand(parts[i])
+	i++
 
-	if index >= len(parts) {
-		return nil
+	if i >= len(parts) {
+		return msg, nil
 	}
 
 	var params []string
-	for i, v := range parts[index:] {
-		if strings.HasPrefix(v, ":") {
-			msg.Text = strings.TrimPrefix(strings.Join(parts[index+i:], " "), ":")
+	for n, param := range parts[i:] {
+		if strings.HasPrefix(param, ":") {
+			text := strings.Join(parts[i+n:], " ")
+			msg.Text = strings.TrimPrefix(text, ":")
 			break
 		}
-		params = append(params, v)
+		params = append(params, param)
 	}
 	msg.Params = params
-	return nil
+	return msg, nil
 }
 
-func (msg *Message) tags(raw string) {
-	tags := make(map[string]string)
-	for _, tag := range strings.Split(raw, ";") {
-		pair := strings.SplitN(tag, "=", 2)
-		var value string
-		if len(pair) == 2 {
-			rawValue := pair[1]
-			for _, escape := range escapeChars {
-				rawValue = strings.ReplaceAll(rawValue, escape.from, escape.to)
-			}
-			value = strings.TrimSpace(strings.TrimSuffix(rawValue, "\\"))
-		}
-		tags[pair[0]] = value
+// ParseTags parses a tags string into an object.
+// In most cases this is handled for you and received in the form of an event.
+//
+// Tag strings are provided by Twitch in a form of "@tag-name-1=<tag-value-1>;tag-name-2=<tag-value-2>;..."
+//
+// See: https://dev.twitch.tv/docs/irc/tags
+func ParseTags(tags string) (Tags, error) {
+	if len(tags) < 2 || !strings.HasPrefix(tags, "@") {
+		return nil, ErrInvalidTags
 	}
-	msg.Tags = tags
+	tags = strings.TrimPrefix(tags, "@")
+
+	data := make(Tags)
+	for _, pair := range strings.Split(tags, ";") {
+		parts := strings.SplitN(pair, "=", 2)
+		value := parts[1]
+		if len(parts) > 1 {
+			for _, escape := range escapeChars {
+				value = strings.ReplaceAll(value, escape.from, escape.to)
+			}
+		}
+		data[parts[0]] = strings.TrimSpace(strings.TrimSuffix(value, "\\"))
+	}
+	return data, nil
 }
 
-func (msg *Message) sender(raw string) {
-	regex := regexp.MustCompile(`!|@`)
-	sourceData := regex.Split(raw, -1)
-	sender := Source{}
+// ParseSource parses a source string.
+// In most cases this is handled for you and received in the form of an event.
+//
+// Source strings are provided by Twitch in a format such as ":justinfan16432!justinfan16432@justinfan16432.tmi.twitch.tv"
+// This message format may vary depending on the type of message.
+//
+// See: https://dev.twitch.tv/docs/irc#parsing-messages
+func ParseSource(source string) (*Source, error) {
+	if len(source) < 2 || !strings.HasPrefix(source, ":") {
+		return nil, ErrInvalidSource
+	}
+	source = strings.TrimPrefix(source, ":")
+
+	data := &Source{}
+	sourceData := senderRegexp.Split(source, -1)
 	if len(sourceData) > 0 {
 		switch len(sourceData) {
 		case 1:
-			sender.Host = sourceData[0]
+			data.Host = sourceData[0]
 		case 2:
-			sender.Nickname = sourceData[0]
-			sender.Username = sourceData[0]
-			sender.Host = sourceData[1]
+			data.Nickname = sourceData[0]
+			data.Username = sourceData[0]
+			data.Host = sourceData[1]
 		case 3:
-			sender.Nickname = sourceData[0]
-			sender.Username = sourceData[1]
-			sender.Host = sourceData[2]
+			data.Nickname = sourceData[0]
+			data.Username = sourceData[1]
+			data.Host = sourceData[2]
 		}
 	}
-	msg.Sender = sender
+	return data, nil
 }
