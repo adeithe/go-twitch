@@ -2,7 +2,6 @@ package irc
 
 import (
 	"errors"
-	"regexp"
 	"strings"
 )
 
@@ -16,8 +15,7 @@ var (
 	// ErrNoCommand returned when the raw message has no command.
 	ErrNoCommand = errors.New("no irc command")
 
-	senderRegexp = regexp.MustCompile(`!|@`)
-	escapeChars  = []struct {
+	escapeChars = []struct {
 		from string
 		to   string
 	}{
@@ -94,18 +92,16 @@ func ParseTags(tags string) (Tags, error) {
 	if len(tags) < 2 || !strings.HasPrefix(tags, "@") {
 		return nil, ErrInvalidTags
 	}
-	tags = strings.TrimPrefix(tags, "@")
 
 	data := make(Tags)
-	for _, pair := range strings.Split(tags, ";") {
+	for _, pair := range strings.Split(tags[1:], ";") {
 		parts := strings.SplitN(pair, "=", 2)
-		value := parts[1]
-		if len(parts) > 1 {
-			for _, escape := range escapeChars {
-				value = strings.ReplaceAll(value, escape.from, escape.to)
+		for _, escape := range escapeChars {
+			if strings.Contains(parts[1], escape.from) {
+				parts[1] = strings.ReplaceAll(parts[1], escape.from, escape.to)
 			}
 		}
-		data[parts[0]] = strings.TrimSpace(strings.TrimSuffix(value, "\\"))
+		data[parts[0]] = strings.TrimSpace(strings.TrimSuffix(parts[1], "\\"))
 	}
 	return data, nil
 }
@@ -123,21 +119,20 @@ func ParseSource(source string) (*Source, error) {
 	}
 	source = strings.TrimPrefix(source, ":")
 
-	data := &Source{}
-	sourceData := senderRegexp.Split(source, -1)
-	if len(sourceData) > 0 {
-		switch len(sourceData) {
-		case 1:
-			data.Host = sourceData[0]
-		case 2:
-			data.Nickname = sourceData[0]
-			data.Username = sourceData[0]
-			data.Host = sourceData[1]
-		case 3:
-			data.Nickname = sourceData[0]
-			data.Username = sourceData[1]
-			data.Host = sourceData[2]
-		}
+	hostParts := strings.SplitN(source, "@", 2)
+	if len(hostParts) < 2 {
+		return &Source{Host: hostParts[0]}, nil
 	}
+
+	data := &Source{Host: hostParts[1]}
+	userParts := strings.SplitN(hostParts[0], "!", 2)
+	if len(userParts) < 2 {
+		data.Nickname = userParts[0]
+		data.Username = userParts[0]
+		return data, nil
+	}
+
+	data.Nickname = userParts[0]
+	data.Username = userParts[1]
 	return data, nil
 }

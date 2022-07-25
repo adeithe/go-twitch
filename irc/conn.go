@@ -51,18 +51,22 @@ func New(events *Events, opts ...ConnOption) *Conn {
 		close:  make(chan error, 1),
 	}
 
-	conn.addr, _ = net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:6697", DefaultHostname))
+	tlsAddr, _ := net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:6697", DefaultHostname))
 	defaultOpts := []ConnOption{
 		WithAuth(
 			fmt.Sprintf("justinfan%d", rand.Intn(99899)+100),
 			"Kappa123",
 		),
-		WithAddr(conn.addr),
+		WithAddr(tlsAddr),
 		WithHostname(DefaultHostname),
 	}
 
 	for _, opt := range append(defaultOpts, opts...) {
 		opt(conn)
+	}
+
+	if !conn.tls && conn.addr == tlsAddr {
+		conn.addr, _ = net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:6667", DefaultHostname))
 	}
 	return conn
 }
@@ -82,7 +86,7 @@ func (c *Conn) Connect(ctx context.Context) error {
 
 	_ = c.requestCapabilities()
 	_ = c.authenticate()
-	c.latency, _ = c.Ping(ctx)
+	_, _ = c.Ping(context.Background())
 
 	select {
 	case <-ctx.Done():
@@ -148,6 +152,7 @@ func (c *Conn) dial() (net.Conn, error) {
 	}
 	if c.tls {
 		config := &tls.Config{
+			MinVersion:         tls.VersionTLS12,
 			ServerName:         c.hostname,
 			InsecureSkipVerify: c.insecure,
 		}

@@ -30,9 +30,31 @@ func TestConnectFailure(t *testing.T) {
 }
 
 func TestConnPingError(t *testing.T) {
-	client := irc.New(nil)
-	_, err := client.Ping(context.Background())
-	assert.ErrorIs(t, err, irc.ErrNotConnected)
+	t.Run("ErrNotConnected", func(t *testing.T) {
+		client := irc.New(nil)
+		_, err := client.Ping(context.Background())
+		assert.ErrorIs(t, err, irc.ErrNotConnected)
+	})
+
+	t.Run("ErrContextDeadlineExceeded", func(t *testing.T) {
+		mock, err := NewMockServer(t, func(c net.Conn, m *irc.Message) {
+			_, _ = c.Write([]byte(":tmi.twitch.tv 376 justinfan16432 :>\r\n"))
+		})
+		if !assert.NoError(t, err) {
+			return
+		}
+
+		ready := make(chan struct{}, 1)
+		client := mock.Conn(&irc.Events{Ready: ready})
+		go func() { _ = client.Connect(context.Background()) }()
+
+		<-ready
+		ctx, cancel := context.WithTimeout(context.Background(), 0)
+		defer cancel()
+
+		_, err = client.Ping(ctx)
+		assert.ErrorIs(t, err, context.DeadlineExceeded)
+	})
 }
 
 func TestConnSendRawNotConnected(t *testing.T) {
@@ -226,6 +248,6 @@ func (srv *MockServer) handleMessage(conn net.Conn, msg *irc.Message) {
 		}
 		srv.username = msg.Params[0]
 	case "PING":
-		_, _ = conn.Write([]byte("PONG\r\n"))
+		_, _ = conn.Write([]byte("PONG :tmi.twitch.tv\r\n"))
 	}
 }

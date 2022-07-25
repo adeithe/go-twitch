@@ -6,27 +6,46 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
 	"github.com/Adeithe/go-twitch/irc"
 )
 
 func main() {
-	sc := make(chan os.Signal, 1)
-	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGHUP)
+	ctx, cancel := context.WithCancel(context.Background())
+	go listenForSignals(cancel)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	writer := &irc.Conn{}
-	writer.SetLogin("username", "oauth:123123123")
-	if err := writer.Connect(ctx); err != nil {
-		panic(err)
+	events := &irc.Events{
+		Ready:      make(chan struct{}),
+		RawMessage: make(chan *irc.Message),
 	}
 
-	reader := irc.New()
-	fmt.Println("Connected to IRC!")
+	conn := irc.New(events,
+		irc.WithAuth("myusername", "oauth:yfvzjqb705z12hrhy1zkwa9xt7v662"),
+		irc.WithTags(), irc.WithCommands(), irc.WithMembership(),
+	)
 
+	go handleEvents(ctx, conn, events)
+	if err := conn.Connect(ctx); err != nil {
+		panic(err)
+	}
+}
+
+func handleEvents(ctx context.Context, conn *irc.Conn, events *irc.Events) {
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-events.Ready:
+			_ = conn.SendRaw("JOIN #jtv")
+		case msg := <-events.RawMessage:
+			fmt.Println(msg.Raw)
+		}
+	}
+}
+
+func listenForSignals(cancel context.CancelFunc) {
+	sc := make(chan os.Signal, 1)
+	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
 	<-sc
-	writer.Close()
+	cancel()
 }

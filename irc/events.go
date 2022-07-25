@@ -25,5 +25,19 @@ func (c *Conn) handleMessage(msg *Message) {
 		_, _ = c.Ping(context.Background())
 	case CMDPong:
 		close(c.pingC)
+
+	case CMDRoomState:
+	case CMDJoin:
+	case CMDPart:
+
+	case CMDGlobalUserState:
+	case CMDUserState:
+
+	case CMDHostTarget:
+	case CMDUserNotice:
+	case CMDClearChat:
+	case CMDClearMessage:
+	case CMDNotice:
+	case CMDPrivMessage:
 	}
 }
