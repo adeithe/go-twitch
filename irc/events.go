@@ -22,7 +22,7 @@ func (c *Conn) handleMessage(msg *Message) {
 	case CMDReady:
 		emit(c.events.Ready, struct{}{})
 	case CMDPing:
-		_, _ = c.Ping(context.Background())
+		go func() { _, _ = c.Ping(context.Background()) }()
 	case CMDPong:
 		close(c.pingC)
 
