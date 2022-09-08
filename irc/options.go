@@ -81,3 +81,12 @@ func WithInsecure() ConnOption {
 		conn.insecure = true
 	}
 }
+
+// WithBufferSize sets the size of the read buffer.
+func WithBufferSize(size int) ConnOption {
+	return func(conn *Conn) {
+		if size > 0 {
+			conn.bufferSize = size
+		}
+	}
+}

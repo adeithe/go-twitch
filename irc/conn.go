@@ -24,6 +24,7 @@ type Conn struct {
 	tls, insecure bool
 	hostname      string
 	addr          net.Addr
+	bufferSize    int
 
 	conn     net.Conn
 	writerMx sync.Mutex
@@ -59,6 +60,7 @@ func New(events *Events, opts ...ConnOption) *Conn {
 		),
 		WithAddr(tlsAddr),
 		WithHostname(DefaultHostname),
+		WithBufferSize(4096),
 	}
 
 	for _, opt := range append(defaultOpts, opts...) {
@@ -162,7 +164,7 @@ func (c *Conn) dial() (net.Conn, error) {
 }
 
 func (c *Conn) reader() {
-	reader := textproto.NewReader(bufio.NewReader(c.conn))
+	reader := textproto.NewReader(bufio.NewReaderSize(c.conn, c.bufferSize))
 	for {
 		line, err := reader.ReadLine()
 		if err != nil {
