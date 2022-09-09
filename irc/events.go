@@ -16,8 +16,8 @@ type Events struct {
 func emit[T any](c chan T, v T) {
 	if c != nil {
 		if cap(c) > 0 && len(c) == cap(c) {
-			log.Warn().Msg("buffered channel is full, dropping oldest event")
-			<-c
+			log.Warn().Msg("buffered channel is full, dropping event")
+			return
 		}
 		c <- v
 	}
