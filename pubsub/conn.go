@@ -387,6 +387,7 @@ func (conn *Conn) reader() {
 		}
 	}
 	conn.socket.Close()
+	conn.isConnected = false
 	close(conn.done)
 	for _, f := range conn.onDisconnect {
 		go f()
