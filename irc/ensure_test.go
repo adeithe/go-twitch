@@ -53,7 +53,7 @@ func TestIRC_EnsureConnection(t *testing.T) {
 	})
 
 	t.Run("Context Canceled", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.Background(), time.Nanosecond)
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		cancel()
 
 		conn, err := irc.New()
