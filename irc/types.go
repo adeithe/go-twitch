@@ -1,5 +1,7 @@
 package irc
 
+import "strings"
+
 // Source the source of the incoming message.
 type Source struct {
 	Nickname string
@@ -60,4 +62,8 @@ const (
 
 func (m Message) String() string {
 	return m.Raw
+}
+
+func sanitizeUsername(username string) string {
+	return strings.TrimPrefix(strings.ToLower(username), "#")
 }

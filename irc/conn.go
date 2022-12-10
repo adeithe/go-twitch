@@ -24,7 +24,9 @@ type Conn struct {
 
 	ready        bool
 	conn         net.Conn
+	channels     map[string]*Channel
 	writerMx     sync.Mutex
+	channelsMx   sync.RWMutex
 	connectionMx sync.Mutex
 	lastMessage  time.Time
 
@@ -50,7 +52,13 @@ func New(opts ...ConnOption) (*Conn, error) {
 		WithBufferSize(4096),
 	}
 
-	conn := &Conn{tls: true, readyC: make(chan error), pingC: make(chan struct{})}
+	conn := &Conn{
+		channels: make(map[string]*Channel),
+
+		tls:    true,
+		readyC: make(chan error),
+		pingC:  make(chan struct{}),
+	}
 	for _, opt := range append(defaultOpts, opts...) {
 		if err := opt(conn); err != nil {
 			return nil, err
@@ -64,6 +72,51 @@ func (c *Conn) IsConnected() bool {
 		return false
 	}
 	return time.Since(c.lastMessage) < time.Minute*5
+}
+
+func (c *Conn) GetChannel(channelName string) (*Channel, bool) {
+	c.channelsMx.RLock()
+	defer c.channelsMx.RUnlock()
+	channel, ok := c.channels[channelName]
+	return channel, ok
+}
+
+// JoinChannel joins the specified channel and returns a channel instance.
+//
+// NOTE: The room state will be updated asynchronously once acknowledged by the server.
+func (c *Conn) JoinChannel(channelName string) (*Channel, error) {
+	channelName = sanitizeUsername(channelName)
+
+	c.channelsMx.RLock()
+	channel, ok := c.channels[channelName]
+	c.channelsMx.RUnlock()
+	if !ok {
+		c.channelsMx.Lock()
+		channel = &Channel{conn: c, name: channelName}
+		c.channels[channelName] = channel
+		c.channelsMx.Unlock()
+	}
+
+	if err := c.SendRaw(fmt.Sprintf("JOIN #%s", channelName)); err != nil {
+		return nil, err
+	}
+	return channel, nil
+}
+
+func (c *Conn) PartChannel(channelName string) error {
+	channelName = sanitizeUsername(channelName)
+	if _, ok := c.GetChannel(channelName); !ok {
+		return nil
+	}
+
+	if err := c.SendRaw(fmt.Sprintf("PART #%s", channelName)); err != nil {
+		return err
+	}
+
+	c.channelsMx.Lock()
+	defer c.channelsMx.Unlock()
+	delete(c.channels, channelName)
+	return nil
 }
 
 func (c *Conn) Ping(ctx context.Context) (time.Duration, error) {
@@ -81,15 +134,6 @@ func (c *Conn) Ping(ctx context.Context) (time.Duration, error) {
 	case <-c.pingC:
 		return time.Since(now), nil
 	}
-}
-
-func (c *Conn) Say(channel, message string) error {
-	channel = strings.TrimPrefix(strings.ToLower(channel), "#")
-	return c.SendRaw(fmt.Sprintf("PRIVMSG #%s :%s", channel, message))
-}
-
-func (c *Conn) Sayf(format, channel string, v ...interface{}) error {
-	return c.Say(channel, fmt.Sprintf(format, v...))
 }
 
 func (c *Conn) SendRaw(lines ...string) error {
@@ -222,5 +266,10 @@ func (c *Conn) handleMessage(msg *Message) {
 		_ = c.write("PONG :" + msg.Text)
 	case CMDPong:
 		c.pingC <- struct{}{}
+
+	case CMDRoomState:
+		c.handleRoomState(msg)
+	case CMDUserState:
+		c.handleUserState(msg)
 	}
 }
