@@ -95,9 +95,12 @@ type NonceGenerator func() string
 
 // ParseTopic returns a topic string with the provided arguments
 func ParseTopic(str string, args ...interface{}) string {
-	var params []string
-	for _, arg := range args {
-		params = append(params, fmt.Sprint(arg))
+	if len(args) > 0 {
+		var params []string
+		for _, arg := range args {
+			params = append(params, fmt.Sprint(arg))
+		}
+		return fmt.Sprintf("%s.%s", str, strings.Join(params, "."))
 	}
-	return fmt.Sprintf("%s.%s", str, strings.Join(params, "."))
+	return str
 }

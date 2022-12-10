@@ -12,6 +12,8 @@ func API(clientID string) *api.Client {
 }
 
 // GraphQL provides an interface with the Twitch GraphQL server.
+//
+// Deprecated: Will be removed in a future release.
 func GraphQL() *graphql.Client {
 	return graphql.New()
 }
