@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"math/rand"
 	"net"
@@ -13,23 +14,22 @@ import (
 	"time"
 )
 
-// Conn a connection to a Twitch IRC server.
 type Conn struct {
-	events *Events
-
 	username, token string
-	capabilities    []Capability
-	latency         time.Duration
 
 	tls, insecure bool
 	hostname      string
 	addr          net.Addr
 	bufferSize    int
 
-	conn     net.Conn
-	writerMx sync.Mutex
-	close    chan error
+	ready        bool
+	conn         net.Conn
+	writerMx     sync.Mutex
+	connectionMx sync.Mutex
+	lastMessage  time.Time
 
+	wg     sync.WaitGroup
+	readyC chan error
 	pingC  chan struct{}
 	pingMx sync.Mutex
 }
@@ -37,78 +37,41 @@ type Conn struct {
 const DefaultHostname = "irc.chat.twitch.tv"
 
 var (
-	ErrNotConnected = fmt.Errorf("irc: not connected")
+	ErrNotConnected = errors.New("irc: not connected")
+	ErrLoginFailed  = errors.New("irc: authentication failed")
+	ErrReadyTimeout = errors.New("irc: timed out while waiting for ready message")
 )
 
-// New creates a new IRC connection.
-func New(events *Events, opts ...ConnOption) *Conn {
-	if events == nil {
-		events = &Events{}
-	}
-
-	conn := &Conn{
-		events: events,
-		tls:    true,
-		close:  make(chan error, 1),
-	}
-
-	tlsAddr, _ := net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:6697", DefaultHostname))
+func New(opts ...ConnOption) (*Conn, error) {
 	defaultOpts := []ConnOption{
-		WithAuth(
-			fmt.Sprintf("justinfan%d", rand.Intn(99899)+100),
-			"Kappa123",
-		),
-		WithAddr(tlsAddr),
+		WithAuth(fmt.Sprintf("justinfan%d", rand.Intn(99899)+100), "Kappa123"),
+		WithAddress(DefaultHostname, 6697),
 		WithHostname(DefaultHostname),
 		WithBufferSize(4096),
 	}
 
+	conn := &Conn{tls: true, readyC: make(chan error), pingC: make(chan struct{})}
 	for _, opt := range append(defaultOpts, opts...) {
-		opt(conn)
+		if err := opt(conn); err != nil {
+			return nil, err
+		}
 	}
-
-	if !conn.tls && conn.addr == tlsAddr {
-		conn.addr, _ = net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:6667", DefaultHostname))
-	}
-	return conn
+	return conn, nil
 }
 
-// Connect attempts to connect to the IRC server.
-//
-// If successful, the goroutine is blocked until the connection is closed.
-func (c *Conn) Connect(ctx context.Context) error {
-	conn, err := c.dial()
-	if err != nil {
-		return err
+func (c *Conn) IsConnected() bool {
+	if c.conn == nil || !c.ready {
+		return false
 	}
-	defer conn.Close()
-
-	c.conn = conn
-	go c.reader()
-
-	_ = c.requestCapabilities()
-	_ = c.authenticate()
-	_, _ = c.Ping(context.Background())
-
-	select {
-	case <-ctx.Done():
-		err = ctx.Err()
-	case err = <-c.close:
-	}
-	c.conn = nil
-	if err == context.Canceled {
-		err = nil
-	}
-	return err
+	return time.Since(c.lastMessage) < time.Minute*5
 }
 
 func (c *Conn) Ping(ctx context.Context) (time.Duration, error) {
 	c.pingMx.Lock()
 	defer c.pingMx.Unlock()
 
-	start := time.Now()
-	c.pingC = make(chan struct{})
-	if err := c.SendRaw(string(CMDPing)); err != nil {
+	now := time.Now()
+	if err := c.SendRaw("PING"); err != nil {
 		return 0, err
 	}
 
@@ -116,86 +79,148 @@ func (c *Conn) Ping(ctx context.Context) (time.Duration, error) {
 	case <-ctx.Done():
 		return 0, ctx.Err()
 	case <-c.pingC:
+		return time.Since(now), nil
 	}
-	c.latency = time.Since(start)
-	emit(c.events.Latency, c.latency)
-	return c.latency, nil
 }
 
-// SendRaw sends a raw message to the IRC server.
-func (c *Conn) SendRaw(raw ...string) error {
-	c.writerMx.Lock()
-	defer c.writerMx.Unlock()
-	if c.conn == nil {
+func (c *Conn) Say(channel, message string) error {
+	channel = strings.TrimPrefix(strings.ToLower(channel), "#")
+	return c.SendRaw(fmt.Sprintf("PRIVMSG #%s :%s", channel, message))
+}
+
+func (c *Conn) Sayf(format, channel string, v ...interface{}) error {
+	return c.Say(channel, fmt.Sprintf(format, v...))
+}
+
+func (c *Conn) SendRaw(lines ...string) error {
+	if !c.IsConnected() {
 		return ErrNotConnected
 	}
+	return c.write(lines...)
+}
 
-	var err error
-	if len(raw) > 0 {
-		_, err = c.conn.Write([]byte(strings.Join(raw, "\r\n") + "\r\n"))
+func (c *Conn) Close() error {
+	c.connectionMx.Lock()
+	defer c.connectionMx.Unlock()
+	if c.conn == nil {
+		return nil
+	}
+
+	if err := c.conn.Close(); err != nil {
+		return err
+	}
+	c.wg.Wait()
+	return nil
+}
+
+func (c *Conn) Connect(ctx context.Context) error {
+	c.connectionMx.Lock()
+	defer c.connectionMx.Unlock()
+	if c.IsConnected() {
+		return nil
+	}
+
+	conn, err := c.dial(ctx)
+	if err != nil {
+		return err
+	}
+	c.conn = conn
+
+	c.wg.Add(1)
+	go c.reader()
+	err = c.authenticate(ctx)
+	if errors.Is(err, context.DeadlineExceeded) {
+		return ErrReadyTimeout
 	}
 	return err
 }
 
-// Capabilities returns the list of capabilities that enabled on the connection.
-func (c *Conn) Capabilities() []Capability {
-	return c.capabilities
-}
-
-// Addr returns the address used to connect to the server.
-func (c *Conn) Addr() net.Addr {
-	return c.addr
-}
-
-func (c *Conn) dial() (net.Conn, error) {
-	dialer := &net.Dialer{
-		Timeout:   time.Second * 10,
-		KeepAlive: time.Second * 10,
-	}
+func (c *Conn) dial(ctx context.Context) (net.Conn, error) {
+	dialer := &net.Dialer{Timeout: time.Second * 10}
 	if c.tls {
-		config := &tls.Config{
-			MinVersion:         tls.VersionTLS12,
-			ServerName:         c.hostname,
-			InsecureSkipVerify: c.insecure,
+		tlsDialer := &tls.Dialer{
+			NetDialer: dialer,
+			Config: &tls.Config{
+				MinVersion:         tls.VersionTLS12,
+				ServerName:         DefaultHostname,
+				InsecureSkipVerify: c.insecure,
+			},
 		}
-		return tls.DialWithDialer(dialer, "tcp", c.addr.String(), config)
+		return tlsDialer.DialContext(ctx, "tcp", c.addr.String())
 	}
-	return dialer.Dial("tcp", c.addr.String())
+	return dialer.DialContext(ctx, "tcp", c.addr.String())
+}
+
+func (c *Conn) authenticate(ctx context.Context) error {
+	lines := []string{
+		"CAP REQ :twitch.tv/tags twitch.tv/commands twitch.tv/membership",
+
+		fmt.Sprintf("PASS oauth:%s", c.token),
+		fmt.Sprintf("NICK %s", c.username),
+	}
+
+	if err := c.write(lines...); err != nil {
+		return err
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+
+	select {
+	case <-ctx.Done():
+		_ = c.conn.Close()
+		return ctx.Err()
+	case err := <-c.readyC:
+		return err
+	}
+}
+
+func (c *Conn) write(lines ...string) error {
+	c.writerMx.Lock()
+	defer c.writerMx.Unlock()
+	_, err := c.conn.Write([]byte(strings.Join(lines, "\r\n") + "\r\n"))
+	return err
 }
 
 func (c *Conn) reader() {
 	reader := textproto.NewReader(bufio.NewReaderSize(c.conn, c.bufferSize))
+	defer c.wg.Done()
 	for {
 		line, err := reader.ReadLine()
 		if err != nil {
-			c.close <- err
 			break
 		}
 
 		msg, err := ParseMessage(line)
 		if err != nil {
-			c.close <- err
-			break
+			continue
 		}
+		c.lastMessage = time.Now()
 
-		emit(c.events.RawMessage, msg)
+		if !c.ready {
+			c.handleLogin(msg)
+			continue
+		}
 		c.handleMessage(msg)
 	}
+	c.ready = false
 }
 
-func (c *Conn) requestCapabilities() error {
-	if len(c.capabilities) == 0 {
-		return nil
+func (c *Conn) handleLogin(msg *Message) {
+	switch msg.Command {
+	case CMDReady:
+		c.ready = true
+		c.readyC <- nil
+	case CMDNotice:
+		c.readyC <- fmt.Errorf("%w - %s", ErrLoginFailed, msg.Text)
 	}
-
-	var capabilities []string
-	for _, capability := range c.Capabilities() {
-		capabilities = append(capabilities, string(capability))
-	}
-
-	return c.SendRaw("CAP REQ :" + strings.Join(capabilities, " "))
 }
 
-func (c *Conn) authenticate() error {
-	return c.SendRaw(fmt.Sprintf("PASS oauth:%s", c.token), fmt.Sprintf("NICK %s", c.username))
+func (c *Conn) handleMessage(msg *Message) {
+	switch msg.Command {
+	case CMDPing:
+		_ = c.write("PONG :" + msg.Text)
+	case CMDPong:
+		c.pingC <- struct{}{}
+	}
 }

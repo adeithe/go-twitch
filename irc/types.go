@@ -17,18 +17,6 @@ type Message struct {
 	Raw     string
 }
 
-// Capability is a Twitch IRC capability.
-type Capability string
-
-const (
-	// CapabilityCommands is the "twitch.tv/commands" capability.
-	CapabilityCommands = "twitch.tv/commands"
-	// CapabilityMembership is the "twitch.tv/membership" capability.
-	CapabilityMembership = "twitch.tv/membership"
-	// CapabilityTags is the "twitch.tv/tags" capability.
-	CapabilityTags = "twitch.tv/tags"
-)
-
 // Tags is a map of Twitch IRC tags.
 type Tags map[string]string
 
@@ -38,11 +26,13 @@ type IRCCommand string
 const (
 	// CMDPrivMessage is a PRIVMSG command
 	CMDPrivMessage IRCCommand = "PRIVMSG"
+	// CMDWhisper is a WHISPER command
+	CMDWhisper IRCCommand = "WHISPER"
 	// CMDClearChat is a CLEARCHAT command
 	CMDClearChat IRCCommand = "CLEARCHAT"
 	// CMDClearMessage is a CLEARMSG command
 	CMDClearMessage IRCCommand = "CLEARMSG"
-	// CMDHostTarget is a HOSTTARGET command
+	// Deprecated: CMDHostTarget is a HOSTTARGET command
 	CMDHostTarget IRCCommand = "HOSTTARGET"
 	// CMDNotice is a NOTICE command
 	CMDNotice IRCCommand = "NOTICE"
@@ -67,3 +57,7 @@ const (
 	// CMDReady is a 376 command
 	CMDReady IRCCommand = "376"
 )
+
+func (m Message) String() string {
+	return m.Raw
+}
