@@ -22,11 +22,13 @@ func TestIRC_Channel_Join(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotNil(t, channel)
 
-		time.Sleep(time.Second)
 		channel2, ok := conn.GetChannel("jtv")
 		assert.True(t, ok)
 		if assert.NotNil(t, channel2) {
 			assert.True(t, channel.IsJoined())
+			assert.True(t, channel.IsSubOnly())
+			assert.False(t, channel.IsEmoteOnly())
+			assert.False(t, channel.IsR9KMode())
 			assert.Equal(t, channel.Username(), channel2.Username())
 			assert.Equal(t, channel.RoomID(), channel2.RoomID())
 			assert.NoError(t, conn.PartChannel(channel.Username()))

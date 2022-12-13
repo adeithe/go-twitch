@@ -24,6 +24,7 @@ type Conn struct {
 
 	ready        bool
 	conn         net.Conn
+	events       *Events
 	channels     map[string]*Channel
 	writerMx     sync.Mutex
 	channelsMx   sync.RWMutex
@@ -42,6 +43,7 @@ var (
 	ErrNotConnected = errors.New("irc: not connected")
 	ErrLoginFailed  = errors.New("irc: authentication failed")
 	ErrReadyTimeout = errors.New("irc: timed out while waiting for ready message")
+	ErrJoinFailed   = errors.New("irc: failed to join channel")
 )
 
 func New(opts ...ConnOption) (*Conn, error) {
@@ -53,6 +55,7 @@ func New(opts ...ConnOption) (*Conn, error) {
 	}
 
 	conn := &Conn{
+		events:   &Events{},
 		channels: make(map[string]*Channel),
 
 		tls:    true,
@@ -65,6 +68,28 @@ func New(opts ...ConnOption) (*Conn, error) {
 		}
 	}
 	return conn, nil
+}
+
+func (c *Conn) Connect(ctx context.Context) error {
+	c.connectionMx.Lock()
+	defer c.connectionMx.Unlock()
+	if c.IsConnected() {
+		return nil
+	}
+
+	conn, err := c.dial(ctx)
+	if err != nil {
+		return err
+	}
+	c.conn = conn
+
+	c.wg.Add(1)
+	go c.reader()
+	err = c.authenticate(ctx)
+	if errors.Is(err, context.DeadlineExceeded) {
+		return ErrReadyTimeout
+	}
+	return err
 }
 
 func (c *Conn) IsConnected() bool {
@@ -82,8 +107,6 @@ func (c *Conn) GetChannel(channelName string) (*Channel, bool) {
 }
 
 // JoinChannel joins the specified channel and returns a channel instance.
-//
-// NOTE: The room state will be updated asynchronously once acknowledged by the server.
 func (c *Conn) JoinChannel(channelName string) (*Channel, error) {
 	channelName = sanitizeUsername(channelName)
 
@@ -92,15 +115,16 @@ func (c *Conn) JoinChannel(channelName string) (*Channel, error) {
 	c.channelsMx.RUnlock()
 	if !ok {
 		c.channelsMx.Lock()
-		channel = &Channel{conn: c, name: channelName}
+		channel = &Channel{conn: c, name: channelName, ackC: make(chan error)}
 		c.channels[channelName] = channel
 		c.channelsMx.Unlock()
 	}
 
+	channel.unack()
 	if err := c.SendRaw(fmt.Sprintf("JOIN #%s", channelName)); err != nil {
 		return nil, err
 	}
-	return channel, nil
+	return channel, <-channel.ackC
 }
 
 func (c *Conn) PartChannel(channelName string) error {
@@ -155,28 +179,6 @@ func (c *Conn) Close() error {
 	}
 	c.wg.Wait()
 	return nil
-}
-
-func (c *Conn) Connect(ctx context.Context) error {
-	c.connectionMx.Lock()
-	defer c.connectionMx.Unlock()
-	if c.IsConnected() {
-		return nil
-	}
-
-	conn, err := c.dial(ctx)
-	if err != nil {
-		return err
-	}
-	c.conn = conn
-
-	c.wg.Add(1)
-	go c.reader()
-	err = c.authenticate(ctx)
-	if errors.Is(err, context.DeadlineExceeded) {
-		return ErrReadyTimeout
-	}
-	return err
 }
 
 func (c *Conn) dial(ctx context.Context) (net.Conn, error) {
@@ -241,6 +243,7 @@ func (c *Conn) reader() {
 		}
 		c.lastMessage = time.Now()
 
+		doEvent(c.events.OnRawMessage)(msg)
 		if !c.ready {
 			c.handleLogin(msg)
 			continue
@@ -248,9 +251,10 @@ func (c *Conn) reader() {
 		c.handleMessage(msg)
 	}
 	c.ready = false
+	doEvent(c.events.OnDisconnect)(c)
 }
 
-func (c *Conn) handleLogin(msg *Message) {
+func (c *Conn) handleLogin(msg *RawMessage) {
 	switch msg.Command {
 	case CMDReady:
 		c.ready = true
@@ -260,16 +264,34 @@ func (c *Conn) handleLogin(msg *Message) {
 	}
 }
 
-func (c *Conn) handleMessage(msg *Message) {
+func (c *Conn) handleMessage(msg *RawMessage) {
 	switch msg.Command {
 	case CMDPing:
 		_ = c.write("PONG :" + msg.Text)
 	case CMDPong:
 		c.pingC <- struct{}{}
 
+	case CMDNotice:
+		c.handleNotice(msg)
 	case CMDRoomState:
 		c.handleRoomState(msg)
 	case CMDUserState:
 		c.handleUserState(msg)
 	}
+}
+
+func (c *Conn) handleNotice(msg *RawMessage) {
+	if len(msg.Params) < 1 {
+		return
+	}
+
+	channelName := sanitizeUsername(msg.Params[0])
+	channel, ok := c.GetChannel(channelName)
+	if !ok {
+		c.channelsMx.Lock()
+		channel = &Channel{conn: c, name: channelName, ackC: make(chan error), acknowledged: true}
+		c.channels[channelName] = channel
+		c.channelsMx.Unlock()
+	}
+	channel.ack(fmt.Errorf("%w - %s", ErrJoinFailed, msg.Text))
 }

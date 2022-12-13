@@ -18,25 +18,23 @@ type Channel struct {
 	acknowledged          bool
 	followersOnlyDuration time.Duration
 	slowModeDuration      time.Duration
+	ackC                  chan error
 }
 
-func (c *Conn) handleRoomState(msg *Message) {
+func (c *Conn) handleRoomState(msg *RawMessage) {
 	if len(msg.Params) < 1 {
 		return
 	}
 
 	channelName := sanitizeUsername(msg.Params[0])
-	c.channelsMx.RLock()
-	channel, ok := c.channels[channelName]
-	c.channelsMx.RUnlock()
+	channel, ok := c.GetChannel(channelName)
 	if !ok {
 		c.channelsMx.Lock()
-		channel = &Channel{conn: c, name: channelName}
+		channel = &Channel{conn: c, name: channelName, ackC: make(chan error), acknowledged: true}
 		c.channels[channelName] = channel
 		c.channelsMx.Unlock()
 	}
 
-	channel.acknowledged = true
 	for key, val := range msg.Tags {
 		switch key {
 		case "room-id":
@@ -55,6 +53,7 @@ func (c *Conn) handleRoomState(msg *Message) {
 			channel.subOnly = val != "0"
 		}
 	}
+	channel.ack(nil)
 }
 
 // Username returns the username of the channel.
@@ -63,50 +62,38 @@ func (c Channel) Username() string {
 }
 
 // RoomID returns the room id of the channel.
-//
-// NOTE: This is only available after the join request has been acknowledged by the server.
 func (c Channel) RoomID() string {
 	return c.roomId
 }
 
 // IsR9KMode returns whether r9k mode is enabled.
-//
-// NOTE: This may be inaccurate until the join request has been acknowledged by the server.
 func (c Channel) IsR9KMode() bool {
 	return c.r9kMode
 }
 
 // IsSubOnly returns whether sub only mode is enabled.
-//
-// NOTE: This may be inaccurate until the join request has been acknowledged by the server.
 func (c Channel) IsSubOnly() bool {
 	return c.subOnly
 }
 
 // IsEmoteOnly returns whether emote only mode is enabled.
-//
-// NOTE: This may be inaccurate until the join request has been acknowledged by the server.
 func (c Channel) IsEmoteOnly() bool {
 	return c.emoteOnly
 }
 
 // IsFollowersOnly returns the duration of followers only mode and whether followers only mode is enabled.
-//
-// NOTE: This may be inaccurate until the join request has been acknowledged by the server.
 func (c Channel) IsFollowersOnly() (time.Duration, bool) {
 	return c.followersOnlyDuration, c.followersOnly
 }
 
 // IsSlowMode returns the duration of slow mode and whether slow mode is enabled.
-//
-// NOTE: This may be inaccurate until the join request has been acknowledged by the server.
 func (c Channel) IsSlowMode() (time.Duration, bool) {
 	return c.slowModeDuration, c.slowMode
 }
 
 // IsJoined returns true if the channel has been acknowledged by the server.
 func (c Channel) IsJoined() bool {
-	return c.acknowledged
+	return c.isAcked()
 }
 
 // Say sends a message to the channel.
@@ -117,4 +104,19 @@ func (c *Channel) Say(message string) error {
 // Sayf sends a formatted message to the channel.
 func (c *Channel) Sayf(format string, v ...interface{}) error {
 	return c.Say(fmt.Sprintf(format, v...))
+}
+
+func (c Channel) isAcked() bool {
+	return c.acknowledged
+}
+
+func (c *Channel) ack(err error) {
+	if !c.isAcked() {
+		c.acknowledged = true
+		c.ackC <- err
+	}
+}
+
+func (c *Channel) unack() {
+	c.acknowledged = false
 }

@@ -31,11 +31,11 @@ var (
 // In most cases this is handled for you and received in the form of an event.
 //
 // See: https://dev.twitch.tv/docs/irc/send-receive-messages#receiving-chat-messages
-func ParseMessage(raw string) (*Message, error) {
+func ParseMessage(raw string) (*RawMessage, error) {
 	var i int
 	parts := strings.Split(raw, " ")
 
-	msg := &Message{Raw: raw}
+	msg := &RawMessage{Raw: raw}
 	if strings.HasPrefix(raw, "@") {
 		tags, err := ParseTags(parts[i])
 		if err != nil {

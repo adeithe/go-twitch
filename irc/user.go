@@ -27,7 +27,7 @@ const (
 	UserTypeAdmin     UserType = "admin"
 )
 
-func (c *Conn) handleUserState(msg *Message) {
+func (c *Conn) handleUserState(msg *RawMessage) {
 	if len(msg.Params) < 1 {
 		return
 	}

@@ -30,11 +30,11 @@ func BenchmarkParseMessage(b *testing.B) {
 func TestParseMessage(t *testing.T) {
 	tests := []struct {
 		raw      string
-		expected *irc.Message
+		expected *irc.RawMessage
 	}{
 		{
 			":justinfan16432!justinfan16432@justinfan16432.tmi.twitch.tv JOIN",
-			&irc.Message{
+			&irc.RawMessage{
 				Source: irc.Source{
 					Username: "justinfan16432",
 					Nickname: "justinfan16432",
@@ -45,7 +45,7 @@ func TestParseMessage(t *testing.T) {
 		},
 		{
 			":justinfan16432!justinfan16432@justinfan16432.tmi.twitch.tv JOIN #jtv",
-			&irc.Message{
+			&irc.RawMessage{
 				Source: irc.Source{
 					Username: "justinfan16432",
 					Nickname: "justinfan16432",
@@ -57,7 +57,7 @@ func TestParseMessage(t *testing.T) {
 		},
 		{
 			"@badge-info=;badges=moments/1;client-nonce=4fb782293442bb3b0df16b4cb5eb21aa;color=#008000;display-name=justinfan16432;emotes=;first-msg=0;flags=;id=6198df9e-77af-4f4f-8d3c-d317802b7c0d;mod=0;returning-chatter=0;room-id=14027;subscriber=0;tmi-sent-ts=1656612693901;turbo=0;user-id=16933;user-type= :justinfan16432!justinfan16432@justinfan16432.tmi.twitch.tv PRIVMSG #jtv :Hello",
-			&irc.Message{
+			&irc.RawMessage{
 				Tags: irc.Tags{
 					"badge-info":        "",
 					"badges":            "moments/1",
@@ -90,7 +90,7 @@ func TestParseMessage(t *testing.T) {
 		{
 
 			"@badge-info=subscriber/2;badges=subscriber/2,no_audio/1;color=#FF0000;display-name=Justinfan16432;emotes=;flags=;id=e1e8d818-3837-4381-b427-c4005ee29ba9;login=justinfan16432;mod=0;msg-id=resub;msg-param-cumulative-months=2;msg-param-months=0;msg-param-multimonth-duration=0;msg-param-multimonth-tenure=0;msg-param-should-share-streak=0;msg-param-sub-plan-name=Channel\\sSubscription\\s(jtv);msg-param-sub-plan=1000;msg-param-was-gifted=false;room-id=14027;subscriber=1;system-msg=Justinfan16432\\ssubscribed\\sat\\sTier\\s1.\\sThey've\\ssubscribed\\sfor\\s2\\smonths!;tmi-sent-ts=1656640802512;user-id=14028;user-type= :tmi.twitch.tv USERNOTICE #jtv :This is a resub message",
-			&irc.Message{
+			&irc.RawMessage{
 				Tags: irc.Tags{
 					"badge-info":                    "subscriber/2",
 					"badges":                        "subscriber/2,no_audio/1",
