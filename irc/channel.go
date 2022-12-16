@@ -26,7 +26,7 @@ func (c *Conn) handleRoomState(msg *RawMessage) {
 		return
 	}
 
-	channelName := sanitizeUsername(msg.Params[0])
+	channelName := toUsername(msg.Params[0])
 	channel, ok := c.GetChannel(channelName)
 	if !ok {
 		c.channelsMx.Lock()
@@ -58,7 +58,7 @@ func (c *Conn) handleRoomState(msg *RawMessage) {
 
 // Username returns the username of the channel.
 func (c Channel) Username() string {
-	return sanitizeUsername(c.name)
+	return toUsername(c.name)
 }
 
 // RoomID returns the room id of the channel.

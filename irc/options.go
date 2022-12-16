@@ -11,6 +11,7 @@ type ConnOption func(*Conn) error
 
 var ErrInvalidField = errors.New("irc: invalid field")
 
+// WithAuth sets the username and token to use when connecting to chat.
 func WithAuth(username, token string) ConnOption {
 	return func(conn *Conn) error {
 		if strings.HasPrefix(strings.ToLower(token), "oauth:") {
@@ -29,6 +30,7 @@ func WithAuth(username, token string) ConnOption {
 	}
 }
 
+// WithAddress sets the host and port to use when connecting to chat.
 func WithAddress(host string, port uint16) ConnOption {
 	return func(conn *Conn) (err error) {
 		if host == "" {
@@ -42,6 +44,7 @@ func WithAddress(host string, port uint16) ConnOption {
 	}
 }
 
+// WithHostname sets the hostname to use when validating the TLS certificate.
 func WithHostname(hostname string) ConnOption {
 	return func(conn *Conn) error {
 		if hostname == "" {
@@ -52,13 +55,18 @@ func WithHostname(hostname string) ConnOption {
 	}
 }
 
+// WithoutTLS disables TLS when connecting to chat.
+//
+// WithoutTLS will also update the address used when connecting.
+// If you are using a proxy, you should call WithAddress after WithoutTLS in your options.
 func WithoutTLS() ConnOption {
 	return func(conn *Conn) error {
 		conn.tls = false
-		return nil
+		return WithAddress(DefaultHostname, 80)(conn)
 	}
 }
 
+// WithInsecure disables TLS certificate validation when connecting to chat.
 func WithInsecure() ConnOption {
 	return func(conn *Conn) error {
 		conn.insecure = true
@@ -66,6 +74,7 @@ func WithInsecure() ConnOption {
 	}
 }
 
+// WithBufferSize sets the buffer size to use when reading messages from chat.
 func WithBufferSize(bufferSize int) ConnOption {
 	return func(conn *Conn) error {
 		if bufferSize < 1 {

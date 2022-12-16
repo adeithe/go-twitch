@@ -46,6 +46,7 @@ var (
 	ErrJoinFailed   = errors.New("irc: failed to join channel")
 )
 
+// New creates a new connection instance with the specified options.
 func New(opts ...ConnOption) (*Conn, error) {
 	defaultOpts := []ConnOption{
 		WithAuth(fmt.Sprintf("justinfan%d", rand.Intn(99899)+100), "Kappa123"),
@@ -70,6 +71,7 @@ func New(opts ...ConnOption) (*Conn, error) {
 	return conn, nil
 }
 
+// Connect attempts to establish a connection to chat and returns an error if the connection failed.
 func (c *Conn) Connect(ctx context.Context) error {
 	c.connectionMx.Lock()
 	defer c.connectionMx.Unlock()
@@ -92,6 +94,7 @@ func (c *Conn) Connect(ctx context.Context) error {
 	return err
 }
 
+// IsConnected returns true if the connection is active.
 func (c *Conn) IsConnected() bool {
 	if c.conn == nil || !c.ready {
 		return false
@@ -99,6 +102,7 @@ func (c *Conn) IsConnected() bool {
 	return time.Since(c.lastMessage) < time.Minute*5
 }
 
+// GetChannel returns the channel instance for the specified channel name if joined.
 func (c *Conn) GetChannel(channelName string) (*Channel, bool) {
 	c.channelsMx.RLock()
 	defer c.channelsMx.RUnlock()
@@ -108,11 +112,8 @@ func (c *Conn) GetChannel(channelName string) (*Channel, bool) {
 
 // JoinChannel joins the specified channel and returns a channel instance.
 func (c *Conn) JoinChannel(channelName string) (*Channel, error) {
-	channelName = sanitizeUsername(channelName)
-
-	c.channelsMx.RLock()
-	channel, ok := c.channels[channelName]
-	c.channelsMx.RUnlock()
+	channelName = toUsername(channelName)
+	channel, ok := c.GetChannel(channelName)
 	if !ok {
 		c.channelsMx.Lock()
 		channel = &Channel{conn: c, name: channelName, ackC: make(chan error)}
@@ -127,8 +128,9 @@ func (c *Conn) JoinChannel(channelName string) (*Channel, error) {
 	return channel, <-channel.ackC
 }
 
+// PartChannel leaves the specified channel.
 func (c *Conn) PartChannel(channelName string) error {
-	channelName = sanitizeUsername(channelName)
+	channelName = toUsername(channelName)
 	if _, ok := c.GetChannel(channelName); !ok {
 		return nil
 	}
@@ -143,6 +145,7 @@ func (c *Conn) PartChannel(channelName string) error {
 	return nil
 }
 
+// Ping sends a ping to the server and returns the round-trip time if successful.
 func (c *Conn) Ping(ctx context.Context) (time.Duration, error) {
 	c.pingMx.Lock()
 	defer c.pingMx.Unlock()
@@ -160,6 +163,7 @@ func (c *Conn) Ping(ctx context.Context) (time.Duration, error) {
 	}
 }
 
+// SendRaw sends the specified raw IRC message to the server.
 func (c *Conn) SendRaw(lines ...string) error {
 	if !c.IsConnected() {
 		return ErrNotConnected
@@ -167,6 +171,7 @@ func (c *Conn) SendRaw(lines ...string) error {
 	return c.write(lines...)
 }
 
+// Close closes the connection.
 func (c *Conn) Close() error {
 	c.connectionMx.Lock()
 	defer c.connectionMx.Unlock()
@@ -285,7 +290,7 @@ func (c *Conn) handleNotice(msg *RawMessage) {
 		return
 	}
 
-	channelName := sanitizeUsername(msg.Params[0])
+	channelName := toUsername(msg.Params[0])
 	channel, ok := c.GetChannel(channelName)
 	if !ok {
 		c.channelsMx.Lock()

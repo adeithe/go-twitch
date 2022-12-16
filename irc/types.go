@@ -64,6 +64,6 @@ func (m RawMessage) String() string {
 	return m.Raw
 }
 
-func sanitizeUsername(username string) string {
-	return strings.TrimPrefix(strings.ToLower(username), "#")
+func toUsername(channel string) string {
+	return strings.TrimPrefix(strings.ToLower(channel), "#")
 }
