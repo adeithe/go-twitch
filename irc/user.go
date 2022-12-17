@@ -38,7 +38,7 @@ func (c *Conn) handleUserState(msg *RawMessage) {
 	c.channelsMx.RUnlock()
 	if !ok {
 		c.channelsMx.Lock()
-		channel = &Channel{conn: c, name: channelName}
+		channel = &Channel{conn: c, name: channelName, ackC: make(chan error), acknowledged: true}
 		c.channels[channelName] = channel
 		c.channelsMx.Unlock()
 	}

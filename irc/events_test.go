@@ -42,8 +42,7 @@ func TestIRC_Events_OnDisconnect(t *testing.T) {
 			assert.NoError(t, conn.Close())
 			select {
 			case <-ctx.Done():
-				t.Fail()
-				return
+				t.FailNow()
 			case <-ch:
 			}
 		}

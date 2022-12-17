@@ -50,7 +50,7 @@ var (
 func New(opts ...ConnOption) (*Conn, error) {
 	defaultOpts := []ConnOption{
 		WithAuth(fmt.Sprintf("justinfan%d", rand.Intn(99899)+100), "Kappa123"),
-		WithAddress(DefaultHostname, 6697),
+		WithAddress(DefaultHostname, 443),
 		WithHostname(DefaultHostname),
 		WithBufferSize(4096),
 	}
@@ -241,12 +241,12 @@ func (c *Conn) reader() {
 		if err != nil {
 			break
 		}
+		c.lastMessage = time.Now()
 
 		msg, err := ParseMessage(line)
 		if err != nil {
 			continue
 		}
-		c.lastMessage = time.Now()
 
 		doEvent(c.events.OnRawMessage)(msg)
 		if !c.ready {
@@ -265,6 +265,7 @@ func (c *Conn) handleLogin(msg *RawMessage) {
 		c.ready = true
 		c.readyC <- nil
 	case CMDNotice:
+		_ = c.conn.Close()
 		c.readyC <- fmt.Errorf("%w - %s", ErrLoginFailed, msg.Text)
 	}
 }
@@ -293,10 +294,8 @@ func (c *Conn) handleNotice(msg *RawMessage) {
 	channelName := toUsername(msg.Params[0])
 	channel, ok := c.GetChannel(channelName)
 	if !ok {
-		c.channelsMx.Lock()
-		channel = &Channel{conn: c, name: channelName, ackC: make(chan error), acknowledged: true}
-		c.channels[channelName] = channel
-		c.channelsMx.Unlock()
+		return
 	}
+
 	channel.ack(fmt.Errorf("%w - %s", ErrJoinFailed, msg.Text))
 }

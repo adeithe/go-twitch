@@ -93,7 +93,7 @@ func (c Channel) IsSlowMode() (time.Duration, bool) {
 
 // IsJoined returns true if the channel has been acknowledged by the server.
 func (c Channel) IsJoined() bool {
-	return c.isAcked()
+	return c.acknowledged
 }
 
 // Say sends a message to the channel.
@@ -106,12 +106,8 @@ func (c *Channel) Sayf(format string, v ...interface{}) error {
 	return c.Say(fmt.Sprintf(format, v...))
 }
 
-func (c Channel) isAcked() bool {
-	return c.acknowledged
-}
-
 func (c *Channel) ack(err error) {
-	if !c.isAcked() {
+	if !c.acknowledged {
 		c.acknowledged = true
 		c.ackC <- err
 	}
