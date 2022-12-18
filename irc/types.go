@@ -1,6 +1,22 @@
 package irc
 
-import "strings"
+import (
+	"strconv"
+	"strings"
+	"time"
+)
+
+type Notice struct {
+	MessageID    string
+	TargetUserID string
+	Channel      *Channel
+	raw          *RawMessage
+}
+
+type Badge struct {
+	Version  string
+	Metadata string
+}
 
 // Source the source of the incoming message.
 type Source struct {
@@ -64,6 +80,37 @@ func (m RawMessage) String() string {
 	return m.Raw
 }
 
+func (m Notice) String() string {
+	return m.raw.Text
+}
+
 func toUsername(channel string) string {
 	return strings.TrimPrefix(strings.ToLower(channel), "#")
+}
+
+func toBadges(msg *RawMessage) map[string]Badge {
+	badges := make(map[string]Badge)
+	for _, badge := range strings.Split(msg.Tags["badges"], ",") {
+		parts := strings.SplitN(badge, "/", 2)
+		if len(parts) > 1 {
+			badges[parts[0]] = Badge{Version: parts[1]}
+		}
+	}
+	for _, badge := range strings.Split(msg.Tags["badge-info"], ",") {
+		parts := strings.SplitN(badge, "/", 2)
+		if len(parts) > 1 {
+			if badge, ok := badges[parts[0]]; ok {
+				badge.Metadata = parts[1]
+			}
+		}
+	}
+	return badges
+}
+
+func toParsedTimestamp(ts string) time.Time {
+	i, err := strconv.ParseInt(ts, 10, 64)
+	if err != nil {
+		return time.Now()
+	}
+	return time.Unix(0, i*1e6)
 }

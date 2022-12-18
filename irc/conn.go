@@ -16,6 +16,7 @@ import (
 
 type Conn struct {
 	username, token string
+	userId          string
 
 	tls, insecure bool
 	hostname      string
@@ -276,18 +277,32 @@ func (c *Conn) handleMessage(msg *RawMessage) {
 		_ = c.write("PONG :" + msg.Text)
 	case CMDPong:
 		c.pingC <- struct{}{}
+	case CMDReconnect:
+		doEvent(c.events.OnReconnectRequest)(c)
 
+	case CMDGlobalUserState:
+		c.userId = msg.Tags["user-id"]
 	case CMDNotice:
 		c.handleNotice(msg)
 	case CMDRoomState:
 		c.handleRoomState(msg)
 	case CMDUserState:
 		c.handleUserState(msg)
+
+	case CMDPrivMessage:
+		c.handlePrivMessage(msg)
 	}
 }
 
 func (c *Conn) handleNotice(msg *RawMessage) {
-	if len(msg.Params) < 1 {
+	notice := &Notice{
+		MessageID:    msg.Tags["msg-id"],
+		TargetUserID: msg.Tags["target-user-id"],
+		raw:          msg,
+	}
+
+	if len(msg.Params) < 1 || msg.Params[0] == "*" {
+		doEvent(c.events.OnServerNotice)(notice)
 		return
 	}
 
@@ -296,6 +311,7 @@ func (c *Conn) handleNotice(msg *RawMessage) {
 	if !ok {
 		return
 	}
-
+	notice.Channel = channel
 	channel.ack(fmt.Errorf("%w - %s", ErrJoinFailed, msg.Text))
+	doEvent(c.events.OnChannelNotice)(notice)
 }

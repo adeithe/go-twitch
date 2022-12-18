@@ -16,6 +16,7 @@ type Channel struct {
 	followersOnly         bool
 	slowMode              bool
 	acknowledged          bool
+	joined                bool
 	followersOnlyDuration time.Duration
 	slowModeDuration      time.Duration
 	ackC                  chan error
@@ -53,7 +54,13 @@ func (c *Conn) handleRoomState(msg *RawMessage) {
 			channel.subOnly = val != "0"
 		}
 	}
+	channel.joined = true
 	channel.ack(nil)
+}
+
+// Conn returns the connection for the channel.
+func (c *Channel) Conn() *Conn {
+	return c.conn
 }
 
 // Username returns the username of the channel.
@@ -91,9 +98,9 @@ func (c Channel) IsSlowMode() (time.Duration, bool) {
 	return c.slowModeDuration, c.slowMode
 }
 
-// IsJoined returns true if the channel has been acknowledged by the server.
+// IsJoined returns true if the channel has been joined successfully.
 func (c Channel) IsJoined() bool {
-	return c.acknowledged
+	return c.acknowledged && c.joined
 }
 
 // Say sends a message to the channel.
@@ -110,9 +117,13 @@ func (c *Channel) ack(err error) {
 	if !c.acknowledged {
 		c.acknowledged = true
 		c.ackC <- err
+		if err == nil {
+			doEvent(c.conn.events.OnChannelJoined)(c)
+		}
 	}
 }
 
 func (c *Channel) unack() {
 	c.acknowledged = false
+	c.joined = false
 }
