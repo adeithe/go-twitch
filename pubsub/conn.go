@@ -172,7 +172,6 @@ func (conn *Conn) WriteMessageWithNonce(msgType MessageType, nonce string, data 
 		err = ErrNonceTimeout
 	}
 	conn.nonces.Lock()
-	close(nc)
 	delete(conn.pending, nonce)
 	conn.nonces.Unlock()
 	return err
@@ -187,7 +186,6 @@ func (conn *Conn) Close() {
 	case <-conn.done:
 	case <-timer.C:
 		conn.socket.Close()
-		close(conn.done)
 	}
 }
 
