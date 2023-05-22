@@ -30,7 +30,8 @@ type StreamsData struct {
 type Stream struct {
 	ID           string   `json:"id"`
 	UserID       string   `json:"user_id"`
-	Login        string   `json:"user_name"`
+	UserName     string   `json:"user_name"`
+	UserLogin    string   `json:"user_login"`
 	GameID       string   `json:"game_id"`
 	Title        string   `json:"title"`
 	ThumbnailURL string   `json:"thumbnail_url"`
