@@ -2,21 +2,13 @@ package twitch
 
 import (
 	"github.com/Adeithe/go-twitch/api"
-	"github.com/Adeithe/go-twitch/graphql"
 	"github.com/Adeithe/go-twitch/irc"
 	"github.com/Adeithe/go-twitch/pubsub"
 )
 
 // API provides tools for developing integrations with Twitch.
-func API(clientID string) *api.Client {
-	return api.New(clientID)
-}
-
-// GraphQL provides an interface with the Twitch GraphQL server.
-//
-// Deprecated: Will be removed in a future release.
-func GraphQL() *graphql.Client {
-	return graphql.New()
+func API(clientID string, opts ...api.ClientOption) *api.Client {
+	return api.New(clientID, opts...)
 }
 
 // IRC is the Twitch interface for chat functionality.
