@@ -29,3 +29,21 @@ func WithBearerToken(token string) RequestOption {
 		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 	}
 }
+
+// SetQueryParameter sets a query parameter on the request, replacing any existing value.
+func SetQueryParameter(key, value string) RequestOption {
+	return func(r *http.Request) {
+		q := r.URL.Query()
+		q.Set(key, value)
+		r.URL.RawQuery = q.Encode()
+	}
+}
+
+// AddQueryParameter adds a query parameter to the request without replacing any existing values.
+func AddQueryParameter(key, value string) RequestOption {
+	return func(r *http.Request) {
+		q := r.URL.Query()
+		q.Add(key, value)
+		r.URL.RawQuery = q.Encode()
+	}
+}
