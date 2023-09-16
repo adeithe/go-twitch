@@ -27,6 +27,11 @@ type AdsInsertRequest struct {
 	duration      int
 }
 
+type AdsInsertResponse struct {
+	Header http.Header
+	Data   []Commercial
+}
+
 // Insert creates a request to start a commercial for the specified broadcaster.
 //
 // Required Scope: channel:edit:commercial
@@ -46,7 +51,7 @@ func (c *AdsInsertRequest) Duration(seconds int) *AdsInsertRequest {
 //
 //	req := client.Ads.Insert("41245072").Duration(60)
 //	data, err := req.Do(ctx, api.WithBearerToken("2gbdx6oar67tqtcmt49t3wpcgycthx")
-func (c *AdsInsertRequest) Do(ctx context.Context, opts ...RequestOption) ([]Commercial, error) {
+func (c *AdsInsertRequest) Do(ctx context.Context, opts ...RequestOption) (*AdsInsertResponse, error) {
 	bs, err := json.Marshal(map[string]interface{}{
 		"broadcaster_id": c.broadcasterID,
 		"length":         c.duration,
@@ -65,5 +70,9 @@ func (c *AdsInsertRequest) Do(ctx context.Context, opts ...RequestOption) ([]Com
 	if err != nil {
 		return nil, err
 	}
-	return data.Data, nil
+
+	return &AdsInsertResponse{
+		Header: res.Header,
+		Data:   data.Data,
+	}, nil
 }

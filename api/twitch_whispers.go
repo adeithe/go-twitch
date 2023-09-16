@@ -4,9 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
-	"net/url"
 )
 
 type WhispersResource struct {
@@ -17,28 +15,16 @@ func NewWhispersResource(client *Client) *WhispersResource {
 	return &WhispersResource{client}
 }
 
-type SendWhisperRequest struct {
-	resource   *WhispersResource
-	fromUserId string
-	toUserId   string
-	message    string
+type WhispersInsertCall struct {
+	resource *WhispersResource
+	opts     []RequestOption
+	message  string
 }
 
-func (r *WhispersResource) SendWhisper(senderId, recipientId string) *SendWhisperRequest {
-	return &SendWhisperRequest{r, senderId, recipientId, ""}
-}
-
-// SenderID sets the sender ID for the request.
-//
-// This ID must match the user ID in the user access token and the account must have a verified phone number.
-func (c *SendWhisperRequest) SenderID(senderId string) *SendWhisperRequest {
-	c.fromUserId = senderId
-	return c
-}
-
-// RecipientID the ID of the user to receive the whisper.
-func (c *SendWhisperRequest) RecipientID(recipientId string) *SendWhisperRequest {
-	c.toUserId = recipientId
+func (r *WhispersResource) Insert(senderId, recipientId string) *WhispersInsertCall {
+	c := &WhispersInsertCall{resource: r}
+	c.opts = append(c.opts, SetQueryParameter("from_user_id", senderId))
+	c.opts = append(c.opts, SetQueryParameter("to_user_id", recipientId))
 	return c
 }
 
@@ -49,7 +35,7 @@ func (c *SendWhisperRequest) RecipientID(recipientId string) *SendWhisperRequest
 //   - 10,000 characters if the user you're sending the message to has whispered you before.
 //
 // Messages that exceed the maximum length are truncated.
-func (c *SendWhisperRequest) Message(message string) *SendWhisperRequest {
+func (c *WhispersInsertCall) Message(message string) *WhispersInsertCall {
 	c.message = message
 	return c
 }
@@ -58,20 +44,18 @@ func (c *SendWhisperRequest) Message(message string) *SendWhisperRequest {
 //
 //	req := client.Whispers.SendWhisper("123", "456").Message("Hello")
 //	data, err := req.Do(ctx, api.WithBearerToken("kpvy3cjboyptmdkiacwr0c19hotn5s")
-func (c *SendWhisperRequest) Do(ctx context.Context, opts ...RequestOption) error {
+func (c *WhispersInsertCall) Do(ctx context.Context, opts ...RequestOption) error {
 	bs, err := json.Marshal(map[string]any{"message": c.message})
 	if err != nil {
 		return err
 	}
 
-	query := url.Values{}
-	query.Set("from_user_id", c.fromUserId)
-	query.Set("to_user_id", c.toUserId)
-	res, err := c.resource.client.doRequest(ctx, http.MethodPost, fmt.Sprintf("/whispers?%s", query.Encode()), bytes.NewReader(bs), opts...)
+	res, err := c.resource.client.doRequest(ctx, http.MethodPost, "/whispers", bytes.NewReader(bs), opts...)
 	if err != nil {
 		return err
 	}
 	defer res.Body.Close()
+
 	_, err = decodeResponse[any](res)
 	return err
 }

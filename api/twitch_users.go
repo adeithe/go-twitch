@@ -32,6 +32,11 @@ type UsersListCall struct {
 	opts     []RequestOption
 }
 
+type UsersListResponse struct {
+	Header http.Header
+	Data   []User
+}
+
 // List creates a request to list users based on the specified criteria.
 //
 // The email field will be empty unless the access token has the user:read:email scope.
@@ -56,7 +61,7 @@ func (c *UsersListCall) Login(logins ...string) *UsersListCall {
 }
 
 // Do executes the request.
-func (c *UsersListCall) Do(ctx context.Context, opts ...RequestOption) ([]User, error) {
+func (c *UsersListCall) Do(ctx context.Context, opts ...RequestOption) (*UsersListResponse, error) {
 	res, err := c.resource.client.doRequest(ctx, http.MethodGet, "/users", nil, append(opts, c.opts...)...)
 	if err != nil {
 		return nil, err
@@ -67,5 +72,9 @@ func (c *UsersListCall) Do(ctx context.Context, opts ...RequestOption) ([]User, 
 	if err != nil {
 		return nil, err
 	}
-	return data.Data, nil
+
+	return &UsersListResponse{
+		Header: res.Header,
+		Data:   data.Data,
+	}, nil
 }

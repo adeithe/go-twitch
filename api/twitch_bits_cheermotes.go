@@ -37,6 +37,11 @@ type CheermotesListCall struct {
 	opts     []RequestOption
 }
 
+type CheermotesListResponse struct {
+	Header http.Header
+	Data   []Cheermote
+}
+
 // List creates a request to list cheermotes based on the specified criteria.
 //
 // Requires an app or user access token. No scope is required.
@@ -51,7 +56,7 @@ func (c *CheermotesListCall) BroadcasterID(id string) *CheermotesListCall {
 }
 
 // BroadcasterName filters the results to the specified broadcaster name.
-func (c *CheermotesListCall) Do(ctx context.Context, opts ...RequestOption) ([]Cheermote, error) {
+func (c *CheermotesListCall) Do(ctx context.Context, opts ...RequestOption) (*CheermotesListResponse, error) {
 	res, err := c.resource.client.doRequest(ctx, http.MethodGet, "/bits/cheermotes", nil, append(opts, c.opts...)...)
 	if err != nil {
 		return nil, err
@@ -62,5 +67,9 @@ func (c *CheermotesListCall) Do(ctx context.Context, opts ...RequestOption) ([]C
 	if err != nil {
 		return nil, err
 	}
-	return data.Data, nil
+
+	return &CheermotesListResponse{
+		Header: res.Header,
+		Data:   data.Data,
+	}, nil
 }

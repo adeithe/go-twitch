@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/url"
 	"strings"
 )
 
@@ -103,11 +102,6 @@ func (c *Client) doRequest(ctx context.Context, method, path string, body io.Rea
 	for _, opt := range opts {
 		opt(req)
 	}
-	return c.httpClient.Do(req)
-}
 
-func addValues(values *url.Values, key string, vals ...string) {
-	for _, val := range vals {
-		values.Add(key, val)
-	}
+	return c.httpClient.Do(req)
 }

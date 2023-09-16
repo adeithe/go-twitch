@@ -38,6 +38,7 @@ type StreamsListCall struct {
 }
 
 type StreamsListResponse struct {
+	Header http.Header
 	Data   []Stream
 	Cursor string
 }
@@ -123,6 +124,7 @@ func (c *StreamsListCall) Do(ctx context.Context, opts ...RequestOption) (*Strea
 	}
 
 	return &StreamsListResponse{
+		Header: res.Header,
 		Data:   data.Data,
 		Cursor: data.Pagination.Cursor,
 	}, nil

@@ -30,7 +30,7 @@ func WithBearerToken(token string) RequestOption {
 	}
 }
 
-// SetQueryParameter sets a query parameter on the request, replacing any existing value.
+// SetQueryParameter sets a query parameter on the request, replacing any existing values.
 func SetQueryParameter(key, value string) RequestOption {
 	return func(r *http.Request) {
 		q := r.URL.Query()

@@ -20,6 +20,7 @@ type TopGamesListCall struct {
 }
 
 type TopGamesListResponse struct {
+	Header http.Header
 	Data   []Game
 	Cursor string
 }
@@ -63,6 +64,7 @@ func (c *TopGamesListCall) Do(ctx context.Context, opts ...RequestOption) (*TopG
 	}
 
 	return &TopGamesListResponse{
+		Header: res.Header,
 		Data:   data.Data,
 		Cursor: data.Pagination.Cursor,
 	}, nil

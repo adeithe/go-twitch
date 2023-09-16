@@ -31,6 +31,11 @@ type ChannelsListCall struct {
 	opts     []RequestOption
 }
 
+type ChannelsListResponse struct {
+	Header http.Header
+	Data   []Channel
+}
+
 // List creates a request to list channels based on the specified criteria.
 func (r *ChannelsResource) List() *ChannelsListCall {
 	return &ChannelsListCall{resource: r}
@@ -45,7 +50,7 @@ func (c *ChannelsListCall) BroadcasterID(ids ...string) *ChannelsListCall {
 }
 
 // Do executes the request.
-func (c *ChannelsListCall) Do(ctx context.Context, opts ...RequestOption) ([]Channel, error) {
+func (c *ChannelsListCall) Do(ctx context.Context, opts ...RequestOption) (*ChannelsListResponse, error) {
 	res, err := c.resource.client.doRequest(ctx, http.MethodGet, "/channels", nil, append(opts, c.opts...)...)
 	if err != nil {
 		return nil, err
@@ -56,5 +61,9 @@ func (c *ChannelsListCall) Do(ctx context.Context, opts ...RequestOption) ([]Cha
 	if err != nil {
 		return nil, err
 	}
-	return data.Data, nil
+
+	return &ChannelsListResponse{
+		Header: res.Header,
+		Data:   data.Data,
+	}, nil
 }
