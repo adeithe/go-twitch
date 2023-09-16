@@ -21,40 +21,32 @@ func NewAdsResource(client *Client) *AdsResource {
 	return &AdsResource{client}
 }
 
-type StartCommercialRequest struct {
+type AdsInsertRequest struct {
 	resource      *AdsResource
 	broadcasterID string
 	duration      int
 }
 
-// StartCommercial creates a request to start a commercial for the specified broadcaster.
+// Insert creates a request to start a commercial for the specified broadcaster.
 //
 // Required Scope: channel:edit:commercial
-func (r *AdsResource) StartCommercial(broadcasterId string) *StartCommercialRequest {
-	return &StartCommercialRequest{r, broadcasterId, 60}
-}
-
-// BroadcasterID sets the broadcaster ID for the request.
-//
-// This ID must match the user ID found in the OAuth token.
-func (c *StartCommercialRequest) BroadcasterID(broadcasterId string) *StartCommercialRequest {
-	c.broadcasterID = broadcasterId
-	return c
+func (r *AdsResource) Insert(broadcasterId string) *AdsInsertRequest {
+	return &AdsInsertRequest{r, broadcasterId, 60}
 }
 
 // Duration sets the duration of the commercial in seconds.
 //
 // Twitch tries to serve a commercial that’s the requested length, but it may be shorter or longer. The maximum length you should request is 180 seconds.
-func (c *StartCommercialRequest) Duration(seconds int) *StartCommercialRequest {
+func (c *AdsInsertRequest) Duration(seconds int) *AdsInsertRequest {
 	c.duration = seconds
 	return c
 }
 
 // Do executes the request.
 //
-//	req := client.Ads.StartCommercial("41245072").Duration(60)
+//	req := client.Ads.Insert("41245072").Duration(60)
 //	data, err := req.Do(ctx, api.WithBearerToken("2gbdx6oar67tqtcmt49t3wpcgycthx")
-func (c *StartCommercialRequest) Do(ctx context.Context, opts ...RequestOption) ([]Commercial, error) {
+func (c *AdsInsertRequest) Do(ctx context.Context, opts ...RequestOption) ([]Commercial, error) {
 	bs, err := json.Marshal(map[string]interface{}{
 		"broadcaster_id": c.broadcasterID,
 		"length":         c.duration,
