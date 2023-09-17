@@ -84,7 +84,7 @@ func (r *CustomRewardsResource) List(broadcasterId string) *CustomRewardsListCal
 }
 
 // ID filters the results to the specified reward IDs.
-func (c *CustomRewardsListCall) ID(ids ...string) *CustomRewardsListCall {
+func (c *CustomRewardsListCall) ID(ids []string) *CustomRewardsListCall {
 	for _, id := range ids {
 		c.opts = append(c.opts, SetQueryParameter("id", id))
 	}
@@ -400,7 +400,7 @@ func (c *CustomRewardsRedemptionListCall) Status(status string) *CustomRewardsRe
 }
 
 // ID filters the results to the specified reward redemption IDs.
-func (c *CustomRewardsRedemptionListCall) ID(ids ...string) *CustomRewardsRedemptionListCall {
+func (c *CustomRewardsRedemptionListCall) ID(ids []string) *CustomRewardsRedemptionListCall {
 	for _, id := range ids {
 		c.opts = append(c.opts, AddQueryParameter("id", id))
 	}

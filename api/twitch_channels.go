@@ -42,7 +42,7 @@ func (r *ChannelsResource) List() *ChannelsListCall {
 }
 
 // BroadcasterID filters the results to the specified broadcaster ID.
-func (c *ChannelsListCall) BroadcasterID(ids ...string) *ChannelsListCall {
+func (c *ChannelsListCall) BroadcasterID(ids []string) *ChannelsListCall {
 	for _, id := range ids {
 		c.opts = append(c.opts, AddQueryParameter("broadcaster_id", id))
 	}

@@ -51,7 +51,7 @@ func (r *StreamsResource) List() *StreamsListCall {
 }
 
 // UserID filters the results to the specified user IDs.
-func (c *StreamsListCall) UserID(ids ...string) *StreamsListCall {
+func (c *StreamsListCall) UserID(ids []string) *StreamsListCall {
 	for _, id := range ids {
 		c.opts = append(c.opts, AddQueryParameter("user_id", id))
 	}
@@ -59,7 +59,7 @@ func (c *StreamsListCall) UserID(ids ...string) *StreamsListCall {
 }
 
 // Username filters the results to the specified usernames.
-func (c *StreamsListCall) Username(usernames ...string) *StreamsListCall {
+func (c *StreamsListCall) Username(usernames []string) *StreamsListCall {
 	for _, username := range usernames {
 		c.opts = append(c.opts, AddQueryParameter("user_login", username))
 	}
@@ -67,7 +67,7 @@ func (c *StreamsListCall) Username(usernames ...string) *StreamsListCall {
 }
 
 // GameID filters the results to the specified game IDs.
-func (c *StreamsListCall) GameID(ids ...string) *StreamsListCall {
+func (c *StreamsListCall) GameID(ids []string) *StreamsListCall {
 	for _, id := range ids {
 		c.opts = append(c.opts, AddQueryParameter("game_id", id))
 	}
@@ -83,7 +83,7 @@ func (c *StreamsListCall) Type(t string) *StreamsListCall {
 }
 
 // Language filters the results to the specified languages.
-func (c *StreamsListCall) Languages(languages ...string) *StreamsListCall {
+func (c *StreamsListCall) Languages(languages []string) *StreamsListCall {
 	for _, language := range languages {
 		c.opts = append(c.opts, AddQueryParameter("language", language))
 	}

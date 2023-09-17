@@ -45,7 +45,7 @@ func (r *UsersResource) List() *UsersListCall {
 }
 
 // ID filters the results to the specified user IDs.
-func (c *UsersListCall) ID(ids ...string) *UsersListCall {
+func (c *UsersListCall) ID(ids []string) *UsersListCall {
 	for _, id := range ids {
 		c.opts = append(c.opts, AddQueryParameter("id", id))
 	}
@@ -53,7 +53,7 @@ func (c *UsersListCall) ID(ids ...string) *UsersListCall {
 }
 
 // Login filters the results to the specified usernames.
-func (c *UsersListCall) Login(logins ...string) *UsersListCall {
+func (c *UsersListCall) Login(logins []string) *UsersListCall {
 	for _, login := range logins {
 		c.opts = append(c.opts, AddQueryParameter("login", login))
 	}
