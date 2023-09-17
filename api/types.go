@@ -11,8 +11,8 @@ type HTTPClient interface {
 }
 
 type ResponseData[T any] struct {
-	Total  *int `json:"total,omitempty"`  // Only present in some endpoints.
-	Points *int `json:"points,omitempty"` // Only present in some endpoints.
+	Total  int `json:"total,omitempty"`  // Only present in some endpoints.
+	Points int `json:"points,omitempty"` // Only present in some endpoints.
 
 	Data       []T        `json:"data"`
 	Pagination Pagination `json:"pagination,omitempty"`
