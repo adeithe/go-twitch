@@ -35,7 +35,6 @@ type Client struct {
 	Raids         *RaidsResource
 	Schedule      *ScheduleResource
 	Search        *SearchResource
-	Music         *MusicResource
 	Streams       *StreamsResource
 	Subscriptions *SubscriptionsResource
 	Tags          *TagsResource
@@ -79,7 +78,6 @@ func New(clientID string, opts ...ClientOption) *Client {
 	client.Raids = NewRaidsResource(client)
 	client.Schedule = NewScheduleResource(client)
 	client.Search = NewSearchResource(client)
-	client.Music = NewMusicResource(client)
 	client.Streams = NewStreamsResource(client)
 	client.Subscriptions = NewSubscriptionsResource(client)
 	client.Tags = NewTagsResource(client)
