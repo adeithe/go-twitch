@@ -142,6 +142,7 @@ func (client *Client) Join(channels ...string) error {
 // Leave attempts to leave a channel
 func (client *Client) Leave(channels ...string) error {
 	client.mx.Lock()
+	defer client.mx.Unlock()
 	for _, shard := range client.shards {
 		for _, channel := range channels {
 			if _, ok := shard.GetChannel(channel); ok {
@@ -151,7 +152,6 @@ func (client *Client) Leave(channels ...string) error {
 			}
 		}
 	}
-	client.mx.Unlock()
 	return nil
 }
 
