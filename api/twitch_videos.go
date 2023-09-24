@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
@@ -21,10 +22,12 @@ type Video struct {
 	ViewCount       int           `json:"view_count"`
 	Language        string        `json:"language"`
 	Type            string        `json:"type"`
-	Duration        time.Duration `json:"duration"`
+	Duration        VideoDuration `json:"duration"`
 	PublishedAt     time.Time     `json:"published_at"`
 	CreatedAt       time.Time     `json:"created_at"`
 }
+
+type VideoDuration time.Duration
 
 type VideosResource struct {
 	client *Client
@@ -173,4 +176,22 @@ func (c *VideosDeleteCall) Do(ctx context.Context, opts ...RequestOption) (*Vide
 		Header: res.Header,
 		Data:   data.Data,
 	}, nil
+}
+
+func (d *VideoDuration) UnmarshalJSON(data []byte) error {
+	var str string
+	if err := json.Unmarshal(data, &str); err != nil {
+		return err
+	}
+
+	parsed, err := time.ParseDuration(str)
+	if err != nil {
+		return err
+	}
+	*d = VideoDuration(parsed)
+	return nil
+}
+
+func (d VideoDuration) AsDuration() time.Duration {
+	return time.Duration(d)
 }
