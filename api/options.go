@@ -14,6 +14,17 @@ func WithClientSecret(secret string) ClientOption {
 	}
 }
 
+// WithDefaultBearerToken sets the bearer token to use for API requests.
+//
+// This can be considered dangerous as if a token is not provided per request, this will become the default token.
+// Some developers may prefer to default to the App Access Token using this method. However, it is recommended to still
+// use the WithBearerToken option for requests that require a token as this method always will fail if the App Access Token has expired.
+func WithDefaultBearerToken(token string) ClientOption {
+	return func(c *Client) {
+		c.bearerToken = token
+	}
+}
+
 // WithHTTPClient sets the HTTP client to use for API requests.
 func WithHTTPClient(client HTTPClient) ClientOption {
 	return func(c *Client) {

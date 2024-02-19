@@ -101,5 +101,11 @@ func (c *Client) doRequest(ctx context.Context, method, path string, body io.Rea
 		opt(req)
 	}
 
+	if c.bearerToken != "" {
+		if req.Header.Get("Authorization") == "" {
+			req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.bearerToken))
+		}
+	}
+
 	return c.httpClient.Do(req)
 }
