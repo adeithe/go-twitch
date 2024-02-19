@@ -14,11 +14,14 @@ type Commercial struct {
 }
 
 type AdsResource struct {
-	client *Client
+	client   *Client
+	Schedule *AdsScheduleResource
 }
 
 func NewAdsResource(client *Client) *AdsResource {
-	return &AdsResource{client}
+	r := &AdsResource{client: client}
+	r.Schedule = NewAdsScheduleResource(client)
+	return r
 }
 
 type AdsInsertRequest struct {
