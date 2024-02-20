@@ -15,8 +15,8 @@ func NewAdsSnoozeResource(client *Client) *AdsSnoozeResource {
 }
 
 type AdsSnoozeRequest struct {
-	resource *AdsSnoozeResource
-	opts     []RequestOption
+	client *Client
+	opts   []RequestOption
 }
 
 type AdsSnoozeResponse struct {
@@ -32,7 +32,7 @@ type AdSnooze struct {
 
 func (r *AdsSnoozeResource) Insert(broadcasterId string) *AdsSnoozeRequest {
 	return &AdsSnoozeRequest{
-		resource: r,
+		client: r.client,
 		opts: []RequestOption{
 			AddQueryParameter("broadcaster_id", broadcasterId),
 		},
@@ -40,8 +40,8 @@ func (r *AdsSnoozeResource) Insert(broadcasterId string) *AdsSnoozeRequest {
 }
 
 // Do executes the request.
-func (c *AdsSnoozeRequest) Do(ctx context.Context, opts ...RequestOption) (*AdsSnoozeResponse, error) {
-	res, err := c.resource.client.doRequest(ctx, http.MethodPost, "/channels/ads/schedule/snooze", nil, opts...)
+func (r *AdsSnoozeRequest) Do(ctx context.Context, opts ...RequestOption) (*AdsSnoozeResponse, error) {
+	res, err := r.client.doRequest(ctx, http.MethodPost, "/channels/ads/schedule/snooze", nil, append(r.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}

@@ -15,8 +15,8 @@ func NewAdsScheduleResource(client *Client) *AdsScheduleResource {
 }
 
 type AdsScheduleListRequest struct {
-	resource *AdsScheduleResource
-	opts     []RequestOption
+	client *Client
+	opts   []RequestOption
 }
 
 type AdsScheduleListResponse struct {
@@ -35,7 +35,7 @@ type AdSchedule struct {
 
 func (r *AdsScheduleResource) List(broadcasterId string) *AdsScheduleListRequest {
 	return &AdsScheduleListRequest{
-		resource: r,
+		client: r.client,
 		opts: []RequestOption{
 			AddQueryParameter("broadcaster_id", broadcasterId),
 		},
@@ -43,8 +43,8 @@ func (r *AdsScheduleResource) List(broadcasterId string) *AdsScheduleListRequest
 }
 
 // Do executes the request.
-func (c *AdsScheduleListRequest) Do(ctx context.Context, opts ...RequestOption) (*AdsScheduleListResponse, error) {
-	res, err := c.resource.client.doRequest(ctx, http.MethodGet, "/channels/ads", nil, opts...)
+func (r *AdsScheduleListRequest) Do(ctx context.Context, opts ...RequestOption) (*AdsScheduleListResponse, error) {
+	res, err := r.client.doRequest(ctx, http.MethodGet, "/channels/ads", nil, append(r.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}
