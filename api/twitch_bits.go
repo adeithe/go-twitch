@@ -36,14 +36,16 @@ type BitsLeaderboardEntry struct {
 type BitsResource struct {
 	client *Client
 
-	Cheermotes  *CheermotesResource
-	Leaderboard *BitsLeaderboardResource
+	Cheermotes            *CheermotesResource
+	Leaderboard           *BitsLeaderboardResource
+	ExtensionTransactions *BitsExtensionTransactionsResource
 }
 
 func NewBitsResource(client *Client) *BitsResource {
 	r := &BitsResource{client: client}
 	r.Cheermotes = NewCheermotesResource(client)
 	r.Leaderboard = NewBitsLeaderboardResource(client)
+	r.ExtensionTransactions = NewBitsExtensionTransactionsResource(client)
 	return r
 }
 
@@ -169,5 +171,96 @@ func (c *BitsLeaderboardListCall) Do(ctx context.Context, opts ...RequestOption)
 		Header: res.Header,
 		Total:  data.Total,
 		Data:   data.Data,
+	}, nil
+}
+
+type BitsExtensionTransactionsResource struct {
+	client *Client
+}
+
+func NewBitsExtensionTransactionsResource(client *Client) *BitsExtensionTransactionsResource {
+	return &BitsExtensionTransactionsResource{client}
+}
+
+type BitsTransactionsListCall struct {
+	client *Client
+	opts   []RequestOption
+}
+
+type BitsTransactionsListResponse struct {
+	Header     http.Header
+	Data       []ExtensionTransaction
+	Pagination Pagination
+}
+
+type ExtensionTransaction struct {
+	ID               string           `json:"id"`
+	BroadcasterID    string           `json:"broadcaster_id"`
+	BroadcasterLogin string           `json:"broadcaster_login"`
+	BroadcasterName  string           `json:"broadcaster_name"`
+	UserID           string           `json:"user_id"`
+	UserLogin        string           `json:"user_login"`
+	UserName         string           `json:"user_name"`
+	ProductType      string           `json:"product_type"`
+	Product          ExtensionProduct `json:"product_data"`
+	Timestamp        time.Time        `json:"timestamp"`
+}
+
+type ExtensionProduct struct {
+	Sku           string               `json:"sku"`
+	Domain        string               `json:"domain"`
+	Cost          ExtensionProductCost `json:"cost"`
+	InDevelopment bool                 `json:"inDevelopment"`
+	DisplayName   string               `json:"displayName"`
+	Broadcast     bool                 `json:"broadcast"`
+}
+
+type ExtensionProductCost struct {
+	Amount int    `json:"amount"`
+	Type   string `json:"type"`
+}
+
+func (r *BitsExtensionTransactionsResource) List(extensionId string) *BitsTransactionsListCall {
+	return &BitsTransactionsListCall{
+		client: r.client,
+		opts: []RequestOption{
+			SetQueryParameter("extension_id", extensionId),
+		},
+	}
+}
+
+func (c *BitsTransactionsListCall) TransactionID(ids ...string) *BitsTransactionsListCall {
+	for _, id := range ids {
+		c.opts = append(c.opts, AddQueryParameter("id", id))
+	}
+	return c
+}
+
+func (c *BitsTransactionsListCall) First(n int) *BitsTransactionsListCall {
+	c.opts = append(c.opts, SetQueryParameter("first", fmt.Sprint(n)))
+	return c
+}
+
+func (c *BitsTransactionsListCall) After(cursor string) *BitsTransactionsListCall {
+	c.opts = append(c.opts, SetQueryParameter("after", cursor))
+	return c
+}
+
+func (c *BitsTransactionsListCall) Do(ctx context.Context, opts ...RequestOption) (*BitsTransactionsListResponse, error) {
+	res, err := c.client.doRequest(ctx, http.MethodGet, "/extensions/transactions", nil, append(opts, c.opts...)...)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+
+	data, err := decodeResponse[ExtensionTransaction](res)
+	if err != nil {
+		return nil, err
+	}
+
+	return &BitsTransactionsListResponse{
+		Header:     res.Header,
+		Data:       data.Data,
+		Pagination: data.Pagination,
 	}, nil
 }
