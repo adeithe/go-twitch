@@ -133,7 +133,10 @@ func (c *ConduitShardUpdateCall) Shard(shardID string, transport Transport) *Con
 
 // Do executes the request.
 func (c *ConduitShardUpdateCall) Do(ctx context.Context, opts ...RequestOption) (*ConduitShardsResponse, error) {
-	bs, err := json.Marshal(c.shards)
+	bs, err := json.Marshal(map[string]any{
+		"conduit_id": c.conduitID,
+		"shards":     c.shards,
+	})
 	if err != nil {
 		return nil, err
 	}
