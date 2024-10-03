@@ -22,6 +22,7 @@ type Client struct {
 	Charity       *CharityResource
 	Chat          *ChatResource
 	Clips         *ClipsResource
+	Conduits      *ConduitsResource
 	Entitlements  *EntitlementsResource
 	Extensions    *ExtensionsResource
 	EventSub      *EventSubResource
@@ -44,6 +45,7 @@ type Client struct {
 	Whispers      *WhispersResource
 }
 
+// BaseURL is the base URL for the Twitch API.
 const BaseURL = "https://api.twitch.tv/helix"
 
 // New creates a new API client for Twitch.
@@ -65,6 +67,7 @@ func New(clientID string, opts ...ClientOption) *Client {
 	client.Charity = NewCharityResource(client)
 	client.Chat = NewChatResource(client)
 	client.Clips = NewClipsResource(client)
+	client.Conduits = NewConduitsResource(client)
 	client.Entitlements = NewEntitlementsResource(client)
 	client.Extensions = NewExtensionsResource(client)
 	client.EventSub = NewEventSubResource(client)

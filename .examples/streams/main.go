@@ -5,7 +5,7 @@ import (
 	"flag"
 	"fmt"
 
-	"github.com/Adeithe/go-twitch/api"
+	"github.com/adeithe/go-twitch/api"
 )
 
 var (

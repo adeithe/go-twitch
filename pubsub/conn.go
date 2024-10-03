@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Adeithe/go-twitch/pubsub/nonce"
+	"github.com/adeithe/go-twitch/pubsub/nonce"
 	"github.com/gorilla/websocket"
 )
 
