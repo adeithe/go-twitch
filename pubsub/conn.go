@@ -1,3 +1,4 @@
+// Package pubsub provides a client for the Twitch PubSub service.
 package pubsub
 
 import (
@@ -179,13 +180,13 @@ func (conn *Conn) WriteMessageWithNonce(msgType MessageType, nonce string, data 
 
 // Close the connection to the PubSub server
 func (conn *Conn) Close() {
-	conn.Write(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
+	_ = conn.Write(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
 	timer := time.NewTimer(time.Second)
 	defer timer.Stop()
 	select {
 	case <-conn.done:
 	case <-timer.C:
-		conn.socket.Close()
+		_ = conn.socket.Close()
 	}
 }
 
@@ -378,13 +379,13 @@ func (conn *Conn) reader() {
 		case Pong:
 			close(conn.ping)
 		case Reconnect:
-			conn.Reconnect()
+			_ = conn.Reconnect()
 			return
 		default:
 			fmt.Println(strings.TrimSpace(string(bytes)))
 		}
 	}
-	conn.socket.Close()
+	_ = conn.socket.Close()
 	conn.isConnected = false
 	close(conn.done)
 	for _, f := range conn.onDisconnect {
@@ -402,7 +403,7 @@ func (conn *Conn) ticker() {
 			return
 		case <-timer.C:
 			timer.Reset(interval)
-			conn.Ping()
+			_, _ = conn.Ping()
 		}
 	}
 }

@@ -77,9 +77,9 @@ type CustomRewardsListResponse struct {
 }
 
 // List creates a reqyest to list custom channel point rewards for a given broadcaster.
-func (r *CustomRewardsResource) List(broadcasterId string) *CustomRewardsListCall {
+func (r *CustomRewardsResource) List(broadcasterID string) *CustomRewardsListCall {
 	c := &CustomRewardsListCall{resource: r}
-	c.opts = append(c.opts, SetQueryParameter("broadcaster_id", broadcasterId))
+	c.opts = append(c.opts, SetQueryParameter("broadcaster_id", broadcasterID))
 	return c
 }
 
@@ -103,7 +103,7 @@ func (c *CustomRewardsListCall) Do(ctx context.Context, opts ...RequestOption) (
 	if err != nil {
 		return nil, err
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 
 	data, err := decodeResponse[CustomReward](res)
 	if err != nil {
@@ -127,9 +127,9 @@ type CustomRewardsInsertResponse struct {
 	Data   []CustomReward
 }
 
-func (r *CustomRewardsResource) Insert(broadcasterId string) *CustomRewardsInsertCall {
+func (r *CustomRewardsResource) Insert(broadcasterID string) *CustomRewardsInsertCall {
 	c := &CustomRewardsInsertCall{resource: r, body: make(map[string]interface{})}
-	c.opts = append(c.opts, SetQueryParameter("broadcaster_id", broadcasterId))
+	c.opts = append(c.opts, SetQueryParameter("broadcaster_id", broadcasterID))
 	return c
 }
 
@@ -214,7 +214,7 @@ func (c *CustomRewardsInsertCall) Do(ctx context.Context, opts ...RequestOption)
 	if err != nil {
 		return nil, err
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 
 	data, err := decodeResponse[CustomReward](res)
 	if err != nil {
@@ -238,9 +238,9 @@ type CustomRewardsUpdateResponse struct {
 	Data   []CustomReward
 }
 
-func (r *CustomRewardsResource) Update(broadcasterId, id string) *CustomRewardsUpdateCall {
+func (r *CustomRewardsResource) Update(broadcasterID, id string) *CustomRewardsUpdateCall {
 	c := &CustomRewardsUpdateCall{resource: r, body: make(map[string]interface{})}
-	c.opts = append(c.opts, SetQueryParameter("broadcaster_id", broadcasterId))
+	c.opts = append(c.opts, SetQueryParameter("broadcaster_id", broadcasterID))
 	c.opts = append(c.opts, SetQueryParameter("id", id))
 	return c
 }
@@ -326,7 +326,7 @@ func (c *CustomRewardsUpdateCall) Do(ctx context.Context, opts ...RequestOption)
 	if err != nil {
 		return nil, err
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 
 	data, err := decodeResponse[CustomReward](res)
 	if err != nil {
@@ -344,9 +344,9 @@ type CustomRewardsDeleteCall struct {
 	opts     []RequestOption
 }
 
-func (r *CustomRewardsResource) Delete(broadcasterId, id string) *CustomRewardsDeleteCall {
+func (r *CustomRewardsResource) Delete(broadcasterID, id string) *CustomRewardsDeleteCall {
 	c := &CustomRewardsDeleteCall{resource: r}
-	c.opts = append(c.opts, SetQueryParameter("broadcaster_id", broadcasterId))
+	c.opts = append(c.opts, SetQueryParameter("broadcaster_id", broadcasterID))
 	c.opts = append(c.opts, SetQueryParameter("id", id))
 	return c
 }
@@ -357,7 +357,7 @@ func (c *CustomRewardsDeleteCall) Do(ctx context.Context, opts ...RequestOption)
 	if err != nil {
 		return err
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 
 	_, err = decodeResponse[CustomRewardRedemption](res)
 	return err
@@ -383,10 +383,10 @@ type CustomRewardsRedemptionListResponse struct {
 }
 
 // List creates a request to list custom channel point reward redemptions for a given broadcaster.
-func (r *CustomRewardsRedemptionResource) List(broadcasterId, rewardId string) *CustomRewardsRedemptionListCall {
+func (r *CustomRewardsRedemptionResource) List(broadcasterID, rewardID string) *CustomRewardsRedemptionListCall {
 	c := &CustomRewardsRedemptionListCall{resource: r}
-	c.opts = append(c.opts, SetQueryParameter("broadcaster_id", broadcasterId))
-	c.opts = append(c.opts, SetQueryParameter("reward_id", rewardId))
+	c.opts = append(c.opts, SetQueryParameter("broadcaster_id", broadcasterID))
+	c.opts = append(c.opts, SetQueryParameter("reward_id", rewardID))
 	c.opts = append(c.opts, SetQueryParameter("status", "UNFULFILLED"))
 	return c
 }
@@ -433,7 +433,7 @@ func (c *CustomRewardsRedemptionListCall) Do(ctx context.Context, opts ...Reques
 	if err != nil {
 		return nil, err
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 
 	data, err := decodeResponse[CustomRewardRedemption](res)
 	if err != nil {
@@ -457,10 +457,10 @@ type CustomRewardsRedemptionUpdateResponse struct {
 	Data   []CustomRewardRedemption
 }
 
-func (r *CustomRewardsRedemptionResource) Update(broadcasterId, rewardId string, id []string) *CustomRewardsRedemptionUpdateCall {
+func (r *CustomRewardsRedemptionResource) Update(broadcasterID, rewardID string, id []string) *CustomRewardsRedemptionUpdateCall {
 	c := &CustomRewardsRedemptionUpdateCall{resource: r}
-	c.opts = append(c.opts, SetQueryParameter("broadcaster_id", broadcasterId))
-	c.opts = append(c.opts, SetQueryParameter("reward_id", rewardId))
+	c.opts = append(c.opts, SetQueryParameter("broadcaster_id", broadcasterID))
+	c.opts = append(c.opts, SetQueryParameter("reward_id", rewardID))
 	for _, id := range id {
 		c.opts = append(c.opts, AddQueryParameter("id", id))
 	}
@@ -483,7 +483,7 @@ func (c *CustomRewardsRedemptionUpdateCall) Do(ctx context.Context, opts ...Requ
 	if err != nil {
 		return nil, err
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 
 	data, err := decodeResponse[CustomRewardRedemption](res)
 	if err != nil {

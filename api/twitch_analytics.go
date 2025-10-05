@@ -100,7 +100,7 @@ func (r *AnalyticsExtensionListCall) Do(ctx context.Context, opts ...RequestOpti
 	if err != nil {
 		return nil, err
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 
 	data, err := decodeResponse[ExtensionAnalytics](res)
 	if err != nil {
@@ -180,7 +180,7 @@ func (r *AnalyticsGameListCall) Do(ctx context.Context, opts ...RequestOption) (
 	if err != nil {
 		return nil, err
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 
 	data, err := decodeResponse[GameAnalytics](res)
 	if err != nil {

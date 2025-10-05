@@ -82,7 +82,7 @@ func (c *StreamsListCall) Type(t string) *StreamsListCall {
 	return c
 }
 
-// Language filters the results to the specified languages.
+// Languages filters the results to the specified stream languages.
 func (c *StreamsListCall) Languages(languages []string) *StreamsListCall {
 	for _, language := range languages {
 		c.opts = append(c.opts, AddQueryParameter("language", language))
@@ -116,7 +116,7 @@ func (c *StreamsListCall) Do(ctx context.Context, opts ...RequestOption) (*Strea
 	if err != nil {
 		return nil, err
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 
 	data, err := decodeResponse[Stream](res)
 	if err != nil {

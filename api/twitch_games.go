@@ -75,7 +75,7 @@ func (c *TopGamesListCall) Do(ctx context.Context, opts ...RequestOption) (*TopG
 	if err != nil {
 		return nil, err
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 
 	data, err := decodeResponse[Game](res)
 	if err != nil {

@@ -1,3 +1,4 @@
+// Package irc provides a client for the Twitch IRC service.
 package irc
 
 import (
@@ -18,7 +19,6 @@ type Conn struct {
 	Username  string
 	token     string
 
-	attempts    int
 	socket      net.Conn
 	isShard     bool
 	isConnected bool
@@ -130,7 +130,7 @@ func (conn *Conn) Connect() error {
 		return err
 	}
 	if len(conn.Username) < 1 || len(conn.token) < 1 {
-		conn.SetLogin(fmt.Sprintf("justinfan%d", rand.Intn(99999)-100), "Kappa123")
+		_ = conn.SetLogin(fmt.Sprintf("justinfan%d", rand.Intn(99999)-100), "Kappa123")
 	}
 	conn.socket = socket
 	conn.isConnected = true
@@ -254,11 +254,10 @@ func (conn *Conn) Close() {
 	if !conn.IsConnected() {
 		return
 	}
-	conn.socket.Close()
+	_ = conn.socket.Close()
 	timer := time.NewTimer(time.Second)
 	defer timer.Stop()
 	<-timer.C
-	return
 }
 
 // OnServerNotice event called when the IRC server sends a notice message
@@ -340,16 +339,17 @@ func (conn *Conn) reader() {
 	}
 }
 
-//nolint: gocyclo
+// nolint: gocyclo
+//
 //gocyclo:ignore
 func (conn *Conn) handle(msg Message) {
 	switch msg.Command {
 	case CMDReady:
-		conn.Ping()
+		_, _ = conn.Ping()
 	case CMDReconnect:
-		conn.Reconnect()
+		_ = conn.Reconnect()
 	case CMDPing:
-		conn.Ping()
+		_, _ = conn.Ping()
 	case CMDPong:
 		close(conn.pingC)
 

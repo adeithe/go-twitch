@@ -93,7 +93,7 @@ func (c *ConduitShardListCall) Do(ctx context.Context, opts ...RequestOption) (*
 	if err != nil {
 		return nil, err
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 
 	data, err := decodeResponse[ConduitShard](res)
 	if err != nil {
@@ -145,7 +145,7 @@ func (c *ConduitShardUpdateCall) Do(ctx context.Context, opts ...RequestOption) 
 	if err != nil {
 		return nil, err
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 
 	data, err := decodeResponse[ConduitShard](res)
 	if err != nil {

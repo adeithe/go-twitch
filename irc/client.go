@@ -228,7 +228,8 @@ func (client *Client) OnShardDisconnect(f func(int)) {
 	client.onShardDisconnect = append(client.onShardDisconnect, f)
 }
 
-//nolint: gocyclo
+// nolint: gocyclo
+//
 //gocyclo:ignore
 func (client *Client) addEventHandlers(id int, conn *Conn) {
 	conn.OnMessage(func(msg ChatMessage) {

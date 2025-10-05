@@ -132,7 +132,7 @@ func TestAuthenticatedConnection(t *testing.T) {
 	}
 
 	writer := Conn{}
-	writer.SetLogin(envUsername, envToken)
+	_ = writer.SetLogin(envUsername, envToken)
 	if err := writer.Connect(); err != nil {
 		t.Fatal(err)
 	}

@@ -41,8 +41,8 @@ type AdsInsertResponse struct {
 // Insert creates a request to start a commercial for the specified broadcaster.
 //
 // Required Scope: channel:edit:commercial
-func (r *AdsResource) Insert(broadcasterId string) *AdsInsertRequest {
-	return &AdsInsertRequest{r.client, broadcasterId, 60}
+func (r *AdsResource) Insert(broadcasterID string) *AdsInsertRequest {
+	return &AdsInsertRequest{r.client, broadcasterID, 60}
 }
 
 // Duration sets the duration of the commercial in seconds.
@@ -70,7 +70,7 @@ func (c *AdsInsertRequest) Do(ctx context.Context, opts ...RequestOption) (*AdsI
 	if err != nil {
 		return nil, err
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 
 	data, err := decodeResponse[Commercial](res)
 	if err != nil {
@@ -116,11 +116,11 @@ type AdSchedule struct {
 // NOTE: A new advertisement can NOT be run until 8 minutes running the previous.
 //
 // Required Scope: channel:read:ads
-func (r *AdsScheduleResource) List(broadcasterId string) *AdsScheduleListRequest {
+func (r *AdsScheduleResource) List(broadcasterID string) *AdsScheduleListRequest {
 	return &AdsScheduleListRequest{
 		client: r.client,
 		opts: []RequestOption{
-			AddQueryParameter("broadcaster_id", broadcasterId),
+			AddQueryParameter("broadcaster_id", broadcasterID),
 		},
 	}
 }
@@ -131,7 +131,7 @@ func (r *AdsScheduleListRequest) Do(ctx context.Context, opts ...RequestOption) 
 	if err != nil {
 		return nil, err
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 
 	data, err := decodeResponse[AdSchedule](res)
 	if err != nil {
@@ -172,11 +172,11 @@ type AdSnooze struct {
 // This endpoint duplicates the snooze functionality in the creator dashboard's Ad Manager.
 //
 // Required Scope: channel:manage:ads
-func (r *AdsSnoozeResource) Insert(broadcasterId string) *AdsSnoozeRequest {
+func (r *AdsSnoozeResource) Insert(broadcasterID string) *AdsSnoozeRequest {
 	return &AdsSnoozeRequest{
 		client: r.client,
 		opts: []RequestOption{
-			AddQueryParameter("broadcaster_id", broadcasterId),
+			AddQueryParameter("broadcaster_id", broadcasterID),
 		},
 	}
 }
@@ -187,7 +187,7 @@ func (r *AdsSnoozeRequest) Do(ctx context.Context, opts ...RequestOption) (*AdsS
 	if err != nil {
 		return nil, err
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 
 	data, err := decodeResponse[AdSnooze](res)
 	if err != nil {

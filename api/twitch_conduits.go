@@ -48,7 +48,7 @@ func (c *ConduitsListCall) Do(ctx context.Context, opts ...RequestOption) (*Cond
 	if err != nil {
 		return nil, err
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 
 	data, err := decodeResponse[Conduit](res)
 	if err != nil {
@@ -89,7 +89,7 @@ func (c *ConduitInsertCall) Do(ctx context.Context, opts ...RequestOption) (*Con
 	if err != nil {
 		return nil, err
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 
 	data, err := decodeResponse[Conduit](res)
 	if err != nil {
@@ -130,7 +130,7 @@ func (c *ConduitUpdateCall) Do(ctx context.Context, opts ...RequestOption) (*Con
 	if err != nil {
 		return nil, err
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 
 	data, err := decodeResponse[Conduit](res)
 	if err != nil {
@@ -165,7 +165,7 @@ func (c *ConduitDeleteCall) Do(ctx context.Context, opts ...RequestOption) error
 	if err != nil {
 		return err
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 
 	if _, err := decodeResponse[any](res); err != nil {
 		return err

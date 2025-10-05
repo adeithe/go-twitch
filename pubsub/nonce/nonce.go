@@ -1,8 +1,7 @@
+// Package nonce provides functions to generate nonces.
 package nonce
 
-import (
-	"math"
-)
+import "math"
 
 var (
 	chars = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")

@@ -118,7 +118,7 @@ func (c *ClipsListCall) Do(ctx context.Context, opts ...RequestOption) (*ClipsLi
 	if err != nil {
 		return nil, err
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 
 	data, err := decodeResponse[Clip](res)
 	if err != nil {

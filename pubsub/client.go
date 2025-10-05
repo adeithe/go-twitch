@@ -163,7 +163,7 @@ func (client *Client) GetShard(id int) (*Conn, error) {
 		if err := shard.Connect(); err != nil {
 			return nil, err
 		}
-		defer shard.Ping()
+		defer func() { _, _ = shard.Ping() }()
 		for _, f := range client.onShardConnect {
 			go f(id)
 		}

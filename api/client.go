@@ -1,3 +1,4 @@
+// Package api provides a client for the Twitch API.
 package api
 
 import (

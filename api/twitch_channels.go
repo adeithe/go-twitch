@@ -55,7 +55,7 @@ func (c *ChannelsListCall) Do(ctx context.Context, opts ...RequestOption) (*Chan
 	if err != nil {
 		return nil, err
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 
 	data, err := decodeResponse[Channel](res)
 	if err != nil {

@@ -127,7 +127,7 @@ func (c *VideosListCall) Do(ctx context.Context, opts ...RequestOption) (*Videos
 	if err != nil {
 		return nil, err
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 
 	data, err := decodeResponse[Video](res)
 	if err != nil {
@@ -165,7 +165,7 @@ func (c *VideosDeleteCall) Do(ctx context.Context, opts ...RequestOption) (*Vide
 	if err != nil {
 		return nil, err
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 
 	data, err := decodeResponse[string](res)
 	if err != nil {

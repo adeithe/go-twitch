@@ -80,13 +80,13 @@ func (c *CheermotesListCall) BroadcasterID(id string) *CheermotesListCall {
 	return c
 }
 
-// BroadcasterName filters the results to the specified broadcaster name.
+// Do executes the request.
 func (c *CheermotesListCall) Do(ctx context.Context, opts ...RequestOption) (*CheermotesListResponse, error) {
 	res, err := c.resource.client.doRequest(ctx, http.MethodGet, "/bits/cheermotes", nil, append(opts, c.opts...)...)
 	if err != nil {
 		return nil, err
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 
 	data, err := decodeResponse[Cheermote](res)
 	if err != nil {
@@ -149,8 +149,8 @@ func (c *BitsLeaderboardListCall) StartedAt(t time.Time) *BitsLeaderboardListCal
 // If count is greater than 1, the response may include users ranked above and below the specified user.
 //
 // To get the leaderboard's top leaders, don't specify this.
-func (c *BitsLeaderboardListCall) UserID(userId string) *BitsLeaderboardListCall {
-	c.opts = append(c.opts, SetQueryParameter("user_id", userId))
+func (c *BitsLeaderboardListCall) UserID(userID string) *BitsLeaderboardListCall {
+	c.opts = append(c.opts, SetQueryParameter("user_id", userID))
 	return c
 }
 
@@ -160,7 +160,7 @@ func (c *BitsLeaderboardListCall) Do(ctx context.Context, opts ...RequestOption)
 	if err != nil {
 		return nil, err
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 
 	data, err := decodeResponse[BitsLeaderboardEntry](res)
 	if err != nil {
@@ -220,11 +220,11 @@ type ExtensionProductCost struct {
 	Type   string `json:"type"`
 }
 
-func (r *BitsExtensionTransactionsResource) List(extensionId string) *BitsTransactionsListCall {
+func (r *BitsExtensionTransactionsResource) List(extensionID string) *BitsTransactionsListCall {
 	return &BitsTransactionsListCall{
 		client: r.client,
 		opts: []RequestOption{
-			SetQueryParameter("extension_id", extensionId),
+			SetQueryParameter("extension_id", extensionID),
 		},
 	}
 }
@@ -251,7 +251,7 @@ func (c *BitsTransactionsListCall) Do(ctx context.Context, opts ...RequestOption
 	if err != nil {
 		return nil, err
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 
 	data, err := decodeResponse[ExtensionTransaction](res)
 	if err != nil {

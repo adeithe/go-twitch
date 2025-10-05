@@ -45,12 +45,12 @@ type ChattersListCall struct {
 }
 
 // List creates a new call to list chatters.
-func (r *ChatResource) List(broadcasterId, moderatorId string) *ChattersListCall {
+func (r *ChatResource) List(broadcasterID, moderatorID string) *ChattersListCall {
 	return &ChattersListCall{
 		resource: r,
 		opts: []RequestOption{
-			SetQueryParameter("broadcaster_id", broadcasterId),
-			SetQueryParameter("moderator_id", moderatorId),
+			SetQueryParameter("broadcaster_id", broadcasterID),
+			SetQueryParameter("moderator_id", moderatorID),
 		},
 	}
 }
@@ -72,7 +72,7 @@ func (c *ChattersListCall) Do(ctx context.Context, opts ...RequestOption) (*Chat
 	if err != nil {
 		return nil, err
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 
 	data, err := decodeResponse[Chatter](res)
 	if err != nil {
