@@ -9,6 +9,7 @@ import (
 	"strings"
 )
 
+// Client is a client for interacting with the Twitch API.
 type Client struct {
 	clientID     string
 	clientSecret string

@@ -1,8 +1,8 @@
 package irc
 
 import (
+	"crypto/rand"
 	"encoding/hex"
-	"math/rand"
 	"os"
 	"testing"
 	"time"
@@ -14,10 +14,6 @@ var (
 
 	testChannel = "dallas"
 )
-
-func init() {
-	rand.Seed(time.Now().Unix())
-}
 
 func TestParseErrors(t *testing.T) {
 	tests := []struct {
@@ -115,10 +111,10 @@ func TestAuthenticatedConnection(t *testing.T) {
 	c := make(chan bool, 1)
 
 	reader := New()
-	reader.OnShardChannelUpdate(func(shardID int, msg RoomState) {
+	reader.OnShardChannelUpdate(func(_ int, _ RoomState) {
 		r <- true
 	})
-	reader.OnShardMessage(func(shardID int, msg ChatMessage) {
+	reader.OnShardMessage(func(_ int, msg ChatMessage) {
 		c <- msg.Text == message
 	})
 	if err := reader.Join(envUsername); err != nil {

@@ -41,8 +41,8 @@ type IConn interface {
 	Connect() error
 	Reconnect() error
 	Write(int, []byte) error
-	WriteMessage(MessageType, interface{}) error
-	WriteMessageWithNonce(MessageType, string, interface{}) error
+	WriteMessage(MessageType, any) error
+	WriteMessageWithNonce(MessageType, string, any) error
 	Close()
 
 	IsConnected() bool
@@ -129,7 +129,7 @@ func (conn *Conn) Write(msgType int, data []byte) error {
 }
 
 // WriteMessage with no nonce and send it to the server
-func (conn *Conn) WriteMessage(msgType MessageType, data interface{}) error {
+func (conn *Conn) WriteMessage(msgType MessageType, data any) error {
 	msg := Packet{
 		Type: msgType,
 		Data: data,
@@ -144,7 +144,7 @@ func (conn *Conn) WriteMessage(msgType MessageType, data interface{}) error {
 // WriteMessageWithNonce write a message with the provided nonce and send it to the server
 //
 // This operation will block, giving the server up to 5 seconds to respond after correcting for latency before failing
-func (conn *Conn) WriteMessageWithNonce(msgType MessageType, nonce string, data interface{}) error {
+func (conn *Conn) WriteMessageWithNonce(msgType MessageType, nonce string, data any) error {
 	msg := Packet{
 		Type:  msgType,
 		Nonce: nonce,
@@ -221,11 +221,11 @@ func (conn *Conn) SetNonceGenerator(gen NonceGenerator) error {
 }
 
 // SetMaxTopics changes the maximum number of topics the connection can listen to
-func (conn *Conn) SetMaxTopics(max int) {
-	if max < 1 {
-		max = 50
+func (conn *Conn) SetMaxTopics(limit int) {
+	if limit < 1 {
+		limit = 50
 	}
-	conn.length = max
+	conn.length = limit
 }
 
 // GetNumTopics returns the number of topics the connection is actively listening to
@@ -295,7 +295,7 @@ func (conn *Conn) Unlisten(topics ...string) error {
 	}
 	conn.listeners.Lock()
 	for token, topics := range conn.topics {
-		var new []string
+		var t []string
 		for _, topic := range topics {
 			var b bool
 			for _, t := range unlisten {
@@ -305,16 +305,13 @@ func (conn *Conn) Unlisten(topics ...string) error {
 				}
 			}
 			if !b {
-				new = append(new, topic)
+				t = append(t, topic)
 			}
 		}
-		conn.topics[token] = new
+		conn.topics[token] = t
 	}
 	conn.listeners.Unlock()
-	if err := conn.WriteMessageWithNonce(Unlisten, conn.generator(), TopicData{Topics: unlisten}); err != nil {
-		return err
-	}
-	return nil
+	return conn.WriteMessageWithNonce(Unlisten, conn.generator(), TopicData{Topics: unlisten})
 }
 
 // Ping the PubSub server
@@ -374,8 +371,8 @@ func (conn *Conn) reader() {
 		switch msg.Type {
 		case Response:
 		case Message:
-			bytes, _ := json.Marshal(msg.Data)
-			conn.handleMessage(bytes)
+			bs, _ := json.Marshal(msg.Data)
+			conn.handleMessage(bs)
 		case Pong:
 			close(conn.ping)
 		case Reconnect:

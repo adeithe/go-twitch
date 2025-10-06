@@ -68,11 +68,11 @@ func New() *Client {
 // SetMaxChannelsPerShard sets the maximum number of channels a shard can listen to at a time
 //
 // Default: 100
-func (client *Client) SetMaxChannelsPerShard(max int) {
-	if max < 1 {
-		max = 100
+func (client *Client) SetMaxChannelsPerShard(maxChannels int) {
+	if maxChannels < 1 {
+		maxChannels = 100
 	}
-	client.length = max
+	client.length = maxChannels
 }
 
 // GetNextShard returns the first shard that can join channels
@@ -228,8 +228,6 @@ func (client *Client) OnShardDisconnect(f func(int)) {
 	client.onShardDisconnect = append(client.onShardDisconnect, f)
 }
 
-// nolint: gocyclo
-//
 //gocyclo:ignore
 func (client *Client) addEventHandlers(id int, conn *Conn) {
 	conn.OnMessage(func(msg ChatMessage) {
@@ -267,9 +265,9 @@ func (client *Client) addEventHandlers(id int, conn *Conn) {
 			go f(id, notice)
 		}
 	})
-	conn.OnChannelMessageDelete(func(delete ChatMessageDelete) {
+	conn.OnChannelMessageDelete(func(del ChatMessageDelete) {
 		for _, f := range client.onShardChannelMessageDelete {
-			go f(id, delete)
+			go f(id, del)
 		}
 	})
 	conn.OnChannelBan(func(ban ChatBan) {

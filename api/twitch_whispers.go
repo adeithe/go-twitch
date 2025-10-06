@@ -7,22 +7,26 @@ import (
 	"net/http"
 )
 
+// WhispersResource represents the Twitch Whispers API.
 type WhispersResource struct {
 	client *Client
 }
 
+// NewWhispersResource creates a new WhispersResource.
 func NewWhispersResource(client *Client) *WhispersResource {
 	return &WhispersResource{client}
 }
 
+// WhispersInsertCall is a call to the Whispers Insert endpoint.
 type WhispersInsertCall struct {
 	resource *WhispersResource
 	opts     []RequestOption
-	body     map[string]interface{}
+	body     map[string]any
 }
 
+// Insert creates a new WhispersInsertCall to send a whisper from senderID to recipientID.
 func (r *WhispersResource) Insert(senderID, recipientID string) *WhispersInsertCall {
-	c := &WhispersInsertCall{resource: r, body: make(map[string]interface{})}
+	c := &WhispersInsertCall{resource: r, body: make(map[string]any)}
 	c.opts = append(c.opts, SetQueryParameter("from_user_id", senderID))
 	c.opts = append(c.opts, SetQueryParameter("to_user_id", recipientID))
 	return c

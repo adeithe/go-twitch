@@ -1,3 +1,4 @@
+// Package main is an example of connecting to Twitch chat using go-twitch.
 package main
 
 import (
@@ -16,7 +17,7 @@ func main() {
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGHUP)
 
 	writer := &irc.Conn{}
-	writer.SetLogin("username", "oauth:123123123")
+	_ = writer.SetLogin("username", "oauth:123123123")
 	if err := writer.Connect(); err != nil {
 		panic("failed to start writer")
 	}

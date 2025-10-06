@@ -7,6 +7,7 @@ import (
 	"time"
 )
 
+// Stream represents a Twitch stream.
 type Stream struct {
 	ID              string    `json:"id"`
 	UserID          string    `json:"user_id"`
@@ -24,19 +25,23 @@ type Stream struct {
 	StartedAt       time.Time `json:"started_at"`
 }
 
+// StreamsResource represents the Twitch Streams API.
 type StreamsResource struct {
 	client *Client
 }
 
+// NewStreamsResource creates a new StreamsResource.
 func NewStreamsResource(client *Client) *StreamsResource {
 	return &StreamsResource{client}
 }
 
+// StreamsListCall is a call to the Streams List endpoint.
 type StreamsListCall struct {
 	resource *StreamsResource
 	opts     []RequestOption
 }
 
+// StreamsListResponse is the response from the Streams List endpoint.
 type StreamsListResponse struct {
 	Header http.Header
 	Data   []Stream

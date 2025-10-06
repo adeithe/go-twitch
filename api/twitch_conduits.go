@@ -64,12 +64,12 @@ func (c *ConduitsListCall) Do(ctx context.Context, opts ...RequestOption) (*Cond
 // ConduitInsertCall is the API call for creating a new Twitch Eventsub Conduit.
 type ConduitInsertCall struct {
 	resource *ConduitsResource
-	body     map[string]interface{}
+	body     map[string]any
 }
 
 // Insert creates a new ConduitInsertCall.
 func (r *ConduitsResource) Insert() *ConduitInsertCall {
-	return &ConduitInsertCall{resource: r, body: make(map[string]interface{})}
+	return &ConduitInsertCall{resource: r, body: make(map[string]any)}
 }
 
 // ShardCount sets the shard count for the new conduit.
@@ -105,12 +105,12 @@ func (c *ConduitInsertCall) Do(ctx context.Context, opts ...RequestOption) (*Con
 // ConduitUpdateCall is the API call for updating a Twitch Eventsub Conduit.
 type ConduitUpdateCall struct {
 	resource *ConduitsResource
-	body     map[string]interface{}
+	body     map[string]any
 }
 
 // Update creates a new ConduitUpdateCall.
 func (r *ConduitsResource) Update(id string) *ConduitUpdateCall {
-	return &ConduitUpdateCall{resource: r, body: map[string]interface{}{"id": id}}
+	return &ConduitUpdateCall{resource: r, body: map[string]any{"id": id}}
 }
 
 // ShardCount sets the shard count for the conduit.

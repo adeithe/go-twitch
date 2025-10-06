@@ -11,6 +11,7 @@ import (
 )
 
 func TestAPI_ClipsDuration(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		Input    float64
 		Expected time.Duration

@@ -7,6 +7,7 @@ import (
 	"time"
 )
 
+// AnalyticsResource provides access to Twitch Analytics API endpoints.
 type AnalyticsResource struct {
 	client *Client
 
@@ -14,11 +15,13 @@ type AnalyticsResource struct {
 	Games      *AnalyticsGameResource
 }
 
+// AnalyticsDateRange represents a date range with start and end times.
 type AnalyticsDateRange struct {
 	StartedAt time.Time `json:"started_at"`
 	EndedAt   time.Time `json:"ended_at"`
 }
 
+// NewAnalyticsResource creates a new AnalyticsResource.
 func NewAnalyticsResource(client *Client) *AnalyticsResource {
 	r := &AnalyticsResource{client: client}
 	r.Extensions = NewAnalyticsExtensionResource(client)
@@ -26,25 +29,30 @@ func NewAnalyticsResource(client *Client) *AnalyticsResource {
 	return r
 }
 
+// AnalyticsExtensionResource provides access to extension analytics endpoints.
 type AnalyticsExtensionResource struct {
 	client *Client
 }
 
+// NewAnalyticsExtensionResource creates a new AnalyticsExtensionResource.
 func NewAnalyticsExtensionResource(client *Client) *AnalyticsExtensionResource {
 	return &AnalyticsExtensionResource{client}
 }
 
+// AnalyticsExtensionListCall represends a request to get extension analytics.
 type AnalyticsExtensionListCall struct {
 	client *Client
 	opts   []RequestOption
 }
 
+// AnalyticsExtensionListResponse represents the response from the extension analytics endpoint.
 type AnalyticsExtensionListResponse struct {
 	Header     http.Header
 	Data       []ExtensionAnalytics
 	Pagination Pagination
 }
 
+// ExtensionAnalytics represents analytics data for a Twitch extension.
 type ExtensionAnalytics struct {
 	ExtensionID string             `json:"extension_id"`
 	URL         string             `json:"URL"`
@@ -52,6 +60,7 @@ type ExtensionAnalytics struct {
 	DateRate    AnalyticsDateRange `json:"date_range"`
 }
 
+// List creates a new call to get extension analytics.
 func (r *AnalyticsExtensionResource) List() *AnalyticsExtensionListCall {
 	return &AnalyticsExtensionListCall{client: r.client}
 }
@@ -114,31 +123,37 @@ func (r *AnalyticsExtensionListCall) Do(ctx context.Context, opts ...RequestOpti
 	}, nil
 }
 
+// AnalyticsGameResource provides access to game analytics endpoints.
 type AnalyticsGameResource struct {
 	client *Client
 }
 
+// NewAnalyticsGameResource creates a new AnalyticsGameResource.
 func NewAnalyticsGameResource(client *Client) *AnalyticsGameResource {
 	return &AnalyticsGameResource{client}
 }
 
+// AnalyticsGameListCall represents a request to get game analytics.
 type AnalyticsGameListCall struct {
 	client *Client
 	opts   []RequestOption
 }
 
+// AnalyticsGameListResponse represents the response from the game analytics endpoint.
 type AnalyticsGameListResponse struct {
 	Header     http.Header
 	Data       []GameAnalytics
 	Pagination Pagination
 }
 
+// GameAnalytics represents analytics data for a Twitch game.
 type GameAnalytics struct {
 	GameID   string             `json:"game_id"`
 	URL      string             `json:"URL"`
 	DateRate AnalyticsDateRange `json:"date_range"`
 }
 
+// List creates a new call to get game analytics.
 func (r *AnalyticsGameResource) List() *AnalyticsGameListCall {
 	return &AnalyticsGameListCall{client: r.client}
 }

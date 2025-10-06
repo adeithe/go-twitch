@@ -10,6 +10,7 @@ import (
 	"time"
 )
 
+// ChatterBan represents a ban or timeout on a user in a channel.
 type ChatterBan struct {
 	BroadcasterID string     `json:"broadcaster_id"`
 	ModeratorID   string     `json:"moderator_id"`
@@ -18,14 +19,17 @@ type ChatterBan struct {
 	EndsAt        *time.Time `json:"ends_at,omitempty"`
 }
 
+// ModerationResource provides access to the Twitch Moderation API.
 type ModerationResource struct {
 	client *Client
 }
 
+// NewModerationResource creates a new ModerationResource.
 func NewModerationResource(client *Client) *ModerationResource {
 	return &ModerationResource{client}
 }
 
+// CreateBanRequest is a request to ban or put a user in a timeout from a channel.
 type CreateBanRequest struct {
 	resource      *ModerationResource
 	broadcasterID string
@@ -95,6 +99,7 @@ func (c *CreateBanRequest) Do(ctx context.Context, opts ...RequestOption) ([]Cha
 	return data.Data, nil
 }
 
+// RemoveBanRequest is a request to remove a ban on a user from a channel.
 type RemoveBanRequest struct {
 	resource      *ModerationResource
 	broadcasterID string
@@ -131,6 +136,7 @@ func (c *RemoveBanRequest) Do(ctx context.Context, opts ...RequestOption) error 
 	return err
 }
 
+// ClearChatRequest is a request to clear all messages from a channel.
 type ClearChatRequest struct {
 	resource      *ModerationResource
 	broadcasterID string

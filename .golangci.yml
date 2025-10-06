@@ -2,14 +2,67 @@ version: "2"
 linters:
   default: standard
   enable:
-    - govet
+    - copyloopvar
+    - errorlint
+    - errcheck
+    - exhaustive
+    - forbidigo
+    - gochecksumtype
     - gocyclo
+    - gosec
+    - govet
+    - importas
     - ineffassign
     - misspell
+    - nilerr
+    - nilnesserr
+    - nilnil
+    - nolintlint
+    - revive
+    - sloglint
+    - staticcheck
+    - testifylint
+    - loggercheck
   settings:
+    copyloopvar:
+      check-alias: true
+    exhaustive:
+      default-signifies-exhaustive: true
+    forbidigo:
+      exclude-godoc-examples: true
+      analyze-types: true
+      forbid:
+        - pattern: ^log.(Panic|Fatal)$
+        - pattern: ^os.Exit$
+        - pattern: ^panic$
+    gocyclo:
+      min-complexity: 15
+    gosec:
+      severity: medium
+      confidence: medium
+    govet:
+      enable:
+        - shadow
+    nolintlint:
+      require-explanation: true
+      require-specific: true
+    revive:
+      rules:
+        - name: exported
+        - name: if-return
+        - name: indent-error-flow
+        - name: errorf
+        - name: time-naming
     staticcheck:
       checks:
         - all
+  exclusions:
+    presets:
+      - std-error-handling
+      - common-false-positives
+    rules:
+      - linters: [govet]
+        text: '^(shadow: )?declaration of "err" shadows declaration'
 formatters:
   enable:
     - gofmt
@@ -21,5 +74,3 @@ formatters:
           replacement: any
         - pattern: a[b:len(a)]
           replacement: a[b:]
-        - pattern: map[string]struct{}
-          replacement: map[string]any

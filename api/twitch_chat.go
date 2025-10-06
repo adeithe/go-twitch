@@ -6,32 +6,38 @@ import (
 	"net/http"
 )
 
+// Chatter represents a user in Twitch chat.
 type Chatter struct {
 	ID          string `json:"user_id"`
 	Username    string `json:"user_login"`
 	DisplayName string `json:"user_name"`
 }
 
+// ChatResource handles chat related API calls.
 type ChatResource struct {
 	client *Client
 
 	Chatters *ChattersResource
 }
 
+// NewChatResource creates a new ChatResource.
 func NewChatResource(client *Client) *ChatResource {
 	r := &ChatResource{client: client}
 	r.Chatters = NewChattersResource(client)
 	return r
 }
 
+// ChattersResource handles chatters related API calls.
 type ChattersResource struct {
 	client *Client
 }
 
+// NewChattersResource creates a new ChattersResource.
 func NewChattersResource(client *Client) *ChattersResource {
 	return &ChattersResource{client: client}
 }
 
+// ChattersResponse is the response from the chatters endpoint.
 type ChattersResponse struct {
 	Total    int
 	Header   http.Header
@@ -39,6 +45,7 @@ type ChattersResponse struct {
 	Cursor   string
 }
 
+// ChattersListCall is a call to the chatters list endpoint.
 type ChattersListCall struct {
 	resource *ChatResource
 	opts     []RequestOption
@@ -67,6 +74,7 @@ func (c *ChattersListCall) After(cursor string) *ChattersListCall {
 	return c
 }
 
+// Do executes the request.
 func (c *ChattersListCall) Do(ctx context.Context, opts ...RequestOption) (*ChattersResponse, error) {
 	res, err := c.resource.client.doRequest(ctx, http.MethodGet, "/chat/chatters", nil, append(c.opts, opts...)...)
 	if err != nil {

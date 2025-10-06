@@ -1,6 +1,7 @@
 package pubsub
 
 import (
+	"errors"
 	"sync"
 	"time"
 )
@@ -32,8 +33,8 @@ type IClient interface {
 	GetShard(int) (*Conn, error)
 	Close()
 
-	Listen(string, ...interface{}) error
-	ListenWithAuth(string, string, ...interface{}) error
+	Listen(string, ...any) error
+	ListenWithAuth(string, string, ...any) error
 	Unlisten(...string) error
 
 	OnShardConnect(func(int))
@@ -60,23 +61,23 @@ func New() *Client {
 // SetMaxShards set the maximum number of shards
 //
 // Default: 10
-func (client *Client) SetMaxShards(max int) {
-	if max < 1 {
-		max = 10
+func (client *Client) SetMaxShards(limit int) {
+	if limit < 1 {
+		limit = 10
 	}
-	client.length = max
+	client.length = limit
 }
 
 // SetMaxTopicsPerShard set the maximum number of topics for each shard
 //
 // Default: 50
-func (client *Client) SetMaxTopicsPerShard(max int) {
-	if max < 1 {
-		max = 50
+func (client *Client) SetMaxTopicsPerShard(limit int) {
+	if limit < 1 {
+		limit = 50
 	}
 	client.mx.Lock()
 	defer client.mx.Unlock()
-	client.topicsLength = max
+	client.topicsLength = limit
 	for _, shard := range client.shards {
 		shard.SetMaxTopics(client.topicsLength)
 	}
@@ -185,7 +186,7 @@ func (client *Client) Close() {
 }
 
 // Listen to a topic on the best available shard
-func (client *Client) Listen(topic string, args ...interface{}) error {
+func (client *Client) Listen(topic string, args ...any) error {
 	topic = ParseTopic(topic, args...)
 	shard, err := client.GetNextShard()
 	if err != nil {
@@ -194,7 +195,7 @@ func (client *Client) Listen(topic string, args ...interface{}) error {
 	client.mx.Lock()
 	defer client.mx.Unlock()
 	if err := shard.Listen(topic); err != nil {
-		if err == ErrShardTooManyTopics {
+		if errors.Is(err, ErrShardTooManyTopics) {
 			client.SetMaxTopicsPerShard(shard.GetNumTopics())
 			shard, err := client.GetNextShard()
 			if err != nil {
@@ -208,7 +209,7 @@ func (client *Client) Listen(topic string, args ...interface{}) error {
 }
 
 // ListenWithAuth starts listening to a topic on the best available shard using the provided authentication token
-func (client *Client) ListenWithAuth(token string, topic string, args ...interface{}) error {
+func (client *Client) ListenWithAuth(token string, topic string, args ...any) error {
 	topic = ParseTopic(topic, args...)
 	shard, err := client.GetNextShard()
 	if err != nil {
@@ -217,7 +218,7 @@ func (client *Client) ListenWithAuth(token string, topic string, args ...interfa
 	client.mx.Lock()
 	defer client.mx.Unlock()
 	if err := shard.ListenWithAuth(token, topic); err != nil {
-		if err == ErrShardTooManyTopics {
+		if errors.Is(err, ErrShardTooManyTopics) {
 			client.SetMaxTopicsPerShard(shard.GetNumTopics())
 			shard, err := client.GetNextShard()
 			if err != nil {
