@@ -48,7 +48,7 @@ func (c *ConduitsListCall) Do(ctx context.Context, opts ...RequestOption) (*Cond
 	if err != nil {
 		return nil, err
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 
 	data, err := decodeResponse[Conduit](res)
 	if err != nil {
@@ -64,12 +64,12 @@ func (c *ConduitsListCall) Do(ctx context.Context, opts ...RequestOption) (*Cond
 // ConduitInsertCall is the API call for creating a new Twitch Eventsub Conduit.
 type ConduitInsertCall struct {
 	resource *ConduitsResource
-	body     map[string]interface{}
+	body     map[string]any
 }
 
 // Insert creates a new ConduitInsertCall.
 func (r *ConduitsResource) Insert() *ConduitInsertCall {
-	return &ConduitInsertCall{resource: r, body: make(map[string]interface{})}
+	return &ConduitInsertCall{resource: r, body: make(map[string]any)}
 }
 
 // ShardCount sets the shard count for the new conduit.
@@ -89,7 +89,7 @@ func (c *ConduitInsertCall) Do(ctx context.Context, opts ...RequestOption) (*Con
 	if err != nil {
 		return nil, err
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 
 	data, err := decodeResponse[Conduit](res)
 	if err != nil {
@@ -105,12 +105,12 @@ func (c *ConduitInsertCall) Do(ctx context.Context, opts ...RequestOption) (*Con
 // ConduitUpdateCall is the API call for updating a Twitch Eventsub Conduit.
 type ConduitUpdateCall struct {
 	resource *ConduitsResource
-	body     map[string]interface{}
+	body     map[string]any
 }
 
 // Update creates a new ConduitUpdateCall.
 func (r *ConduitsResource) Update(id string) *ConduitUpdateCall {
-	return &ConduitUpdateCall{resource: r, body: map[string]interface{}{"id": id}}
+	return &ConduitUpdateCall{resource: r, body: map[string]any{"id": id}}
 }
 
 // ShardCount sets the shard count for the conduit.
@@ -130,7 +130,7 @@ func (c *ConduitUpdateCall) Do(ctx context.Context, opts ...RequestOption) (*Con
 	if err != nil {
 		return nil, err
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 
 	data, err := decodeResponse[Conduit](res)
 	if err != nil {
@@ -165,7 +165,7 @@ func (c *ConduitDeleteCall) Do(ctx context.Context, opts ...RequestOption) error
 	if err != nil {
 		return err
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 
 	if _, err := decodeResponse[any](res); err != nil {
 		return err

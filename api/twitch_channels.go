@@ -5,6 +5,7 @@ import (
 	"net/http"
 )
 
+// Channel represents a Twitch channel.
 type Channel struct {
 	ID                          string   `json:"broadcaster_id"`
 	Login                       string   `json:"broadcaster_login"`
@@ -18,19 +19,23 @@ type Channel struct {
 	IsBrandedContent            bool     `json:"is_branded_content"`
 }
 
+// ChannelsResource handles channel related API calls.
 type ChannelsResource struct {
 	client *Client
 }
 
+// NewChannelsResource creates a new ChannelsResource.
 func NewChannelsResource(client *Client) *ChannelsResource {
 	return &ChannelsResource{client}
 }
 
+// ChannelsListCall is a call to the channels list endpoint.
 type ChannelsListCall struct {
 	resource *ChannelsResource
 	opts     []RequestOption
 }
 
+// ChannelsListResponse is the response from the channels list endpoint.
 type ChannelsListResponse struct {
 	Header http.Header
 	Data   []Channel
@@ -55,7 +60,7 @@ func (c *ChannelsListCall) Do(ctx context.Context, opts ...RequestOption) (*Chan
 	if err != nil {
 		return nil, err
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 
 	data, err := decodeResponse[Channel](res)
 	if err != nil {

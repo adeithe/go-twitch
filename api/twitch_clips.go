@@ -8,6 +8,7 @@ import (
 	"time"
 )
 
+// Clip represents a Twitch clip.
 type Clip struct {
 	ID              string       `json:"id"`
 	URL             string       `json:"url"`
@@ -28,21 +29,26 @@ type Clip struct {
 	CreatedAt       time.Time    `json:"created_at"`
 }
 
+// ClipDuration represents the duration of a Twitch clip.
 type ClipDuration time.Duration
 
+// ClipsResource provides methods for the Twitch Clips API.
 type ClipsResource struct {
 	client *Client
 }
 
+// NewClipsResource creates a new ClipsResource.
 func NewClipsResource(client *Client) *ClipsResource {
 	return &ClipsResource{client}
 }
 
+// ClipsListCall is a call to the clips list endpoint.
 type ClipsListCall struct {
 	resource *ClipsResource
 	opts     []RequestOption
 }
 
+// ClipsListResponse is the response from the clips list endpoint.
 type ClipsListResponse struct {
 	Header http.Header
 	Data   []Clip
@@ -118,7 +124,7 @@ func (c *ClipsListCall) Do(ctx context.Context, opts ...RequestOption) (*ClipsLi
 	if err != nil {
 		return nil, err
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 
 	data, err := decodeResponse[Clip](res)
 	if err != nil {
@@ -132,6 +138,7 @@ func (c *ClipsListCall) Do(ctx context.Context, opts ...RequestOption) (*ClipsLi
 	}, nil
 }
 
+// UnmarshalJSON implements the json.Unmarshaler interface for ClipDuration.
 func (d *ClipDuration) UnmarshalJSON(data []byte) error {
 	var duration float64
 	if err := json.Unmarshal(data, &duration); err != nil {
@@ -142,6 +149,7 @@ func (d *ClipDuration) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// AsDuration converts the ClipDuration to a time.Duration.
 func (d ClipDuration) AsDuration() time.Duration {
 	return time.Duration(d)
 }

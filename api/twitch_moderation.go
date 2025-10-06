@@ -10,6 +10,7 @@ import (
 	"time"
 )
 
+// ChatterBan represents a ban or timeout on a user in a channel.
 type ChatterBan struct {
 	BroadcasterID string     `json:"broadcaster_id"`
 	ModeratorID   string     `json:"moderator_id"`
@@ -18,14 +19,17 @@ type ChatterBan struct {
 	EndsAt        *time.Time `json:"ends_at,omitempty"`
 }
 
+// ModerationResource provides access to the Twitch Moderation API.
 type ModerationResource struct {
 	client *Client
 }
 
+// NewModerationResource creates a new ModerationResource.
 func NewModerationResource(client *Client) *ModerationResource {
 	return &ModerationResource{client}
 }
 
+// CreateBanRequest is a request to ban or put a user in a timeout from a channel.
 type CreateBanRequest struct {
 	resource      *ModerationResource
 	broadcasterID string
@@ -38,13 +42,13 @@ type CreateBanRequest struct {
 // CreateBan creates a request to ban a user from a channel.
 //
 // Required Scope: moderator:manage:banned_users
-func (r *ModerationResource) CreateBan(broadcasterId, moderatorId, userId string) *CreateBanRequest {
-	return &CreateBanRequest{r, broadcasterId, moderatorId, userId, nil, ""}
+func (r *ModerationResource) CreateBan(broadcasterID, moderatorID, userID string) *CreateBanRequest {
+	return &CreateBanRequest{r, broadcasterID, moderatorID, userID, nil, ""}
 }
 
-// UserID the ID of the user to ban or put in a timeout.
-func (c *CreateBanRequest) TargetID(userId string) *CreateBanRequest {
-	c.userID = userId
+// TargetID the ID of the user to ban or put in a timeout.
+func (c *CreateBanRequest) TargetID(userID string) *CreateBanRequest {
+	c.userID = userID
 	return c
 }
 
@@ -86,7 +90,7 @@ func (c *CreateBanRequest) Do(ctx context.Context, opts ...RequestOption) ([]Cha
 	if err != nil {
 		return nil, err
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 
 	data, err := decodeResponse[ChatterBan](res)
 	if err != nil {
@@ -95,6 +99,7 @@ func (c *CreateBanRequest) Do(ctx context.Context, opts ...RequestOption) ([]Cha
 	return data.Data, nil
 }
 
+// RemoveBanRequest is a request to remove a ban on a user from a channel.
 type RemoveBanRequest struct {
 	resource      *ModerationResource
 	broadcasterID string
@@ -105,13 +110,13 @@ type RemoveBanRequest struct {
 // RemoveBan creates a request to remove a ban on a user from a channel.
 //
 // Required Scope: moderator:manage:banned_users
-func (r *ModerationResource) RemoveBan(broadcasterId, moderatorId, userId string) *RemoveBanRequest {
-	return &RemoveBanRequest{r, broadcasterId, moderatorId, userId}
+func (r *ModerationResource) RemoveBan(broadcasterID, moderatorID, userID string) *RemoveBanRequest {
+	return &RemoveBanRequest{r, broadcasterID, moderatorID, userID}
 }
 
-// UserID the ID of the user to unban.
-func (c *RemoveBanRequest) TargetID(userId string) *RemoveBanRequest {
-	c.userID = userId
+// TargetID the ID of the user to unban.
+func (c *RemoveBanRequest) TargetID(userID string) *RemoveBanRequest {
+	c.userID = userID
 	return c
 }
 
@@ -126,43 +131,44 @@ func (c *RemoveBanRequest) Do(ctx context.Context, opts ...RequestOption) error 
 	if err != nil {
 		return err
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 	_, err = decodeResponse[any](res)
 	return err
 }
 
+// ClearChatRequest is a request to clear all messages from a channel.
 type ClearChatRequest struct {
 	resource      *ModerationResource
-	broadcasterId string
-	moderatorId   string
-	messageId     string
+	broadcasterID string
+	moderatorID   string
+	messageID     string
 }
 
 // ClearChat creates a request to clear all messages from a channel.
 //
 // Required Scope: moderator:manage:chat_messages
-func (r *ModerationResource) ClearChat(broadcasterId, moderatorId string) *ClearChatRequest {
-	return &ClearChatRequest{r, broadcasterId, moderatorId, ""}
+func (r *ModerationResource) ClearChat(broadcasterID, moderatorID string) *ClearChatRequest {
+	return &ClearChatRequest{r, broadcasterID, moderatorID, ""}
 }
 
 // MessageID the ID of the message to delete.
-func (c *ClearChatRequest) MessageID(messageId string) *ClearChatRequest {
-	c.messageId = messageId
+func (c *ClearChatRequest) MessageID(messageID string) *ClearChatRequest {
+	c.messageID = messageID
 	return c
 }
 
 // Do executes the request.
 func (c *ClearChatRequest) Do(ctx context.Context, opts ...RequestOption) error {
 	query := url.Values{}
-	query.Set("broadcaster_id", c.broadcasterId)
-	query.Set("moderator_id", c.moderatorId)
-	query.Set("message_id", c.messageId)
+	query.Set("broadcaster_id", c.broadcasterID)
+	query.Set("moderator_id", c.moderatorID)
+	query.Set("message_id", c.messageID)
 
 	res, err := c.resource.client.doRequest(ctx, http.MethodDelete, fmt.Sprintf("/moderation/chat?%s", query.Encode()), nil, opts...)
 	if err != nil {
 		return err
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 	_, err = decodeResponse[any](res)
 	return err
 }

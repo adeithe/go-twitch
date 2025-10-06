@@ -330,7 +330,7 @@ func NewChatBan(msg Message) ChatBan {
 
 // NewChatMessageDelete parses a notice that a message was deleted
 func NewChatMessageDelete(msg Message) ChatMessageDelete {
-	delete := ChatMessageDelete{
+	del := ChatMessageDelete{
 		IRCMessage:       msg,
 		ChannelName:      strings.TrimPrefix(msg.Params[0], "#"),
 		TargetID:         msg.Tags["target-msg-id"],
@@ -338,9 +338,9 @@ func NewChatMessageDelete(msg Message) ChatMessageDelete {
 		Text:             msg.Text,
 	}
 	if ts, err := toParsedTimestamp(msg.Tags["tmi-sent-ts"]); err == nil {
-		delete.CreatedAt = ts
+		del.CreatedAt = ts
 	}
-	return delete
+	return del
 }
 
 // IsEmoteOnly returns true if users without VIP or moderator privileges are only permitted to send emotes

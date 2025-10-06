@@ -1,3 +1,4 @@
+// Package irc provides a client for the Twitch IRC service.
 package irc
 
 import (
@@ -18,7 +19,6 @@ type Conn struct {
 	Username  string
 	token     string
 
-	attempts    int
 	socket      net.Conn
 	isShard     bool
 	isConnected bool
@@ -56,7 +56,7 @@ type IConn interface {
 	Ping() (time.Duration, error)
 	Join(...string) error
 	Say(string, string) error
-	Sayf(string, string, ...interface{}) error
+	Sayf(string, string, ...any) error
 	Leave(...string) error
 	Reconnect() error
 	Close()
@@ -130,7 +130,7 @@ func (conn *Conn) Connect() error {
 		return err
 	}
 	if len(conn.Username) < 1 || len(conn.token) < 1 {
-		conn.SetLogin(fmt.Sprintf("justinfan%d", rand.Intn(99999)-100), "Kappa123")
+		_ = conn.SetLogin(fmt.Sprintf("justinfan%d", rand.Intn(99999)-100), "Kappa123") //gosec:disable
 	}
 	conn.socket = socket
 	conn.isConnected = true
@@ -216,7 +216,7 @@ func (conn *Conn) Say(channel string, message string) error {
 // Sayf sends a formatted message in the provided channel if authenticated
 //
 // If using a shards, you must create a single connection and use it as a writer
-func (conn *Conn) Sayf(channel string, format string, a ...interface{}) error {
+func (conn *Conn) Sayf(channel string, format string, a ...any) error {
 	return conn.Say(channel, fmt.Sprintf(format, a...))
 }
 
@@ -254,11 +254,10 @@ func (conn *Conn) Close() {
 	if !conn.IsConnected() {
 		return
 	}
-	conn.socket.Close()
+	_ = conn.socket.Close()
 	timer := time.NewTimer(time.Second)
 	defer timer.Stop()
 	<-timer.C
-	return
 }
 
 // OnServerNotice event called when the IRC server sends a notice message
@@ -340,16 +339,15 @@ func (conn *Conn) reader() {
 	}
 }
 
-//nolint: gocyclo
 //gocyclo:ignore
 func (conn *Conn) handle(msg Message) {
 	switch msg.Command {
 	case CMDReady:
-		conn.Ping()
+		_, _ = conn.Ping()
 	case CMDReconnect:
-		conn.Reconnect()
+		_ = conn.Reconnect()
 	case CMDPing:
-		conn.Ping()
+		_, _ = conn.Ping()
 	case CMDPong:
 		close(conn.pingC)
 
@@ -404,9 +402,9 @@ func (conn *Conn) handle(msg Message) {
 			go f(ban)
 		}
 	case CMDClearMessage:
-		delete := NewChatMessageDelete(msg)
+		del := NewChatMessageDelete(msg)
 		for _, f := range conn.onChannelMessageDelete {
-			go f(delete)
+			go f(del)
 		}
 
 	case CMDNotice:

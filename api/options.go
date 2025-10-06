@@ -5,6 +5,7 @@ import (
 	"net/http"
 )
 
+// ClientOption is a function that modifies a Client.
 type ClientOption func(*Client)
 
 // WithClientSecret sets the client secret to use for API requests.
@@ -32,6 +33,7 @@ func WithHTTPClient(client HTTPClient) ClientOption {
 	}
 }
 
+// RequestOption is a function that modifies an HTTP request.
 type RequestOption func(*http.Request)
 
 // WithBearerToken sets the bearer token to use for API requests.

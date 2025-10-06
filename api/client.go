@@ -1,3 +1,4 @@
+// Package api provides a client for the Twitch API.
 package api
 
 import (
@@ -8,6 +9,7 @@ import (
 	"strings"
 )
 
+// Client is a client for interacting with the Twitch API.
 type Client struct {
 	clientID     string
 	clientSecret string

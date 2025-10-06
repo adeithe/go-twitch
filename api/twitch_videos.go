@@ -8,6 +8,7 @@ import (
 	"time"
 )
 
+// Video represents a Twitch video.
 type Video struct {
 	ID              string        `json:"id"`
 	StreamID        string        `json:"stream_id"`
@@ -27,21 +28,26 @@ type Video struct {
 	CreatedAt       time.Time     `json:"created_at"`
 }
 
+// VideoDuration represents the duration of a video.
 type VideoDuration time.Duration
 
+// VideosResource represents the Twitch Videos API.
 type VideosResource struct {
 	client *Client
 }
 
+// NewVideosResource creates a new VideosResource.
 func NewVideosResource(client *Client) *VideosResource {
 	return &VideosResource{client}
 }
 
+// VideosListCall is a call to the Videos List endpoint.
 type VideosListCall struct {
 	resource *VideosResource
 	opts     []RequestOption
 }
 
+// VideosListResponse is the response from the Videos List endpoint.
 type VideosListResponse struct {
 	Header http.Header
 	Data   []Video
@@ -97,6 +103,7 @@ func (c *VideosListCall) Sort(s string) *VideosListCall {
 	return c
 }
 
+// First sets the maximum number of objects to return.
 func (c *VideosListCall) First(n int) *VideosListCall {
 	c.opts = append(c.opts, SetQueryParameter("first", fmt.Sprint(n)))
 	return c
@@ -122,12 +129,13 @@ func (c *VideosListCall) After(cursor string) *VideosListCall {
 	return c
 }
 
+// Do executes the request.
 func (c *VideosListCall) Do(ctx context.Context, opts ...RequestOption) (*VideosListResponse, error) {
 	res, err := c.resource.client.doRequest(ctx, http.MethodGet, "/videos", nil, append(c.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 
 	data, err := decodeResponse[Video](res)
 	if err != nil {
@@ -141,11 +149,13 @@ func (c *VideosListCall) Do(ctx context.Context, opts ...RequestOption) (*Videos
 	}, nil
 }
 
+// VideosDeleteCall is a call to the Videos Delete endpoint.
 type VideosDeleteCall struct {
 	resource *VideosResource
 	opts     []RequestOption
 }
 
+// VideosDeleteResponse is the response from the Videos Delete endpoint.
 type VideosDeleteResponse struct {
 	Header http.Header
 	Data   []string
@@ -160,12 +170,13 @@ func (r *VideosResource) Delete(ids []string) *VideosDeleteCall {
 	return c
 }
 
+// Do executes the request.
 func (c *VideosDeleteCall) Do(ctx context.Context, opts ...RequestOption) (*VideosDeleteResponse, error) {
 	res, err := c.resource.client.doRequest(ctx, http.MethodDelete, "/videos", nil, append(c.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 
 	data, err := decodeResponse[string](res)
 	if err != nil {
@@ -178,6 +189,7 @@ func (c *VideosDeleteCall) Do(ctx context.Context, opts ...RequestOption) (*Vide
 	}, nil
 }
 
+// UnmarshalJSON implements the json.Unmarshaler interface.
 func (d *VideoDuration) UnmarshalJSON(data []byte) error {
 	var str string
 	if err := json.Unmarshal(data, &str); err != nil {
@@ -192,6 +204,7 @@ func (d *VideoDuration) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// AsDuration converts the VideoDuration to a time.Duration.
 func (d VideoDuration) AsDuration() time.Duration {
 	return time.Duration(d)
 }

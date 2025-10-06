@@ -1,3 +1,4 @@
+// Package twitch provides tools for interacting with the Twitch Developer API.
 package twitch
 
 import (

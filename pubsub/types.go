@@ -35,7 +35,7 @@ var (
 type Packet struct {
 	Type  MessageType  `json:"type"`
 	Nonce string       `json:"nonce,omitempty"`
-	Data  interface{}  `json:"data,omitempty"`
+	Data  any          `json:"data,omitempty"`
 	Error MessageError `json:"error,omitempty"`
 }
 
@@ -94,7 +94,7 @@ const (
 type NonceGenerator func() string
 
 // ParseTopic returns a topic string with the provided arguments
-func ParseTopic(str string, args ...interface{}) string {
+func ParseTopic(str string, args ...any) string {
 	if len(args) > 0 {
 		var params []string
 		for _, arg := range args {

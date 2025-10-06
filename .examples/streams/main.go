@@ -1,3 +1,4 @@
+// Package main provides an example of how to use the Twitch API to list live streams.
 package main
 
 import (

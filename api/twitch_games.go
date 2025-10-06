@@ -6,6 +6,7 @@ import (
 	"net/http"
 )
 
+// Game represents a game on Twitch.
 type Game struct {
 	ID        string `json:"id"`
 	Name      string `json:"name"`
@@ -13,31 +14,37 @@ type Game struct {
 	IGDB      string `json:"igdb_id"`
 }
 
+// GamesResource provides access to the Twitch Games API.
 type GamesResource struct {
 	client *Client
 
 	Top *TopGamesResource
 }
 
+// NewGamesResource creates a new GamesResource.
 func NewGamesResource(client *Client) *GamesResource {
 	c := &GamesResource{client: client}
 	c.Top = NewTopGamesResource(client)
 	return c
 }
 
+// TopGamesResource provides methods for the Twitch Top Games API.
 type TopGamesResource struct {
 	client *Client
 }
 
+// NewTopGamesResource creates a new TopGamesResource.
 func NewTopGamesResource(client *Client) *TopGamesResource {
 	return &TopGamesResource{client}
 }
 
+// TopGamesListCall is a request to list top games based on the specified criteria.
 type TopGamesListCall struct {
 	resource *TopGamesResource
 	opts     []RequestOption
 }
 
+// TopGamesListResponse is the response from listing top games.
 type TopGamesListResponse struct {
 	Header http.Header
 	Data   []Game
@@ -75,7 +82,7 @@ func (c *TopGamesListCall) Do(ctx context.Context, opts ...RequestOption) (*TopG
 	if err != nil {
 		return nil, err
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 
 	data, err := decodeResponse[Game](res)
 	if err != nil {

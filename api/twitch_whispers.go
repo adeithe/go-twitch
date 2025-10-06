@@ -7,24 +7,28 @@ import (
 	"net/http"
 )
 
+// WhispersResource represents the Twitch Whispers API.
 type WhispersResource struct {
 	client *Client
 }
 
+// NewWhispersResource creates a new WhispersResource.
 func NewWhispersResource(client *Client) *WhispersResource {
 	return &WhispersResource{client}
 }
 
+// WhispersInsertCall is a call to the Whispers Insert endpoint.
 type WhispersInsertCall struct {
 	resource *WhispersResource
 	opts     []RequestOption
-	body     map[string]interface{}
+	body     map[string]any
 }
 
-func (r *WhispersResource) Insert(senderId, recipientId string) *WhispersInsertCall {
-	c := &WhispersInsertCall{resource: r, body: make(map[string]interface{})}
-	c.opts = append(c.opts, SetQueryParameter("from_user_id", senderId))
-	c.opts = append(c.opts, SetQueryParameter("to_user_id", recipientId))
+// Insert creates a new WhispersInsertCall to send a whisper from senderID to recipientID.
+func (r *WhispersResource) Insert(senderID, recipientID string) *WhispersInsertCall {
+	c := &WhispersInsertCall{resource: r, body: make(map[string]any)}
+	c.opts = append(c.opts, SetQueryParameter("from_user_id", senderID))
+	c.opts = append(c.opts, SetQueryParameter("to_user_id", recipientID))
 	return c
 }
 
@@ -54,7 +58,7 @@ func (c *WhispersInsertCall) Do(ctx context.Context, opts ...RequestOption) erro
 	if err != nil {
 		return err
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 
 	_, err = decodeResponse[any](res)
 	return err

@@ -6,6 +6,7 @@ import (
 	"time"
 )
 
+// User represents a Twitch user.
 type User struct {
 	ID              string    `json:"id"`
 	Login           string    `json:"login"`
@@ -19,19 +20,23 @@ type User struct {
 	CreatedAt       time.Time `json:"created_at"`
 }
 
+// UsersResource represents the Twitch Users API.
 type UsersResource struct {
 	client *Client
 }
 
+// NewUsersResource creates a new UsersResource.
 func NewUsersResource(client *Client) *UsersResource {
 	return &UsersResource{client}
 }
 
+// UsersListCall is a call to the Users List endpoint.
 type UsersListCall struct {
 	resource *UsersResource
 	opts     []RequestOption
 }
 
+// UsersListResponse is the response from the Users List endpoint.
 type UsersListResponse struct {
 	Header http.Header
 	Data   []User
@@ -66,7 +71,7 @@ func (c *UsersListCall) Do(ctx context.Context, opts ...RequestOption) (*UsersLi
 	if err != nil {
 		return nil, err
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 
 	data, err := decodeResponse[User](res)
 	if err != nil {

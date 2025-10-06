@@ -8,18 +8,21 @@ import (
 	"time"
 )
 
+// Commercial contains information about a commercial that was started.
 type Commercial struct {
 	Length     int    `json:"length"`
 	Message    string `json:"message"`
 	RetryAfter int    `json:"retry_after"`
 }
 
+// AdsResource provides methods for the Twitch Ads API.
 type AdsResource struct {
 	client   *Client
 	Schedule *AdsScheduleResource
 	Snooze   *AdsSnoozeResource
 }
 
+// NewAdsResource creates a new AdsResource.
 func NewAdsResource(client *Client) *AdsResource {
 	r := &AdsResource{client: client}
 	r.Schedule = NewAdsScheduleResource(client)
@@ -27,12 +30,14 @@ func NewAdsResource(client *Client) *AdsResource {
 	return r
 }
 
+// AdsInsertRequest is a request to start a commercial.
 type AdsInsertRequest struct {
 	client        *Client
 	broadcasterID string
 	duration      int
 }
 
+// AdsInsertResponse is the response from starting a commercial.
 type AdsInsertResponse struct {
 	Header http.Header
 	Data   []Commercial
@@ -41,8 +46,8 @@ type AdsInsertResponse struct {
 // Insert creates a request to start a commercial for the specified broadcaster.
 //
 // Required Scope: channel:edit:commercial
-func (r *AdsResource) Insert(broadcasterId string) *AdsInsertRequest {
-	return &AdsInsertRequest{r.client, broadcasterId, 60}
+func (r *AdsResource) Insert(broadcasterID string) *AdsInsertRequest {
+	return &AdsInsertRequest{r.client, broadcasterID, 60}
 }
 
 // Duration sets the duration of the commercial in seconds.
@@ -58,7 +63,7 @@ func (c *AdsInsertRequest) Duration(seconds int) *AdsInsertRequest {
 //	req := client.Ads.Insert("41245072").Duration(60)
 //	data, err := req.Do(ctx, api.WithBearerToken("2gbdx6oar67tqtcmt49t3wpcgycthx")
 func (c *AdsInsertRequest) Do(ctx context.Context, opts ...RequestOption) (*AdsInsertResponse, error) {
-	bs, err := json.Marshal(map[string]interface{}{
+	bs, err := json.Marshal(map[string]any{
 		"broadcaster_id": c.broadcasterID,
 		"length":         c.duration,
 	})
@@ -70,7 +75,7 @@ func (c *AdsInsertRequest) Do(ctx context.Context, opts ...RequestOption) (*AdsI
 	if err != nil {
 		return nil, err
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 
 	data, err := decodeResponse[Commercial](res)
 	if err != nil {
@@ -83,24 +88,29 @@ func (c *AdsInsertRequest) Do(ctx context.Context, opts ...RequestOption) (*AdsI
 	}, nil
 }
 
+// AdsScheduleResource provides methods for the Twitch Ads Schedule API.
 type AdsScheduleResource struct {
 	client *Client
 }
 
+// NewAdsScheduleResource creates a new AdsScheduleResource.
 func NewAdsScheduleResource(client *Client) *AdsScheduleResource {
 	return &AdsScheduleResource{client}
 }
 
+// AdsScheduleListRequest is a request to list ad schedule information.
 type AdsScheduleListRequest struct {
 	client *Client
 	opts   []RequestOption
 }
 
+// AdsScheduleListResponse is the response from listing ad schedule information.
 type AdsScheduleListResponse struct {
 	Header http.Header
 	Data   []AdSchedule
 }
 
+// AdSchedule contains information about the ad schedule for a broadcaster.
 type AdSchedule struct {
 	Duration        int       `json:"duration"`
 	NextAdAt        time.Time `json:"next_ad_at"`
@@ -116,11 +126,11 @@ type AdSchedule struct {
 // NOTE: A new advertisement can NOT be run until 8 minutes running the previous.
 //
 // Required Scope: channel:read:ads
-func (r *AdsScheduleResource) List(broadcasterId string) *AdsScheduleListRequest {
+func (r *AdsScheduleResource) List(broadcasterID string) *AdsScheduleListRequest {
 	return &AdsScheduleListRequest{
 		client: r.client,
 		opts: []RequestOption{
-			AddQueryParameter("broadcaster_id", broadcasterId),
+			AddQueryParameter("broadcaster_id", broadcasterID),
 		},
 	}
 }
@@ -131,7 +141,7 @@ func (r *AdsScheduleListRequest) Do(ctx context.Context, opts ...RequestOption) 
 	if err != nil {
 		return nil, err
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 
 	data, err := decodeResponse[AdSchedule](res)
 	if err != nil {
@@ -144,24 +154,29 @@ func (r *AdsScheduleListRequest) Do(ctx context.Context, opts ...RequestOption) 
 	}, nil
 }
 
+// AdsSnoozeResource provides methods for the Twitch Ads Snooze API.
 type AdsSnoozeResource struct {
 	client *Client
 }
 
+// NewAdsSnoozeResource creates a new AdsSnoozeResource.
 func NewAdsSnoozeResource(client *Client) *AdsSnoozeResource {
 	return &AdsSnoozeResource{client}
 }
 
+// AdsSnoozeRequest is a request to snooze ads for a broadcaster.
 type AdsSnoozeRequest struct {
 	client *Client
 	opts   []RequestOption
 }
 
+// AdsSnoozeResponse is the response from snoozing ads for a broadcaster.
 type AdsSnoozeResponse struct {
 	Header http.Header
 	Data   []AdSnooze
 }
 
+// AdSnooze contains information about the ad snooze status for a broadcaster.
 type AdSnooze struct {
 	SnoozeCount     int       `json:"snooze_count"`
 	SnoozeRefreshAt time.Time `json:"snooze_refresh_at"`
@@ -172,11 +187,11 @@ type AdSnooze struct {
 // This endpoint duplicates the snooze functionality in the creator dashboard's Ad Manager.
 //
 // Required Scope: channel:manage:ads
-func (r *AdsSnoozeResource) Insert(broadcasterId string) *AdsSnoozeRequest {
+func (r *AdsSnoozeResource) Insert(broadcasterID string) *AdsSnoozeRequest {
 	return &AdsSnoozeRequest{
 		client: r.client,
 		opts: []RequestOption{
-			AddQueryParameter("broadcaster_id", broadcasterId),
+			AddQueryParameter("broadcaster_id", broadcasterID),
 		},
 	}
 }
@@ -187,7 +202,7 @@ func (r *AdsSnoozeRequest) Do(ctx context.Context, opts ...RequestOption) (*AdsS
 	if err != nil {
 		return nil, err
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 
 	data, err := decodeResponse[AdSnooze](res)
 	if err != nil {

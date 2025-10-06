@@ -1,3 +1,4 @@
+// Package main provides a simple example of using the pubsub package.
 package main
 
 import (
