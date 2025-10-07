@@ -37,6 +37,13 @@ type ClipsResource struct {
 	client *Client
 }
 
+const (
+	// EndpointClips is the endpoint for the Twitch Clips API.
+	EndpointClips = TwitchAPIVersionHelix + "/clips"
+	// EndpointClipsGetClipsDownload is the endpoint for getting clip download URLs.
+	EndpointClipsGetClipsDownload = TwitchAPIVersionHelix + "/clips/downloads"
+)
+
 // NewClipsResource creates a new ClipsResource.
 func NewClipsResource(client *Client) *ClipsResource {
 	return &ClipsResource{client}
@@ -120,7 +127,7 @@ func (c *ClipsListCall) Featured() *ClipsListCall {
 
 // Do executes the call.
 func (c *ClipsListCall) Do(ctx context.Context, opts ...RequestOption) (*ClipsListResponse, error) {
-	res, err := c.resource.client.doRequest(ctx, http.MethodGet, "/clips", nil, append(c.opts, opts...)...)
+	res, err := c.resource.client.doRequest(ctx, http.MethodGet, EndpointClips, nil, append(c.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}

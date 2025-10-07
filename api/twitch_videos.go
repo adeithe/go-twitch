@@ -36,6 +36,9 @@ type VideosResource struct {
 	client *Client
 }
 
+// EndpointVideos is the endpoint for the Twitch Videos API.
+const EndpointVideos = TwitchAPIVersionHelix + "/videos"
+
 // NewVideosResource creates a new VideosResource.
 func NewVideosResource(client *Client) *VideosResource {
 	return &VideosResource{client}
@@ -131,7 +134,7 @@ func (c *VideosListCall) After(cursor string) *VideosListCall {
 
 // Do executes the request.
 func (c *VideosListCall) Do(ctx context.Context, opts ...RequestOption) (*VideosListResponse, error) {
-	res, err := c.resource.client.doRequest(ctx, http.MethodGet, "/videos", nil, append(c.opts, opts...)...)
+	res, err := c.resource.client.doRequest(ctx, http.MethodGet, EndpointVideos, nil, append(c.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}
@@ -172,7 +175,7 @@ func (r *VideosResource) Delete(ids []string) *VideosDeleteCall {
 
 // Do executes the request.
 func (c *VideosDeleteCall) Do(ctx context.Context, opts ...RequestOption) (*VideosDeleteResponse, error) {
-	res, err := c.resource.client.doRequest(ctx, http.MethodDelete, "/videos", nil, append(c.opts, opts...)...)
+	res, err := c.resource.client.doRequest(ctx, http.MethodDelete, EndpointVideos, nil, append(c.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}

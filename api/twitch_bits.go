@@ -59,6 +59,15 @@ type CheermotesResource struct {
 	client *Client
 }
 
+const (
+	// EndpointBitsGetLeaderboard is the endpoint for getting the Bits leaderboard.
+	EndpointBitsGetLeaderboard = TwitchAPIVersionHelix + "/bits/leaderboard"
+	// EndpointBitsGetCheermotes is the endpoint for getting cheermotes.
+	EndpointBitsGetCheermotes = TwitchAPIVersionHelix + "/bits/cheermotes"
+	// EndpointBitsGetExtensionTransactions is the endpoint for getting extension transactions.
+	EndpointBitsGetExtensionTransactions = TwitchAPIVersionHelix + "/extensions/transactions"
+)
+
 // NewCheermotesResource creates a new CheermotesResource.
 func NewCheermotesResource(client *Client) *CheermotesResource {
 	return &CheermotesResource{client}
@@ -91,7 +100,7 @@ func (c *CheermotesListCall) BroadcasterID(id string) *CheermotesListCall {
 
 // Do executes the request.
 func (c *CheermotesListCall) Do(ctx context.Context, opts ...RequestOption) (*CheermotesListResponse, error) {
-	res, err := c.resource.client.doRequest(ctx, http.MethodGet, "/bits/cheermotes", nil, append(opts, c.opts...)...)
+	res, err := c.resource.client.doRequest(ctx, http.MethodGet, EndpointBitsGetCheermotes, nil, append(opts, c.opts...)...)
 	if err != nil {
 		return nil, err
 	}
@@ -169,7 +178,7 @@ func (c *BitsLeaderboardListCall) UserID(userID string) *BitsLeaderboardListCall
 
 // Do executes the request.
 func (c *BitsLeaderboardListCall) Do(ctx context.Context, opts ...RequestOption) (*BitsLeaderboardListResponse, error) {
-	res, err := c.resource.client.doRequest(ctx, http.MethodGet, "/bits/leaderboard", nil, append(opts, c.opts...)...)
+	res, err := c.resource.client.doRequest(ctx, http.MethodGet, EndpointBitsGetLeaderboard, nil, append(opts, c.opts...)...)
 	if err != nil {
 		return nil, err
 	}
@@ -272,7 +281,7 @@ func (c *BitsTransactionsListCall) After(cursor string) *BitsTransactionsListCal
 
 // Do executes the request.
 func (c *BitsTransactionsListCall) Do(ctx context.Context, opts ...RequestOption) (*BitsTransactionsListResponse, error) {
-	res, err := c.client.doRequest(ctx, http.MethodGet, "/extensions/transactions", nil, append(opts, c.opts...)...)
+	res, err := c.client.doRequest(ctx, http.MethodGet, EndpointBitsGetExtensionTransactions, nil, append(opts, c.opts...)...)
 	if err != nil {
 		return nil, err
 	}

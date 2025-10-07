@@ -42,6 +42,17 @@ type UsersListResponse struct {
 	Data   []User
 }
 
+const (
+	// EndpointUsers is the endpoint for getting users.
+	EndpointUsers = TwitchAPIVersionHelix + "/users"
+	// EndpointUsersBlocks is the endpoint for managing blocked users.
+	EndpointUsersBlocks = TwitchAPIVersionHelix + "/users/blocks"
+	// EndpointUsersAllExtensions is the endpoint for getting all extensions a user has installed.
+	EndpointUsersAllExtensions = TwitchAPIVersionHelix + "/users/extensions/list"
+	// EndpointUsersActiveExtensions is the endpoint for getting active extensions for a user.
+	EndpointUsersActiveExtensions = TwitchAPIVersionHelix + "/users/extensions"
+)
+
 // List creates a request to list users based on the specified criteria.
 //
 // The email field will be empty unless the access token has the user:read:email scope.
@@ -67,7 +78,7 @@ func (c *UsersListCall) Login(logins []string) *UsersListCall {
 
 // Do executes the request.
 func (c *UsersListCall) Do(ctx context.Context, opts ...RequestOption) (*UsersListResponse, error) {
-	res, err := c.resource.client.doRequest(ctx, http.MethodGet, "/users", nil, append(opts, c.opts...)...)
+	res, err := c.resource.client.doRequest(ctx, http.MethodGet, EndpointUsers, nil, append(opts, c.opts...)...)
 	if err != nil {
 		return nil, err
 	}

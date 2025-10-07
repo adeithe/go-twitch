@@ -43,6 +43,15 @@ type AdsInsertResponse struct {
 	Data   []Commercial
 }
 
+const (
+	// EndpointAdsStartCommercial is the endpoint for starting a commercial.
+	EndpointAdsStartCommercial = TwitchAPIVersionHelix + "/channels/commercial"
+	// EndpointAdsGetAdsSchedule is the endpoint for getting ad schedule information.
+	EndpointAdsGetAdsSchedule = TwitchAPIVersionHelix + "/channels/ads"
+	// EndpointAdsSnoozeNextAd is the endpoint for snoozing the next ad.
+	EndpointAdsSnoozeNextAd = TwitchAPIVersionHelix + "/channels/ads/schedule/snooze"
+)
+
 // Insert creates a request to start a commercial for the specified broadcaster.
 //
 // Required Scope: channel:edit:commercial
@@ -71,7 +80,7 @@ func (c *AdsInsertRequest) Do(ctx context.Context, opts ...RequestOption) (*AdsI
 		return nil, err
 	}
 
-	res, err := c.client.doRequest(ctx, http.MethodPost, "/channels/commercial", bytes.NewReader(bs), opts...)
+	res, err := c.client.doRequest(ctx, http.MethodPost, EndpointAdsStartCommercial, bytes.NewReader(bs), opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -137,7 +146,7 @@ func (r *AdsScheduleResource) List(broadcasterID string) *AdsScheduleListRequest
 
 // Do executes the request.
 func (r *AdsScheduleListRequest) Do(ctx context.Context, opts ...RequestOption) (*AdsScheduleListResponse, error) {
-	res, err := r.client.doRequest(ctx, http.MethodGet, "/channels/ads", nil, append(r.opts, opts...)...)
+	res, err := r.client.doRequest(ctx, http.MethodGet, EndpointAdsGetAdsSchedule, nil, append(r.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}
@@ -198,7 +207,7 @@ func (r *AdsSnoozeResource) Insert(broadcasterID string) *AdsSnoozeRequest {
 
 // Do executes the request.
 func (r *AdsSnoozeRequest) Do(ctx context.Context, opts ...RequestOption) (*AdsSnoozeResponse, error) {
-	res, err := r.client.doRequest(ctx, http.MethodPost, "/channels/ads/schedule/snooze", nil, append(r.opts, opts...)...)
+	res, err := r.client.doRequest(ctx, http.MethodPost, EndpointAdsSnoozeNextAd, nil, append(r.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}

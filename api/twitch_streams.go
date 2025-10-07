@@ -48,6 +48,17 @@ type StreamsListResponse struct {
 	Cursor string
 }
 
+const (
+	// EndpointStreamsGetKey is the endpoint for getting a stream key.
+	EndpointStreamsGetKey = TwitchAPIVersionHelix + "/streams/key"
+	// EndpointStreams is the endpoint for getting stream information.
+	EndpointStreams = TwitchAPIVersionHelix + "/streams"
+	// EndpointStreamsFollowed is the endpoint for getting followed streams.
+	EndpointStreamsFollowed = TwitchAPIVersionHelix + "/streams/followed"
+	// EndpointStreamsMarkers is the endpoint for managing a markers for a stream.
+	EndpointStreamsMarkers = TwitchAPIVersionHelix + "/streams/markers"
+)
+
 // List creates a request to list streams based on the specified criteria.
 //
 // Requires an app or user access token. No scope is required.
@@ -117,7 +128,7 @@ func (c *StreamsListCall) After(cursor string) *StreamsListCall {
 
 // Do executes the request.
 func (c *StreamsListCall) Do(ctx context.Context, opts ...RequestOption) (*StreamsListResponse, error) {
-	res, err := c.resource.client.doRequest(ctx, http.MethodGet, "/streams", nil, append(opts, c.opts...)...)
+	res, err := c.resource.client.doRequest(ctx, http.MethodGet, EndpointStreams, nil, append(opts, c.opts...)...)
 	if err != nil {
 		return nil, err
 	}

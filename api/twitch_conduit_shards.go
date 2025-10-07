@@ -32,6 +32,9 @@ type Transport struct {
 	DisconnectedAt *time.Time `json:"disconnected_at,omitempty"`
 }
 
+// EndpointConduitsShards is the endpoint for the Twitch Eventsub Conduit Shards API.
+const EndpointConduitsShards = TwitchAPIVersionHelix + "/eventsub/conduits/shards"
+
 // NewWebhookTransport creates a new webhook transport for a Twitch Eventsub Conduit Shard.
 func NewWebhookTransport(callback, secret string) Transport {
 	return Transport{
@@ -89,7 +92,7 @@ func (c *ConduitShardListCall) After(cursor string) *ConduitShardListCall {
 
 // Do executes the request.
 func (c *ConduitShardListCall) Do(ctx context.Context, opts ...RequestOption) (*ConduitShardsResponse, error) {
-	res, err := c.resource.client.doRequest(ctx, http.MethodGet, "/eventsub/conduits/shards", nil, opts...)
+	res, err := c.resource.client.doRequest(ctx, http.MethodGet, EndpointConduitsShards, nil, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -141,7 +144,7 @@ func (c *ConduitShardUpdateCall) Do(ctx context.Context, opts ...RequestOption) 
 		return nil, err
 	}
 
-	res, err := c.resource.client.doRequest(ctx, http.MethodPatch, "/eventsub/conduits/shards", bytes.NewReader(bs), opts...)
+	res, err := c.resource.client.doRequest(ctx, http.MethodPatch, EndpointConduitsShards, bytes.NewReader(bs), opts...)
 	if err != nil {
 		return nil, err
 	}

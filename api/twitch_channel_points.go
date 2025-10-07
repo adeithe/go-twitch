@@ -84,6 +84,21 @@ type CustomRewardsListResponse struct {
 	Data   []CustomReward
 }
 
+const (
+	// EndpointChannelPointsCreateCustomRewards is the endpoint for creating custom rewards.
+	EndpointChannelPointsCreateCustomRewards = TwitchAPIVersionHelix + "/channel_points/custom_rewards"
+	// EndpointChannelPointsDeleteCustomReward is the endpoint for deleting a custom reward.
+	EndpointChannelPointsDeleteCustomReward = TwitchAPIVersionHelix + "/channel_points/custom_rewards"
+	// EndpointChannelPointsGetCustomRewards is the endpoint for getting custom rewards.
+	EndpointChannelPointsGetCustomRewards = TwitchAPIVersionHelix + "/channel_points/custom_rewards"
+	// EndpointChannelPointsGetCustomRewardRedemptions is the endpoint for getting custom reward redemptions.
+	EndpointChannelPointsGetCustomRewardRedemptions = TwitchAPIVersionHelix + "/channel_points/custom_rewards/redemptions"
+	// EndpointChannelPointsUpdateCustomReward is the endpoint for updating a custom reward.
+	EndpointChannelPointsUpdateCustomReward = TwitchAPIVersionHelix + "/channel_points/custom_rewards"
+	// EndpointChannelPointsUpdateRedemptionStatus is the endpoint for updating the status of a reward redemption.
+	EndpointChannelPointsUpdateRedemptionStatus = TwitchAPIVersionHelix + "/channel_points/custom_rewards/redemptions"
+)
+
 // List creates a reqyest to list custom channel point rewards for a given broadcaster.
 func (r *CustomRewardsResource) List(broadcasterID string) *CustomRewardsListCall {
 	c := &CustomRewardsListCall{resource: r}
@@ -107,7 +122,7 @@ func (c *CustomRewardsListCall) OnlyManageable() *CustomRewardsListCall {
 
 // Do executes the request.
 func (c *CustomRewardsListCall) Do(ctx context.Context, opts ...RequestOption) (*CustomRewardsListResponse, error) {
-	res, err := c.resource.client.doRequest(ctx, http.MethodGet, "/channel_points/custom_rewards", nil, append(opts, c.opts...)...)
+	res, err := c.resource.client.doRequest(ctx, http.MethodGet, EndpointChannelPointsGetCustomRewards, nil, append(opts, c.opts...)...)
 	if err != nil {
 		return nil, err
 	}
@@ -235,7 +250,7 @@ func (c *CustomRewardsInsertCall) Do(ctx context.Context, opts ...RequestOption)
 		return nil, err
 	}
 
-	res, err := c.resource.client.doRequest(ctx, http.MethodPost, "/channel_points/custom_rewards", bytes.NewReader(bs), append(opts, c.opts...)...)
+	res, err := c.resource.client.doRequest(ctx, http.MethodPost, EndpointChannelPointsCreateCustomRewards, bytes.NewReader(bs), append(opts, c.opts...)...)
 	if err != nil {
 		return nil, err
 	}
@@ -364,7 +379,7 @@ func (c *CustomRewardsUpdateCall) Do(ctx context.Context, opts ...RequestOption)
 		return nil, err
 	}
 
-	res, err := c.resource.client.doRequest(ctx, http.MethodPatch, "/channel_points/custom_rewards", bytes.NewReader(bs), append(opts, c.opts...)...)
+	res, err := c.resource.client.doRequest(ctx, http.MethodPatch, EndpointChannelPointsUpdateCustomReward, bytes.NewReader(bs), append(opts, c.opts...)...)
 	if err != nil {
 		return nil, err
 	}
@@ -397,7 +412,7 @@ func (r *CustomRewardsResource) Delete(broadcasterID, id string) *CustomRewardsD
 
 // Do executes the request.
 func (c *CustomRewardsDeleteCall) Do(ctx context.Context, opts ...RequestOption) error {
-	res, err := c.resource.client.doRequest(ctx, http.MethodDelete, "/channel_points/custom_rewards", nil, append(opts, c.opts...)...)
+	res, err := c.resource.client.doRequest(ctx, http.MethodDelete, EndpointChannelPointsDeleteCustomReward, nil, append(opts, c.opts...)...)
 	if err != nil {
 		return err
 	}
@@ -477,7 +492,7 @@ func (c *CustomRewardsRedemptionListCall) After(cursor string) *CustomRewardsRed
 
 // Do executes the request.
 func (c *CustomRewardsRedemptionListCall) Do(ctx context.Context, opts ...RequestOption) (*CustomRewardsRedemptionListResponse, error) {
-	res, err := c.resource.client.doRequest(ctx, http.MethodGet, "/channel_points/custom_rewards/redemptions", nil, append(opts, c.opts...)...)
+	res, err := c.resource.client.doRequest(ctx, http.MethodGet, EndpointChannelPointsGetCustomRewardRedemptions, nil, append(opts, c.opts...)...)
 	if err != nil {
 		return nil, err
 	}
@@ -532,7 +547,7 @@ func (c *CustomRewardsRedemptionUpdateCall) Fulfill() *CustomRewardsRedemptionUp
 
 // Do executes the request.
 func (c *CustomRewardsRedemptionUpdateCall) Do(ctx context.Context, opts ...RequestOption) (*CustomRewardsRedemptionUpdateResponse, error) {
-	res, err := c.resource.client.doRequest(ctx, http.MethodPatch, "/channel_points/custom_rewards/redemptions", nil, append(opts, c.opts...)...)
+	res, err := c.resource.client.doRequest(ctx, http.MethodPatch, EndpointChannelPointsUpdateRedemptionStatus, nil, append(opts, c.opts...)...)
 	if err != nil {
 		return nil, err
 	}

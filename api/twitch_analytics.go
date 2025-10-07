@@ -60,6 +60,13 @@ type ExtensionAnalytics struct {
 	DateRate    AnalyticsDateRange `json:"date_range"`
 }
 
+const (
+	// EndpointAnalyticsGetExtensionAnalytics is the endpoint for getting extension analytics.
+	EndpointAnalyticsGetExtensionAnalytics = TwitchAPIVersionHelix + "/analytics/extensions"
+	// EndpointAnalyticsGetGameAnalytics is the endpoint for getting game analytics.
+	EndpointAnalyticsGetGameAnalytics = TwitchAPIVersionHelix + "/analytics/games"
+)
+
 // List creates a new call to get extension analytics.
 func (r *AnalyticsExtensionResource) List() *AnalyticsExtensionListCall {
 	return &AnalyticsExtensionListCall{client: r.client}
@@ -105,7 +112,7 @@ func (r *AnalyticsExtensionListCall) After(cursor string) *AnalyticsExtensionLis
 
 // Do executes the request.
 func (r *AnalyticsExtensionListCall) Do(ctx context.Context, opts ...RequestOption) (*AnalyticsExtensionListResponse, error) {
-	res, err := r.client.doRequest(ctx, http.MethodGet, "/analytics/extensions", nil, append(r.opts, opts...)...)
+	res, err := r.client.doRequest(ctx, http.MethodGet, EndpointAnalyticsGetExtensionAnalytics, nil, append(r.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}
@@ -191,7 +198,7 @@ func (r *AnalyticsGameListCall) After(a string) *AnalyticsGameListCall {
 
 // Do executes the request.
 func (r *AnalyticsGameListCall) Do(ctx context.Context, opts ...RequestOption) (*AnalyticsGameListResponse, error) {
-	res, err := r.client.doRequest(ctx, http.MethodGet, "/analytics/games", nil, append(r.opts, opts...)...)
+	res, err := r.client.doRequest(ctx, http.MethodGet, EndpointAnalyticsGetGameAnalytics, nil, append(r.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}

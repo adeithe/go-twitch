@@ -24,6 +24,19 @@ type ChannelsResource struct {
 	client *Client
 }
 
+const (
+	// EndpointChannelsGetInformation is the endpoint for getting channel information.
+	EndpointChannelsGetInformation = TwitchAPIVersionHelix + "/channels"
+	// EndpointChannelsModifyInformation is the endpoint for modifying channel information.
+	EndpointChannelsModifyInformation = TwitchAPIVersionHelix + "/channels"
+	// EndpointChannelsGetEditors is the endpoint for getting channel editors.
+	EndpointChannelsGetEditors = TwitchAPIVersionHelix + "/channels/editors"
+	// EndpointChannelsGetFollowedChannels is the endpoint for getting followed channels.
+	EndpointChannelsGetFollowedChannels = TwitchAPIVersionHelix + "/channels/followed"
+	// EndpointChannelsGetFollowers is the endpoint for getting channel followers.
+	EndpointChannelsGetFollowers = TwitchAPIVersionHelix + "/channels/followers"
+)
+
 // NewChannelsResource creates a new ChannelsResource.
 func NewChannelsResource(client *Client) *ChannelsResource {
 	return &ChannelsResource{client}
@@ -56,7 +69,7 @@ func (c *ChannelsListCall) BroadcasterID(ids []string) *ChannelsListCall {
 
 // Do executes the request.
 func (c *ChannelsListCall) Do(ctx context.Context, opts ...RequestOption) (*ChannelsListResponse, error) {
-	res, err := c.resource.client.doRequest(ctx, http.MethodGet, "/channels", nil, append(opts, c.opts...)...)
+	res, err := c.resource.client.doRequest(ctx, http.MethodGet, EndpointChannelsGetInformation, nil, append(opts, c.opts...)...)
 	if err != nil {
 		return nil, err
 	}

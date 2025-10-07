@@ -47,8 +47,12 @@ type Client struct {
 	Whispers      *WhispersResource
 }
 
-// BaseURL is the base URL for the Twitch API.
-const BaseURL = "https://api.twitch.tv/helix"
+const (
+	// BaseURL is the base URL for the Twitch API.
+	BaseURL string = "https://api.twitch.tv"
+	// TwitchAPIVersionHelix is the base path for the Helix API.
+	TwitchAPIVersionHelix = "/helix"
+)
 
 // New creates a new API client for Twitch.
 func New(clientID string, opts ...ClientOption) *Client {

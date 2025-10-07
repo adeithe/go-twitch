@@ -24,6 +24,9 @@ type WhispersInsertCall struct {
 	body     map[string]any
 }
 
+// EndpointWhispers is the endpoint for sending whispers.
+const EndpointWhispers = TwitchAPIVersionHelix + "/whispers"
+
 // Insert creates a new WhispersInsertCall to send a whisper from senderID to recipientID.
 func (r *WhispersResource) Insert(senderID, recipientID string) *WhispersInsertCall {
 	c := &WhispersInsertCall{resource: r, body: make(map[string]any)}
@@ -54,7 +57,7 @@ func (c *WhispersInsertCall) Do(ctx context.Context, opts ...RequestOption) erro
 		return err
 	}
 
-	res, err := c.resource.client.doRequest(ctx, http.MethodPost, "/whispers", bytes.NewReader(bs), opts...)
+	res, err := c.resource.client.doRequest(ctx, http.MethodPost, EndpointWhispers, bytes.NewReader(bs), opts...)
 	if err != nil {
 		return err
 	}

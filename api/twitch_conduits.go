@@ -37,6 +37,9 @@ type ConduitsListCall struct {
 	resource *ConduitsResource
 }
 
+// EndpointConduits is the endpoint for the Twitch Eventsub Conduits API.
+const EndpointConduits = TwitchAPIVersionHelix + "/eventsub/conduits"
+
 // List creates a new ConduitsListCall.
 func (r *ConduitsResource) List() *ConduitsListCall {
 	return &ConduitsListCall{resource: r}
@@ -44,7 +47,7 @@ func (r *ConduitsResource) List() *ConduitsListCall {
 
 // Do executes the request.
 func (c *ConduitsListCall) Do(ctx context.Context, opts ...RequestOption) (*ConduitsResponse, error) {
-	res, err := c.resource.client.doRequest(ctx, http.MethodGet, "/eventsub/conduits", nil, opts...)
+	res, err := c.resource.client.doRequest(ctx, http.MethodGet, EndpointConduits, nil, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -85,7 +88,7 @@ func (c *ConduitInsertCall) Do(ctx context.Context, opts ...RequestOption) (*Con
 		return nil, err
 	}
 
-	res, err := c.resource.client.doRequest(ctx, http.MethodPost, "/eventsub/conduits", bytes.NewReader(bs), opts...)
+	res, err := c.resource.client.doRequest(ctx, http.MethodPost, EndpointConduits, bytes.NewReader(bs), opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -126,7 +129,7 @@ func (c *ConduitUpdateCall) Do(ctx context.Context, opts ...RequestOption) (*Con
 		return nil, err
 	}
 
-	res, err := c.resource.client.doRequest(ctx, http.MethodPatch, "/eventsub/conduits", bytes.NewReader(bs), opts...)
+	res, err := c.resource.client.doRequest(ctx, http.MethodPatch, EndpointConduits, bytes.NewReader(bs), opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -161,7 +164,7 @@ func (r *ConduitsResource) Delete(id string) *ConduitDeleteCall {
 
 // Do executes the request.
 func (c *ConduitDeleteCall) Do(ctx context.Context, opts ...RequestOption) error {
-	res, err := c.resource.client.doRequest(ctx, http.MethodDelete, "/eventsub/conduits", nil, append(c.opts, opts...)...)
+	res, err := c.resource.client.doRequest(ctx, http.MethodDelete, EndpointConduits, nil, append(c.opts, opts...)...)
 	if err != nil {
 		return err
 	}
