@@ -13,8 +13,8 @@ type {{ $EndpointName }} struct {
 {{- end }}
 }
 
-// {{ .Name }}Response represents the response from a {{ .Method }} request to {{ .Path }}.
-type {{ .Name }}Response struct {
+// {{ .Name }}{{ MethodName .Method }}Response represents the response from a {{ .Method }} request to {{ .Path }}.
+type {{ .Name }}{{ MethodName .Method }}Response struct {
 	// Status is the HTTP status text returned by the Twitch API. For example, "200 OK".
 	Status string
 	// StatusCode is the HTTP status code returned by the Twitch API. For example, 200.
@@ -74,7 +74,7 @@ func (api *{{ $EndpointName }}) {{ .Name }}({{ $varName }}{{ if .Slice }}s{{ end
 {{- end }}
 
 // Do executes the request.
-func (api *{{ $EndpointName }}) Do(ctx context.Context, opts ...RequestOption) (*{{ .Name }}Response, error) {
+func (api *{{ $EndpointName }}) Do(ctx context.Context, opts ...RequestOption) (*{{ .Name }}{{ MethodName .Method }}Response, error) {
 {{- if .HasBody }}
 	bs, err := json.Marshal(api.body)
 	if err != nil {
@@ -95,7 +95,7 @@ func (api *{{ $EndpointName }}) Do(ctx context.Context, opts ...RequestOption) (
 		return nil, err
 	}
 
-	return &{{ .Name }}Response{
+	return &{{ .Name }}{{ MethodName .Method }}Response{
 		Status:     res.Status,
 		StatusCode: res.StatusCode,
 		Header:     res.Header,

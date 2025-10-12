@@ -5,441 +5,117 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
-	"time"
 )
 
-// ChannelPointsResource provides methods for the Twitch Channel Points API.
+// ChannelPointsResource represents the Twitch ChannelPoints API.
 type ChannelPointsResource struct {
 	client *Client
 
-	CustomRewards *CustomRewardsResource
+	// Redemptions provides access to the Twitch Redemptions API.
+	Redemptions *ChannelPointsRedemptionsResource
+	// Rewards provides access to the Twitch Rewards API.
+	Rewards *ChannelPointsRewardsResource
 }
 
 // NewChannelPointsResource creates a new ChannelPointsResource.
 func NewChannelPointsResource(client *Client) *ChannelPointsResource {
 	r := &ChannelPointsResource{client: client}
-	r.CustomRewards = NewCustomRewardsResource(client)
+	r.Redemptions = NewChannelPointsRedemptionsResource(client)
+	r.Rewards = NewChannelPointsRewardsResource(client)
 	return r
 }
 
-// CustomRewardsResource provides methods for the Twitch Channel Points Custom Rewards API.
-type CustomRewardsResource struct {
-	client *Client
-
-	Redemption *CustomRewardsRedemptionResource
-}
-
-// NewCustomRewardsResource creates a new CustomRewardsResource.
-func NewCustomRewardsResource(client *Client) *CustomRewardsResource {
-	return &CustomRewardsResource{client: client}
-}
-
-// CustomRewardsListCall is a call to the custom rewards list endpoint.
-type CustomRewardsListCall struct {
-	resource *CustomRewardsResource
-	opts     []RequestOption
-}
-
-// CustomRewardsListResponse is the response from the custom rewards list endpoint.
-type CustomRewardsListResponse struct {
-	Header http.Header
-	Data   []CustomReward
-}
-
-// List creates a reqyest to list custom channel point rewards for a given broadcaster.
-func (r *CustomRewardsResource) List(broadcasterID string) *CustomRewardsListCall {
-	c := &CustomRewardsListCall{resource: r}
-	c.opts = append(c.opts, SetQueryParameter("broadcaster_id", broadcasterID))
-	return c
-}
-
-// ID filters the results to the specified reward IDs.
-func (c *CustomRewardsListCall) ID(ids []string) *CustomRewardsListCall {
-	for _, id := range ids {
-		c.opts = append(c.opts, SetQueryParameter("id", id))
-	}
-	return c
-}
-
-// OnlyManageable filters the results to only rewards that the app may manage.
-func (c *CustomRewardsListCall) OnlyManageable() *CustomRewardsListCall {
-	c.opts = append(c.opts, SetQueryParameter("only_manageable_rewards", "true"))
-	return c
-}
-
-// Do executes the request.
-func (c *CustomRewardsListCall) Do(ctx context.Context, opts ...RequestOption) (*CustomRewardsListResponse, error) {
-	res, err := c.resource.client.DoRequest(ctx, http.MethodGet, EndpointChannelPointsGetCustomRewards, nil, append(opts, c.opts...)...)
-	if err != nil {
-		return nil, err
-	}
-	defer func() { _ = res.Body.Close() }()
-
-	data, err := decodeResponse[CustomReward](res)
-	if err != nil {
-		return nil, err
-	}
-
-	return &CustomRewardsListResponse{
-		Header: res.Header,
-		Data:   data.Data,
-	}, nil
-}
-
-// CustomRewardsInsertCall is a call to the custom rewards insert endpoint.
-type CustomRewardsInsertCall struct {
-	resource *CustomRewardsResource
-	opts     []RequestOption
-	body     map[string]any
-}
-
-// CustomRewardsInsertResponse is the response from the custom rewards insert endpoint.
-type CustomRewardsInsertResponse struct {
-	Header http.Header
-	Data   []CustomReward
-}
-
-// Insert creates a request to create a custom channel point reward for a given broadcaster.
-func (r *CustomRewardsResource) Insert(broadcasterID string) *CustomRewardsInsertCall {
-	c := &CustomRewardsInsertCall{resource: r, body: make(map[string]any)}
-	c.opts = append(c.opts, SetQueryParameter("broadcaster_id", broadcasterID))
-	return c
-}
-
-// Title sets the title of the reward.
-func (c *CustomRewardsInsertCall) Title(title string) *CustomRewardsInsertCall {
-	c.body["title"] = title
-	return c
-}
-
-// Prompt sets the prompt of the reward.
-func (c *CustomRewardsInsertCall) Prompt(prompt string) *CustomRewardsInsertCall {
-	c.body["prompt"] = prompt
-	return c
-}
-
-// Cost sets the cost of the reward.
-func (c *CustomRewardsInsertCall) Cost(cost int64) *CustomRewardsInsertCall {
-	c.body["cost"] = cost
-	return c
-}
-
-// BackgroundColor sets the background color of the reward in hex code format.
-func (c *CustomRewardsInsertCall) BackgroundColor(hexCode string) *CustomRewardsInsertCall {
-	c.body["background_color"] = hexCode
-	return c
-}
-
-// IsEnabled sets whether the reward is enabled.
-func (c *CustomRewardsInsertCall) IsEnabled(enabled bool) *CustomRewardsInsertCall {
-	c.body["is_enabled"] = enabled
-	return c
-}
-
-// IsUserInputRequired sets whether user input is required for the reward.
-func (c *CustomRewardsInsertCall) IsUserInputRequired(required bool) *CustomRewardsInsertCall {
-	c.body["is_user_input_required"] = required
-	return c
-}
-
-// IsMaxPerStreamEnabled sets whether the max per stream limit is enabled for the reward.
-func (c *CustomRewardsInsertCall) IsMaxPerStreamEnabled(enabled bool) *CustomRewardsInsertCall {
-	c.body["is_max_per_stream_enabled"] = enabled
-	return c
-}
-
-// MaxPerStream sets the max per stream limit for the reward.
-func (c *CustomRewardsInsertCall) MaxPerStream(limit int64) *CustomRewardsInsertCall {
-	c.body["max_per_stream"] = limit
-	return c
-}
-
-// IsMaxPerUserPerStreamEnabled sets whether the max per user per stream limit is enabled for the reward.
-func (c *CustomRewardsInsertCall) IsMaxPerUserPerStreamEnabled(enabled bool) *CustomRewardsInsertCall {
-	c.body["is_max_per_user_per_stream_enabled"] = enabled
-	return c
-}
-
-// MaxPerUserPerStream sets the max per user per stream limit for the reward.
-func (c *CustomRewardsInsertCall) MaxPerUserPerStream(limit int64) *CustomRewardsInsertCall {
-	c.body["max_per_user_per_stream"] = limit
-	return c
-}
-
-// IsGlobalCooldownEnabled sets whether the global cooldown is enabled for the reward.
-func (c *CustomRewardsInsertCall) IsGlobalCooldownEnabled(enabled bool) *CustomRewardsInsertCall {
-	c.body["is_global_cooldown_enabled"] = enabled
-	return c
-}
-
-// GlobalCooldown sets the global cooldown duration for the reward.
-func (c *CustomRewardsInsertCall) GlobalCooldown(d time.Duration) *CustomRewardsInsertCall {
-	c.body["global_cooldown_seconds"] = d.Seconds()
-	return c
-}
-
-// IsPaused sets whether the reward is paused.
-func (c *CustomRewardsInsertCall) IsPaused(paused bool) *CustomRewardsInsertCall {
-	c.body["is_paused"] = paused
-	return c
-}
-
-// ShouldRedemptionsSkipRequestQueue sets whether redemptions should skip the request queue.
-func (c *CustomRewardsInsertCall) ShouldRedemptionsSkipRequestQueue(b bool) *CustomRewardsInsertCall {
-	c.body["should_redemptions_skip_request_queue"] = b
-	return c
-}
-
-// Do executes the request.
-func (c *CustomRewardsInsertCall) Do(ctx context.Context, opts ...RequestOption) (*CustomRewardsInsertResponse, error) {
-	bs, err := json.Marshal(c.body)
-	if err != nil {
-		return nil, err
-	}
-
-	res, err := c.resource.client.DoRequest(ctx, http.MethodPost, EndpointChannelPointsCreateCustomRewards, bytes.NewReader(bs), append(opts, c.opts...)...)
-	if err != nil {
-		return nil, err
-	}
-	defer func() { _ = res.Body.Close() }()
-
-	data, err := decodeResponse[CustomReward](res)
-	if err != nil {
-		return nil, err
-	}
-
-	return &CustomRewardsInsertResponse{
-		Header: res.Header,
-		Data:   data.Data,
-	}, nil
-}
-
-// CustomRewardsUpdateCall is a call to the custom rewards update endpoint.
-type CustomRewardsUpdateCall struct {
-	resource *CustomRewardsResource
-	opts     []RequestOption
-	body     map[string]any
-}
-
-// CustomRewardsUpdateResponse is the response from the custom rewards update endpoint.
-type CustomRewardsUpdateResponse struct {
-	Header http.Header
-	Data   []CustomReward
-}
-
-// Update creates a request to update a custom channel point reward for a given broadcaster.
-func (r *CustomRewardsResource) Update(broadcasterID, id string) *CustomRewardsUpdateCall {
-	c := &CustomRewardsUpdateCall{resource: r, body: make(map[string]any)}
-	c.opts = append(c.opts, SetQueryParameter("broadcaster_id", broadcasterID))
-	c.opts = append(c.opts, SetQueryParameter("id", id))
-	return c
-}
-
-// Title sets the title of the reward.
-func (c *CustomRewardsUpdateCall) Title(title string) *CustomRewardsUpdateCall {
-	c.body["title"] = title
-	return c
-}
-
-// Prompt sets the prompt of the reward.
-func (c *CustomRewardsUpdateCall) Prompt(prompt string) *CustomRewardsUpdateCall {
-	c.body["prompt"] = prompt
-	return c
-}
-
-// Cost sets the cost of the reward.
-func (c *CustomRewardsUpdateCall) Cost(cost int64) *CustomRewardsUpdateCall {
-	c.body["cost"] = cost
-	return c
-}
-
-// BackgroundColor sets the background color of the reward in hex code format.
-func (c *CustomRewardsUpdateCall) BackgroundColor(hexCode string) *CustomRewardsUpdateCall {
-	c.body["background_color"] = hexCode
-	return c
-}
-
-// IsEnabled sets whether the reward is enabled.
-func (c *CustomRewardsUpdateCall) IsEnabled(enabled bool) *CustomRewardsUpdateCall {
-	c.body["is_enabled"] = enabled
-	return c
-}
-
-// IsUserInputRequired sets whether user input is required for the reward.
-func (c *CustomRewardsUpdateCall) IsUserInputRequired(required bool) *CustomRewardsUpdateCall {
-	c.body["is_user_input_required"] = required
-	return c
-}
-
-// IsMaxPerStreamEnabled sets whether the max per stream limit is enabled for the reward.
-func (c *CustomRewardsUpdateCall) IsMaxPerStreamEnabled(enabled bool) *CustomRewardsUpdateCall {
-	c.body["is_max_per_stream_enabled"] = enabled
-	return c
-}
-
-// MaxPerStream sets the max per stream limit for the reward.
-func (c *CustomRewardsUpdateCall) MaxPerStream(limit int64) *CustomRewardsUpdateCall {
-	c.body["max_per_stream"] = limit
-	return c
-}
-
-// IsMaxPerUserPerStreamEnabled sets whether the max per user per stream limit is enabled for the reward.
-func (c *CustomRewardsUpdateCall) IsMaxPerUserPerStreamEnabled(enabled bool) *CustomRewardsUpdateCall {
-	c.body["is_max_per_user_per_stream_enabled"] = enabled
-	return c
-}
-
-// MaxPerUserPerStream sets the max per user per stream limit for the reward.
-func (c *CustomRewardsUpdateCall) MaxPerUserPerStream(limit int64) *CustomRewardsUpdateCall {
-	c.body["max_per_user_per_stream"] = limit
-	return c
-}
-
-// IsGlobalCooldownEnabled sets whether the global cooldown is enabled for the reward.
-func (c *CustomRewardsUpdateCall) IsGlobalCooldownEnabled(enabled bool) *CustomRewardsUpdateCall {
-	c.body["is_global_cooldown_enabled"] = enabled
-	return c
-}
-
-// GlobalCooldown sets the global cooldown duration for the reward.
-func (c *CustomRewardsUpdateCall) GlobalCooldown(d time.Duration) *CustomRewardsUpdateCall {
-	c.body["global_cooldown_seconds"] = d.Seconds()
-	return c
-}
-
-// IsPaused sets whether the reward is paused.
-func (c *CustomRewardsUpdateCall) IsPaused(paused bool) *CustomRewardsUpdateCall {
-	c.body["is_paused"] = paused
-	return c
-}
-
-// ShouldRedemptionsSkipRequestQueue sets whether redemptions should skip the request queue.
-func (c *CustomRewardsUpdateCall) ShouldRedemptionsSkipRequestQueue(b bool) *CustomRewardsUpdateCall {
-	c.body["should_redemptions_skip_request_queue"] = b
-	return c
-}
-
-// Do executes the request.
-func (c *CustomRewardsUpdateCall) Do(ctx context.Context, opts ...RequestOption) (*CustomRewardsUpdateResponse, error) {
-	bs, err := json.Marshal(c.body)
-	if err != nil {
-		return nil, err
-	}
-
-	res, err := c.resource.client.DoRequest(ctx, http.MethodPatch, EndpointChannelPointsUpdateCustomReward, bytes.NewReader(bs), append(opts, c.opts...)...)
-	if err != nil {
-		return nil, err
-	}
-	defer func() { _ = res.Body.Close() }()
-
-	data, err := decodeResponse[CustomReward](res)
-	if err != nil {
-		return nil, err
-	}
-
-	return &CustomRewardsUpdateResponse{
-		Header: res.Header,
-		Data:   data.Data,
-	}, nil
-}
-
-// CustomRewardsDeleteCall is a call to the custom rewards delete endpoint.
-type CustomRewardsDeleteCall struct {
-	resource *CustomRewardsResource
-	opts     []RequestOption
-}
-
-// Delete creates a request to delete a custom channel point reward for a given broadcaster.
-func (r *CustomRewardsResource) Delete(broadcasterID, id string) *CustomRewardsDeleteCall {
-	c := &CustomRewardsDeleteCall{resource: r}
-	c.opts = append(c.opts, SetQueryParameter("broadcaster_id", broadcasterID))
-	c.opts = append(c.opts, SetQueryParameter("id", id))
-	return c
-}
-
-// Do executes the request.
-func (c *CustomRewardsDeleteCall) Do(ctx context.Context, opts ...RequestOption) error {
-	res, err := c.resource.client.DoRequest(ctx, http.MethodDelete, EndpointChannelPointsDeleteCustomReward, nil, append(opts, c.opts...)...)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = res.Body.Close() }()
-
-	_, err = decodeResponse[CustomRewardRedemption](res)
-	return err
-}
-
-// CustomRewardsRedemptionResource provides methods for the Twitch Channel Points Custom Rewards Redemptions API.
-type CustomRewardsRedemptionResource struct {
+// ChannelPointsRedemptionsResource represents the Twitch ChannelPointsRedemptions API.
+type ChannelPointsRedemptionsResource struct {
 	client *Client
 }
 
-// NewCustomRewardsRedemptionResource creates a new CustomRewardsRedemptionResource.
-func NewCustomRewardsRedemptionResource(client *Client) *CustomRewardsRedemptionResource {
-	return &CustomRewardsRedemptionResource{client: client}
+// NewChannelPointsRedemptionsResource creates a new ChannelPointsRedemptionsResource.
+func NewChannelPointsRedemptionsResource(client *Client) *ChannelPointsRedemptionsResource {
+	return &ChannelPointsRedemptionsResource{client}
 }
 
-// CustomRewardsRedemptionListCall is a call to the custom rewards redemptions list endpoint.
-type CustomRewardsRedemptionListCall struct {
-	resource *CustomRewardsRedemptionResource
+// ChannelPointRedemptionsListCall represents a GET call to a Twitch ChannelPointsRedemptions API endpoint.
+type ChannelPointRedemptionsListCall struct {
+	resource *ChannelPointsRedemptionsResource
 	opts     []RequestOption
 }
 
-// CustomRewardsRedemptionListResponse is the response from the custom rewards redemptions list endpoint.
-type CustomRewardsRedemptionListResponse struct {
+// ChannelPointRedemptionsListResponse represents the response from a GET request to /helix/channel_points/custom_rewards/redemptions.
+type ChannelPointRedemptionsListResponse struct {
+	// Status is the HTTP status text returned by the Twitch API. For example, "200 OK".
+	Status string
+	// StatusCode is the HTTP status code returned by the Twitch API. For example, 200.
+	StatusCode int
+	// Header contains the HTTP headers from the Twitch API response.
 	Header http.Header
-	Data   []CustomRewardRedemption
-	Cursor string
+	// Data is the CustomRewardRedemption data returned by the Twitch API.
+	Data []CustomRewardRedemption
+	// Request is the HTTP request that was sent to the Twitch API.
+	Request *http.Request
 }
 
-// List creates a request to list custom channel point reward redemptions for a given broadcaster.
-func (r *CustomRewardsRedemptionResource) List(broadcasterID, rewardID string) *CustomRewardsRedemptionListCall {
-	c := &CustomRewardsRedemptionListCall{resource: r}
-	c.opts = append(c.opts, SetQueryParameter("broadcaster_id", broadcasterID))
-	c.opts = append(c.opts, SetQueryParameter("reward_id", rewardID))
-	c.opts = append(c.opts, SetQueryParameter("status", "UNFULFILLED"))
-	return c
-}
-
-// Status filters the results to the specified statuses.
+// List creates a new GET request to /helix/channel_points/custom_rewards/redemptions.
 //
-// Possible values: "UNFULFILLED", "FULFILLED", "CANCELED" (default: UNFULFILLED)
-func (c *CustomRewardsRedemptionListCall) Status(status string) *CustomRewardsRedemptionListCall {
-	c.opts = append(c.opts, SetQueryParameter("status", status))
-	return c
-}
-
-// ID filters the results to the specified reward redemption IDs.
-func (c *CustomRewardsRedemptionListCall) ID(ids []string) *CustomRewardsRedemptionListCall {
-	for _, id := range ids {
-		c.opts = append(c.opts, AddQueryParameter("id", id))
-	}
-	return c
-}
-
-// Sort specifies the order in which to sort the results.
+// Gets a list of redemptions for the specified custom reward.
+// The app used to create the reward is the only app that may get the redemptions.
 //
-// Possible values: "OLDEST", "NEWEST" (default: OLDEST)
-func (c *CustomRewardsRedemptionListCall) Sort(sort string) *CustomRewardsRedemptionListCall {
-	c.opts = append(c.opts, SetQueryParameter("sort", sort))
-	return c
+// # Authorization
+//
+// Requires a user access token that includes the channel:read:redemptions or channel:manage:redemptions scope.
+//
+// Check the [Official Twitch Documentation] for more information.
+//
+// [Official Twitch Documentation]: https://dev.twitch.tv/docs/api/reference/#get-custom-reward-redemption
+func (r *ChannelPointsRedemptionsResource) List() *ChannelPointRedemptionsListCall {
+	return &ChannelPointRedemptionsListCall{resource: r}
 }
 
-// Before filters the results to those with a cursor value before the specified cursor.
-func (c *CustomRewardsRedemptionListCall) Before(cursor string) *CustomRewardsRedemptionListCall {
-	c.opts = append(c.opts, SetQueryParameter("before", cursor))
-	return c
+// ID sets the ID query parameter.
+func (api *ChannelPointRedemptionsListCall) ID(iD string) *ChannelPointRedemptionsListCall {
+	api.opts = append(api.opts, SetQueryParameter("id", iD))
+	return api
 }
 
-// After filters the results to those with a cursor value after the specified cursor.
-func (c *CustomRewardsRedemptionListCall) After(cursor string) *CustomRewardsRedemptionListCall {
-	c.opts = append(c.opts, SetQueryParameter("after", cursor))
-	return c
+// BroadcasterID sets the BroadcasterID query parameter.
+func (api *ChannelPointRedemptionsListCall) BroadcasterID(broadcasterID string) *ChannelPointRedemptionsListCall {
+	api.opts = append(api.opts, SetQueryParameter("broadcaster_id", broadcasterID))
+	return api
+}
+
+// RewardID sets the RewardID query parameter.
+func (api *ChannelPointRedemptionsListCall) RewardID(rewardID string) *ChannelPointRedemptionsListCall {
+	api.opts = append(api.opts, SetQueryParameter("reward_id", rewardID))
+	return api
+}
+
+// Status sets the Status query parameter.
+func (api *ChannelPointRedemptionsListCall) Status(status string) *ChannelPointRedemptionsListCall {
+	api.opts = append(api.opts, SetQueryParameter("status", status))
+	return api
+}
+
+// Sort sets the Sort query parameter.
+func (api *ChannelPointRedemptionsListCall) Sort(sort string) *ChannelPointRedemptionsListCall {
+	api.opts = append(api.opts, SetQueryParameter("sort", sort))
+	return api
+}
+
+// After sets the After query parameter.
+func (api *ChannelPointRedemptionsListCall) After(after string) *ChannelPointRedemptionsListCall {
+	api.opts = append(api.opts, SetQueryParameter("after", after))
+	return api
+}
+
+// First sets the First query parameter.
+func (api *ChannelPointRedemptionsListCall) First(first int) *ChannelPointRedemptionsListCall {
+	api.opts = append(api.opts, SetQueryParameter("first", first))
+	return api
 }
 
 // Do executes the request.
-func (c *CustomRewardsRedemptionListCall) Do(ctx context.Context, opts ...RequestOption) (*CustomRewardsRedemptionListResponse, error) {
-	res, err := c.resource.client.DoRequest(ctx, http.MethodGet, EndpointChannelPointsGetCustomRewardRedemptions, nil, append(opts, c.opts...)...)
+func (api *ChannelPointRedemptionsListCall) Do(ctx context.Context, opts ...RequestOption) (*ChannelPointRedemptionsListResponse, error) {
+	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/channel_points/custom_rewards/redemptions", nil, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -450,51 +126,72 @@ func (c *CustomRewardsRedemptionListCall) Do(ctx context.Context, opts ...Reques
 		return nil, err
 	}
 
-	return &CustomRewardsRedemptionListResponse{
-		Header: res.Header,
-		Data:   data.Data,
-		Cursor: data.Pagination.Cursor,
+	return &ChannelPointRedemptionsListResponse{
+		Status:     res.Status,
+		StatusCode: res.StatusCode,
+		Header:     res.Header,
+		Data:       data.Data,
+		Request:    res.Request,
 	}, nil
 }
 
-// CustomRewardsRedemptionUpdateCall is a call to the custom rewards redemptions update endpoint.
-type CustomRewardsRedemptionUpdateCall struct {
-	resource *CustomRewardsRedemptionResource
+// ChannelPointRedemptionsModifyCall represents a PATCH call to a Twitch ChannelPointsRedemptions API endpoint.
+type ChannelPointRedemptionsModifyCall struct {
+	resource *ChannelPointsRedemptionsResource
 	opts     []RequestOption
 }
 
-// CustomRewardsRedemptionUpdateResponse is the response from the custom rewards redemptions update endpoint.
-type CustomRewardsRedemptionUpdateResponse struct {
+// ChannelPointRedemptionsModifyResponse represents the response from a PATCH request to /helix/channel_points/custom_rewards/redemptions.
+type ChannelPointRedemptionsModifyResponse struct {
+	// Status is the HTTP status text returned by the Twitch API. For example, "200 OK".
+	Status string
+	// StatusCode is the HTTP status code returned by the Twitch API. For example, 200.
+	StatusCode int
+	// Header contains the HTTP headers from the Twitch API response.
 	Header http.Header
-	Data   []CustomRewardRedemption
+	// Data is the CustomRewardRedemption data returned by the Twitch API.
+	Data []CustomRewardRedemption
+	// Request is the HTTP request that was sent to the Twitch API.
+	Request *http.Request
 }
 
-// Update creates a request to update the status of one or more custom channel point reward redemptions for a given broadcaster and reward.
-func (r *CustomRewardsRedemptionResource) Update(broadcasterID, rewardID string, id []string) *CustomRewardsRedemptionUpdateCall {
-	c := &CustomRewardsRedemptionUpdateCall{resource: r}
-	c.opts = append(c.opts, SetQueryParameter("broadcaster_id", broadcasterID))
-	c.opts = append(c.opts, SetQueryParameter("reward_id", rewardID))
-	for _, id := range id {
-		c.opts = append(c.opts, AddQueryParameter("id", id))
-	}
-	return c
+// Modify creates a new PATCH request to /helix/channel_points/custom_rewards/redemptions.
+//
+// Updates the status for a redemption. You may update a redemption only if its status is UNFULFILLED.
+// The app used to create the reward is the only app that may update the redemption.
+//
+// # Authorization
+//
+// Requires a user access token that includes the channel:manage:redemptions scope.
+//
+// Check the [Official Twitch Documentation] for more information.
+//
+// [Official Twitch Documentation]: https://dev.twitch.tv/docs/api/reference/#update-redemption-status
+func (r *ChannelPointsRedemptionsResource) Modify() *ChannelPointRedemptionsModifyCall {
+	return &ChannelPointRedemptionsModifyCall{resource: r}
 }
 
-// Cancel sets the status of the redemption(s) to "CANCELED".
-func (c *CustomRewardsRedemptionUpdateCall) Cancel() *CustomRewardsRedemptionUpdateCall {
-	c.opts = append(c.opts, SetQueryParameter("status", "CANCELED"))
-	return c
+// ID sets the ID query parameter.
+func (api *ChannelPointRedemptionsModifyCall) ID(iD string) *ChannelPointRedemptionsModifyCall {
+	api.opts = append(api.opts, SetQueryParameter("id", iD))
+	return api
 }
 
-// Fulfill sets the status of the redemption(s) to "FULFILLED".
-func (c *CustomRewardsRedemptionUpdateCall) Fulfill() *CustomRewardsRedemptionUpdateCall {
-	c.opts = append(c.opts, SetQueryParameter("status", "FULFILLED"))
-	return c
+// BroadcasterID sets the BroadcasterID query parameter.
+func (api *ChannelPointRedemptionsModifyCall) BroadcasterID(broadcasterID string) *ChannelPointRedemptionsModifyCall {
+	api.opts = append(api.opts, SetQueryParameter("broadcaster_id", broadcasterID))
+	return api
+}
+
+// RewardID sets the RewardID query parameter.
+func (api *ChannelPointRedemptionsModifyCall) RewardID(rewardID string) *ChannelPointRedemptionsModifyCall {
+	api.opts = append(api.opts, SetQueryParameter("reward_id", rewardID))
+	return api
 }
 
 // Do executes the request.
-func (c *CustomRewardsRedemptionUpdateCall) Do(ctx context.Context, opts ...RequestOption) (*CustomRewardsRedemptionUpdateResponse, error) {
-	res, err := c.resource.client.DoRequest(ctx, http.MethodPatch, EndpointChannelPointsUpdateRedemptionStatus, nil, append(opts, c.opts...)...)
+func (api *ChannelPointRedemptionsModifyCall) Do(ctx context.Context, opts ...RequestOption) (*ChannelPointRedemptionsModifyResponse, error) {
+	res, err := api.resource.client.DoRequest(ctx, "PATCH", "/helix/channel_points/custom_rewards/redemptions", nil, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -505,8 +202,477 @@ func (c *CustomRewardsRedemptionUpdateCall) Do(ctx context.Context, opts ...Requ
 		return nil, err
 	}
 
-	return &CustomRewardsRedemptionUpdateResponse{
-		Header: res.Header,
-		Data:   data.Data,
+	return &ChannelPointRedemptionsModifyResponse{
+		Status:     res.Status,
+		StatusCode: res.StatusCode,
+		Header:     res.Header,
+		Data:       data.Data,
+		Request:    res.Request,
+	}, nil
+}
+
+// ChannelPointsRewardsResource represents the Twitch ChannelPointsRewards API.
+type ChannelPointsRewardsResource struct {
+	client *Client
+}
+
+// NewChannelPointsRewardsResource creates a new ChannelPointsRewardsResource.
+func NewChannelPointsRewardsResource(client *Client) *ChannelPointsRewardsResource {
+	return &ChannelPointsRewardsResource{client}
+}
+
+// ChannelPointRewardsInsertCall represents a POST call to a Twitch ChannelPointsRewards API endpoint.
+type ChannelPointRewardsInsertCall struct {
+	resource *ChannelPointsRewardsResource
+	body     map[string]any
+	opts     []RequestOption
+}
+
+// ChannelPointRewardsInsertResponse represents the response from a POST request to /helix/channel_points/custom_rewards.
+type ChannelPointRewardsInsertResponse struct {
+	// Status is the HTTP status text returned by the Twitch API. For example, "200 OK".
+	Status string
+	// StatusCode is the HTTP status code returned by the Twitch API. For example, 200.
+	StatusCode int
+	// Header contains the HTTP headers from the Twitch API response.
+	Header http.Header
+	// Data is the CustomReward data returned by the Twitch API.
+	Data []CustomReward
+	// Request is the HTTP request that was sent to the Twitch API.
+	Request *http.Request
+}
+
+// Insert creates a new POST request to /helix/channel_points/custom_rewards.
+//
+// Creates a new Custom Reward in a channel.
+//
+// The maximum number of custom rewards per channel is 50, which includes both enabled and disabled rewards.
+//
+// # Authorization
+//
+// Requires a user access token that includes the channel:manage:redemptions scope.
+//
+// Check the [Official Twitch Documentation] for more information.
+//
+// [Official Twitch Documentation]: https://dev.twitch.tv/docs/api/reference/#create-custom-rewards
+func (r *ChannelPointsRewardsResource) Insert() *ChannelPointRewardsInsertCall {
+	return &ChannelPointRewardsInsertCall{resource: r, body: make(map[string]any)}
+}
+
+// BroadcasterID sets the BroadcasterID query parameter.
+func (api *ChannelPointRewardsInsertCall) BroadcasterID(broadcasterID string) *ChannelPointRewardsInsertCall {
+	api.opts = append(api.opts, SetQueryParameter("broadcaster_id", broadcasterID))
+	return api
+}
+
+// Title sets the Title body parameter.
+func (api *ChannelPointRewardsInsertCall) Title(title string) *ChannelPointRewardsInsertCall {
+	api.body["title"] = title
+	return api
+}
+
+// Prompt sets the Prompt body parameter.
+func (api *ChannelPointRewardsInsertCall) Prompt(prompt string) *ChannelPointRewardsInsertCall {
+	api.body["prompt"] = prompt
+	return api
+}
+
+// BackgroundColor sets the BackgroundColor body parameter.
+func (api *ChannelPointRewardsInsertCall) BackgroundColor(backgroundColor string) *ChannelPointRewardsInsertCall {
+	api.body["background_color"] = backgroundColor
+	return api
+}
+
+// Cost sets the Cost body parameter.
+func (api *ChannelPointRewardsInsertCall) Cost(cost int64) *ChannelPointRewardsInsertCall {
+	api.body["cost"] = cost
+	return api
+}
+
+// MaxPerStream sets the MaxPerStream body parameter.
+func (api *ChannelPointRewardsInsertCall) MaxPerStream(maxPerStream int) *ChannelPointRewardsInsertCall {
+	api.body["max_per_stream"] = maxPerStream
+	return api
+}
+
+// MaxPerUserPerStream sets the MaxPerUserPerStream body parameter.
+func (api *ChannelPointRewardsInsertCall) MaxPerUserPerStream(maxPerUserPerStream int) *ChannelPointRewardsInsertCall {
+	api.body["max_per_user_per_stream"] = maxPerUserPerStream
+	return api
+}
+
+// GlobalCooldownSeconds sets the GlobalCooldownSeconds body parameter.
+func (api *ChannelPointRewardsInsertCall) GlobalCooldownSeconds(globalCooldownSeconds int) *ChannelPointRewardsInsertCall {
+	api.body["global_cooldown_seconds"] = globalCooldownSeconds
+	return api
+}
+
+// IsEnabled sets the IsEnabled body parameter.
+func (api *ChannelPointRewardsInsertCall) IsEnabled(isEnabled bool) *ChannelPointRewardsInsertCall {
+	api.body["is_enabled"] = isEnabled
+	return api
+}
+
+// IsUserInputRequired sets the IsUserInputRequired body parameter.
+func (api *ChannelPointRewardsInsertCall) IsUserInputRequired(isUserInputRequired bool) *ChannelPointRewardsInsertCall {
+	api.body["is_user_input_required"] = isUserInputRequired
+	return api
+}
+
+// IsMaxPerStreamEnabled sets the IsMaxPerStreamEnabled body parameter.
+func (api *ChannelPointRewardsInsertCall) IsMaxPerStreamEnabled(isMaxPerStreamEnabled bool) *ChannelPointRewardsInsertCall {
+	api.body["is_max_per_stream_enabled"] = isMaxPerStreamEnabled
+	return api
+}
+
+// IsMaxPerUserPerStreamEnabled sets the IsMaxPerUserPerStreamEnabled body parameter.
+func (api *ChannelPointRewardsInsertCall) IsMaxPerUserPerStreamEnabled(isMaxPerUserPerStreamEnabled bool) *ChannelPointRewardsInsertCall {
+	api.body["is_max_per_user_per_stream_enabled"] = isMaxPerUserPerStreamEnabled
+	return api
+}
+
+// IsGlobalCooldownEnabled sets the IsGlobalCooldownEnabled body parameter.
+func (api *ChannelPointRewardsInsertCall) IsGlobalCooldownEnabled(isGlobalCooldownEnabled bool) *ChannelPointRewardsInsertCall {
+	api.body["is_global_cooldown_enabled"] = isGlobalCooldownEnabled
+	return api
+}
+
+// ShouldRedemptionsSkipRequestQueue sets the ShouldRedemptionsSkipRequestQueue body parameter.
+func (api *ChannelPointRewardsInsertCall) ShouldRedemptionsSkipRequestQueue(shouldRedemptionsSkipRequestQueue bool) *ChannelPointRewardsInsertCall {
+	api.body["should_redemptions_skip_request_queue"] = shouldRedemptionsSkipRequestQueue
+	return api
+}
+
+// Do executes the request.
+func (api *ChannelPointRewardsInsertCall) Do(ctx context.Context, opts ...RequestOption) (*ChannelPointRewardsInsertResponse, error) {
+	bs, err := json.Marshal(api.body)
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := api.resource.client.DoRequest(ctx, "POST", "/helix/channel_points/custom_rewards", bytes.NewReader(bs), opts...)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = res.Body.Close() }()
+
+	data, err := decodeResponse[CustomReward](res)
+	if err != nil {
+		return nil, err
+	}
+
+	return &ChannelPointRewardsInsertResponse{
+		Status:     res.Status,
+		StatusCode: res.StatusCode,
+		Header:     res.Header,
+		Data:       data.Data,
+		Request:    res.Request,
+	}, nil
+}
+
+// ChannelPointRewardsDeleteCall represents a DELETE call to a Twitch ChannelPointsRewards API endpoint.
+type ChannelPointRewardsDeleteCall struct {
+	resource *ChannelPointsRewardsResource
+	opts     []RequestOption
+}
+
+// ChannelPointRewardsDeleteResponse represents the response from a DELETE request to /helix/channel_points/custom_rewards.
+type ChannelPointRewardsDeleteResponse struct {
+	// Status is the HTTP status text returned by the Twitch API. For example, "200 OK".
+	Status string
+	// StatusCode is the HTTP status code returned by the Twitch API. For example, 200.
+	StatusCode int
+	// Header contains the HTTP headers from the Twitch API response.
+	Header http.Header
+	// Request is the HTTP request that was sent to the Twitch API.
+	Request *http.Request
+}
+
+// Delete creates a new DELETE request to /helix/channel_points/custom_rewards.
+//
+// Deletes a custom reward that the broadcaster created.
+//
+// The app used to create the reward is the only app that may delete it.
+// If the redemption status for the reward is UNFULFILLED at the time the reward is deleted, its redemption status is marked as FULFILLED.
+//
+// # Authorization
+//
+// Requires a user access token that includes the channel:manage:redemptions scope.
+//
+// Check the [Official Twitch Documentation] for more information.
+//
+// [Official Twitch Documentation]: https://dev.twitch.tv/docs/api/reference/#delete-custom-reward
+func (r *ChannelPointsRewardsResource) Delete() *ChannelPointRewardsDeleteCall {
+	return &ChannelPointRewardsDeleteCall{resource: r}
+}
+
+// ID sets the ID query parameter.
+func (api *ChannelPointRewardsDeleteCall) ID(iD string) *ChannelPointRewardsDeleteCall {
+	api.opts = append(api.opts, SetQueryParameter("id", iD))
+	return api
+}
+
+// BroadcasterID sets the BroadcasterID query parameter.
+func (api *ChannelPointRewardsDeleteCall) BroadcasterID(broadcasterID string) *ChannelPointRewardsDeleteCall {
+	api.opts = append(api.opts, SetQueryParameter("broadcaster_id", broadcasterID))
+	return api
+}
+
+// Do executes the request.
+func (api *ChannelPointRewardsDeleteCall) Do(ctx context.Context, opts ...RequestOption) (*ChannelPointRewardsDeleteResponse, error) {
+	res, err := api.resource.client.DoRequest(ctx, "DELETE", "/helix/channel_points/custom_rewards", nil, opts...)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = res.Body.Close() }()
+
+	_, err = decodeResponse[any](res)
+	if err != nil {
+		return nil, err
+	}
+
+	return &ChannelPointRewardsDeleteResponse{
+		Status:     res.Status,
+		StatusCode: res.StatusCode,
+		Header:     res.Header,
+		Request:    res.Request,
+	}, nil
+}
+
+// ChannelPointRewardsListCall represents a GET call to a Twitch ChannelPointsRewards API endpoint.
+type ChannelPointRewardsListCall struct {
+	resource *ChannelPointsRewardsResource
+	opts     []RequestOption
+}
+
+// ChannelPointRewardsListResponse represents the response from a GET request to /helix/channel_points/custom_rewards.
+type ChannelPointRewardsListResponse struct {
+	// Status is the HTTP status text returned by the Twitch API. For example, "200 OK".
+	Status string
+	// StatusCode is the HTTP status code returned by the Twitch API. For example, 200.
+	StatusCode int
+	// Header contains the HTTP headers from the Twitch API response.
+	Header http.Header
+	// Data is the CustomReward data returned by the Twitch API.
+	Data []CustomReward
+	// Request is the HTTP request that was sent to the Twitch API.
+	Request *http.Request
+}
+
+// List creates a new GET request to /helix/channel_points/custom_rewards.
+//
+// Gets a list of custom rewards that the specified broadcaster created.
+//
+// A channel may offer a maximum of 50 rewards, which includes both enabled and disabled rewards.
+//
+// # Authorization
+//
+// Requires a user access token that includes the channel:read:redemptions or channel:manage:redemptions scope.
+//
+// Check the [Official Twitch Documentation] for more information.
+//
+// [Official Twitch Documentation]: https://dev.twitch.tv/docs/api/reference/#get-custom-reward
+func (r *ChannelPointsRewardsResource) List() *ChannelPointRewardsListCall {
+	return &ChannelPointRewardsListCall{resource: r}
+}
+
+// ID adds to the ID query parameter.
+func (api *ChannelPointRewardsListCall) ID(iDs ...string) *ChannelPointRewardsListCall {
+	for _, iD := range iDs {
+		api.opts = append(api.opts, AddQueryParameter("id", iD))
+	}
+	return api
+}
+
+// BroadcasterID sets the BroadcasterID query parameter.
+func (api *ChannelPointRewardsListCall) BroadcasterID(broadcasterID string) *ChannelPointRewardsListCall {
+	api.opts = append(api.opts, SetQueryParameter("broadcaster_id", broadcasterID))
+	return api
+}
+
+// OnlyManageableRewards sets the OnlyManageableRewards query parameter.
+func (api *ChannelPointRewardsListCall) OnlyManageableRewards(onlyManageableRewards bool) *ChannelPointRewardsListCall {
+	api.opts = append(api.opts, SetQueryParameter("only_manageable_rewards", onlyManageableRewards))
+	return api
+}
+
+// Do executes the request.
+func (api *ChannelPointRewardsListCall) Do(ctx context.Context, opts ...RequestOption) (*ChannelPointRewardsListResponse, error) {
+	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/channel_points/custom_rewards", nil, opts...)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = res.Body.Close() }()
+
+	data, err := decodeResponse[CustomReward](res)
+	if err != nil {
+		return nil, err
+	}
+
+	return &ChannelPointRewardsListResponse{
+		Status:     res.Status,
+		StatusCode: res.StatusCode,
+		Header:     res.Header,
+		Data:       data.Data,
+		Request:    res.Request,
+	}, nil
+}
+
+// ChannelPointRewardsModifyCall represents a PATCH call to a Twitch ChannelPointsRewards API endpoint.
+type ChannelPointRewardsModifyCall struct {
+	resource *ChannelPointsRewardsResource
+	body     map[string]any
+	opts     []RequestOption
+}
+
+// ChannelPointRewardsModifyResponse represents the response from a PATCH request to /helix/channel_points/custom_rewards.
+type ChannelPointRewardsModifyResponse struct {
+	// Status is the HTTP status text returned by the Twitch API. For example, "200 OK".
+	Status string
+	// StatusCode is the HTTP status code returned by the Twitch API. For example, 200.
+	StatusCode int
+	// Header contains the HTTP headers from the Twitch API response.
+	Header http.Header
+	// Data is the CustomReward data returned by the Twitch API.
+	Data []CustomReward
+	// Request is the HTTP request that was sent to the Twitch API.
+	Request *http.Request
+}
+
+// Modify creates a new PATCH request to /helix/channel_points/custom_rewards.
+//
+// Updates a custom reward. The app used to create the reward is the only app that may update the reward.
+//
+// # Authorization
+//
+// Requires a user access token that includes the channel:manage:redemptions scope.
+//
+// Check the [Official Twitch Documentation] for more information.
+//
+// [Official Twitch Documentation]: https://dev.twitch.tv/docs/api/reference/#update-custom-reward
+func (r *ChannelPointsRewardsResource) Modify() *ChannelPointRewardsModifyCall {
+	return &ChannelPointRewardsModifyCall{resource: r, body: make(map[string]any)}
+}
+
+// ID sets the ID query parameter.
+func (api *ChannelPointRewardsModifyCall) ID(iD string) *ChannelPointRewardsModifyCall {
+	api.opts = append(api.opts, SetQueryParameter("id", iD))
+	return api
+}
+
+// BroadcasterID sets the BroadcasterID query parameter.
+func (api *ChannelPointRewardsModifyCall) BroadcasterID(broadcasterID string) *ChannelPointRewardsModifyCall {
+	api.opts = append(api.opts, SetQueryParameter("broadcaster_id", broadcasterID))
+	return api
+}
+
+// Title sets the Title body parameter.
+func (api *ChannelPointRewardsModifyCall) Title(title string) *ChannelPointRewardsModifyCall {
+	api.body["title"] = title
+	return api
+}
+
+// Prompt sets the Prompt body parameter.
+func (api *ChannelPointRewardsModifyCall) Prompt(prompt string) *ChannelPointRewardsModifyCall {
+	api.body["prompt"] = prompt
+	return api
+}
+
+// BackgroundColor sets the BackgroundColor body parameter.
+func (api *ChannelPointRewardsModifyCall) BackgroundColor(backgroundColor string) *ChannelPointRewardsModifyCall {
+	api.body["background_color"] = backgroundColor
+	return api
+}
+
+// Cost sets the Cost body parameter.
+func (api *ChannelPointRewardsModifyCall) Cost(cost int) *ChannelPointRewardsModifyCall {
+	api.body["cost"] = cost
+	return api
+}
+
+// MaxPerStream sets the MaxPerStream body parameter.
+func (api *ChannelPointRewardsModifyCall) MaxPerStream(maxPerStream int) *ChannelPointRewardsModifyCall {
+	api.body["max_per_stream"] = maxPerStream
+	return api
+}
+
+// MaxPerUserPerStream sets the MaxPerUserPerStream body parameter.
+func (api *ChannelPointRewardsModifyCall) MaxPerUserPerStream(maxPerUserPerStream int) *ChannelPointRewardsModifyCall {
+	api.body["max_per_user_per_stream"] = maxPerUserPerStream
+	return api
+}
+
+// GlobalCooldownSeconds sets the GlobalCooldownSeconds body parameter.
+func (api *ChannelPointRewardsModifyCall) GlobalCooldownSeconds(globalCooldownSeconds int) *ChannelPointRewardsModifyCall {
+	api.body["global_cooldown_seconds"] = globalCooldownSeconds
+	return api
+}
+
+// IsPaused sets the IsPaused body parameter.
+func (api *ChannelPointRewardsModifyCall) IsPaused(isPaused bool) *ChannelPointRewardsModifyCall {
+	api.body["is_paused"] = isPaused
+	return api
+}
+
+// IsEnabled sets the IsEnabled body parameter.
+func (api *ChannelPointRewardsModifyCall) IsEnabled(isEnabled bool) *ChannelPointRewardsModifyCall {
+	api.body["is_enabled"] = isEnabled
+	return api
+}
+
+// IsUserInputRequired sets the IsUserInputRequired body parameter.
+func (api *ChannelPointRewardsModifyCall) IsUserInputRequired(isUserInputRequired bool) *ChannelPointRewardsModifyCall {
+	api.body["is_user_input_required"] = isUserInputRequired
+	return api
+}
+
+// IsMaxPerStreamEnabled sets the IsMaxPerStreamEnabled body parameter.
+func (api *ChannelPointRewardsModifyCall) IsMaxPerStreamEnabled(isMaxPerStreamEnabled bool) *ChannelPointRewardsModifyCall {
+	api.body["is_max_per_stream_enabled"] = isMaxPerStreamEnabled
+	return api
+}
+
+// IsMaxPerUserPerStreamEnabled sets the IsMaxPerUserPerStreamEnabled body parameter.
+func (api *ChannelPointRewardsModifyCall) IsMaxPerUserPerStreamEnabled(isMaxPerUserPerStreamEnabled bool) *ChannelPointRewardsModifyCall {
+	api.body["is_max_per_user_per_stream_enabled"] = isMaxPerUserPerStreamEnabled
+	return api
+}
+
+// IsGlobalCooldownEnabled sets the IsGlobalCooldownEnabled body parameter.
+func (api *ChannelPointRewardsModifyCall) IsGlobalCooldownEnabled(isGlobalCooldownEnabled bool) *ChannelPointRewardsModifyCall {
+	api.body["is_global_cooldown_enabled"] = isGlobalCooldownEnabled
+	return api
+}
+
+// ShouldRedemptionsSkipRequestQueue sets the ShouldRedemptionsSkipRequestQueue body parameter.
+func (api *ChannelPointRewardsModifyCall) ShouldRedemptionsSkipRequestQueue(shouldRedemptionsSkipRequestQueue bool) *ChannelPointRewardsModifyCall {
+	api.body["should_redemptions_skip_request_queue"] = shouldRedemptionsSkipRequestQueue
+	return api
+}
+
+// Do executes the request.
+func (api *ChannelPointRewardsModifyCall) Do(ctx context.Context, opts ...RequestOption) (*ChannelPointRewardsModifyResponse, error) {
+	bs, err := json.Marshal(api.body)
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := api.resource.client.DoRequest(ctx, "PATCH", "/helix/channel_points/custom_rewards", bytes.NewReader(bs), opts...)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = res.Body.Close() }()
+
+	data, err := decodeResponse[CustomReward](res)
+	if err != nil {
+		return nil, err
+	}
+
+	return &ChannelPointRewardsModifyResponse{
+		Status:     res.Status,
+		StatusCode: res.StatusCode,
+		Header:     res.Header,
+		Data:       data.Data,
+		Request:    res.Request,
 	}, nil
 }

@@ -2,104 +2,273 @@ package api
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"net/http"
 	"time"
 )
 
-// ClipDuration represents the duration of a Twitch clip.
-type ClipDuration time.Duration
-
-// ClipsResource provides methods for the Twitch Clips API.
+// ClipsResource represents the Twitch Clips API.
 type ClipsResource struct {
 	client *Client
+
+	// Download provides access to the Twitch Download API.
+	Download *ClipsDownloadResource
 }
 
 // NewClipsResource creates a new ClipsResource.
 func NewClipsResource(client *Client) *ClipsResource {
-	return &ClipsResource{client}
+	r := &ClipsResource{client: client}
+	r.Download = NewClipsDownloadResource(client)
+	return r
 }
 
-// ClipsListCall is a call to the clips list endpoint.
+// ClipsDownloadResource represents the Twitch ClipsDownload API.
+type ClipsDownloadResource struct {
+	client *Client
+}
+
+// NewClipsDownloadResource creates a new ClipsDownloadResource.
+func NewClipsDownloadResource(client *Client) *ClipsDownloadResource {
+	return &ClipsDownloadResource{client}
+}
+
+// ClipDownloadListCall represents a GET call to a Twitch ClipsDownload API endpoint.
+type ClipDownloadListCall struct {
+	resource *ClipsDownloadResource
+	opts     []RequestOption
+}
+
+// ClipDownloadListResponse represents the response from a GET request to /helix/clips/downloads.
+type ClipDownloadListResponse struct {
+	// Status is the HTTP status text returned by the Twitch API. For example, "200 OK".
+	Status string
+	// StatusCode is the HTTP status code returned by the Twitch API. For example, 200.
+	StatusCode int
+	// Header contains the HTTP headers from the Twitch API response.
+	Header http.Header
+	// Data is the DownloadableClip data returned by the Twitch API.
+	Data []DownloadableClip
+	// Request is the HTTP request that was sent to the Twitch API.
+	Request *http.Request
+}
+
+// List creates a new GET request to /helix/clips/downloads.
+//
+// Provides URLs to download the video file for the specified clips.
+//
+// # Rate Limits
+//
+// Limited to 100 requests per minute.
+//
+// # Authorization
+//
+// Requires an app access token or user access token that includes the editor:manage:clips or channel:manage:clips scope.
+//
+// Check the [Official Twitch Documentation] for more information.
+//
+// [Official Twitch Documentation]: https://dev.twitch.tv/docs/api/reference/#get-clips-download
+func (r *ClipsDownloadResource) List() *ClipDownloadListCall {
+	return &ClipDownloadListCall{resource: r}
+}
+
+// ClipID sets the ClipID query parameter.
+func (api *ClipDownloadListCall) ClipID(clipID string) *ClipDownloadListCall {
+	api.opts = append(api.opts, SetQueryParameter("clip_id", clipID))
+	return api
+}
+
+// EditorID sets the EditorID query parameter.
+func (api *ClipDownloadListCall) EditorID(editorID string) *ClipDownloadListCall {
+	api.opts = append(api.opts, SetQueryParameter("editor_id", editorID))
+	return api
+}
+
+// BroadcasterID sets the BroadcasterID query parameter.
+func (api *ClipDownloadListCall) BroadcasterID(broadcasterID string) *ClipDownloadListCall {
+	api.opts = append(api.opts, SetQueryParameter("broadcaster_id", broadcasterID))
+	return api
+}
+
+// Do executes the request.
+func (api *ClipDownloadListCall) Do(ctx context.Context, opts ...RequestOption) (*ClipDownloadListResponse, error) {
+	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/clips/downloads", nil, opts...)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = res.Body.Close() }()
+
+	data, err := decodeResponse[DownloadableClip](res)
+	if err != nil {
+		return nil, err
+	}
+
+	return &ClipDownloadListResponse{
+		Status:     res.Status,
+		StatusCode: res.StatusCode,
+		Header:     res.Header,
+		Data:       data.Data,
+		Request:    res.Request,
+	}, nil
+}
+
+// CreateClipInsertCall represents a POST call to a Twitch Clips API endpoint.
+type CreateClipInsertCall struct {
+	resource *ClipsResource
+	opts     []RequestOption
+}
+
+// CreateClipInsertResponse represents the response from a POST request to /helix/clips.
+type CreateClipInsertResponse struct {
+	// Status is the HTTP status text returned by the Twitch API. For example, "200 OK".
+	Status string
+	// StatusCode is the HTTP status code returned by the Twitch API. For example, 200.
+	StatusCode int
+	// Header contains the HTTP headers from the Twitch API response.
+	Header http.Header
+	// Data is the Clip data returned by the Twitch API.
+	Data []Clip
+	// Request is the HTTP request that was sent to the Twitch API.
+	Request *http.Request
+}
+
+// Insert creates a new POST request to /helix/clips.
+//
+// Creates a clip for a stream.
+//
+// # Authorization
+//
+// Requires a user access token that includes the clips:edit scope.
+//
+// Check the [Official Twitch Documentation] for more information.
+//
+// [Official Twitch Documentation]: https://dev.twitch.tv/docs/api/reference/#create-clip
+func (r *ClipsResource) Insert() *CreateClipInsertCall {
+	return &CreateClipInsertCall{resource: r}
+}
+
+// BroadcasterID sets the BroadcasterID query parameter.
+func (api *CreateClipInsertCall) BroadcasterID(broadcasterID string) *CreateClipInsertCall {
+	api.opts = append(api.opts, SetQueryParameter("broadcaster_id", broadcasterID))
+	return api
+}
+
+// HasDelay sets the HasDelay query parameter.
+func (api *CreateClipInsertCall) HasDelay(hasDelay bool) *CreateClipInsertCall {
+	api.opts = append(api.opts, SetQueryParameter("has_delay", hasDelay))
+	return api
+}
+
+// Do executes the request.
+func (api *CreateClipInsertCall) Do(ctx context.Context, opts ...RequestOption) (*CreateClipInsertResponse, error) {
+	res, err := api.resource.client.DoRequest(ctx, "POST", "/helix/clips", nil, opts...)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = res.Body.Close() }()
+
+	data, err := decodeResponse[Clip](res)
+	if err != nil {
+		return nil, err
+	}
+
+	return &CreateClipInsertResponse{
+		Status:     res.Status,
+		StatusCode: res.StatusCode,
+		Header:     res.Header,
+		Data:       data.Data,
+		Request:    res.Request,
+	}, nil
+}
+
+// ClipsListCall represents a GET call to a Twitch Clips API endpoint.
 type ClipsListCall struct {
 	resource *ClipsResource
 	opts     []RequestOption
 }
 
-// ClipsListResponse is the response from the clips list endpoint.
+// ClipsListResponse represents the response from a GET request to /helix/clips.
 type ClipsListResponse struct {
+	// Status is the HTTP status text returned by the Twitch API. For example, "200 OK".
+	Status string
+	// StatusCode is the HTTP status code returned by the Twitch API. For example, 200.
+	StatusCode int
+	// Header contains the HTTP headers from the Twitch API response.
 	Header http.Header
-	Data   []Clip
-	Cursor string
+	// Data is the Clip data returned by the Twitch API.
+	Data []Clip
+	// Pagination is the Pagination data returned by the Twitch API.
+	Pagination Pagination
+	// Request is the HTTP request that was sent to the Twitch API.
+	Request *http.Request
 }
 
-// List creates a new call to list clips.
+// List creates a new GET request to /helix/clips.
 //
-// One or more of ID, BroadcasterID, or GameID must be specified.
+// Check the [Official Twitch Documentation] for more information.
+//
+// [Official Twitch Documentation]: https://dev.twitch.tv/docs/api/reference/#get-clips
 func (r *ClipsResource) List() *ClipsListCall {
 	return &ClipsListCall{resource: r}
 }
 
-// ID filters the results to those with the specified clip IDs.
-func (c *ClipsListCall) ID(ids []string) *ClipsListCall {
-	for _, id := range ids {
-		c.opts = append(c.opts, AddQueryParameter("id", id))
+// ID adds to the ID query parameter.
+func (api *ClipsListCall) ID(iDs ...string) *ClipsListCall {
+	for _, iD := range iDs {
+		api.opts = append(api.opts, AddQueryParameter("id", iD))
 	}
-	return c
+	return api
 }
 
-// BroadcasterID filters the results to those with the specified broadcaster ID.
-func (c *ClipsListCall) BroadcasterID(id string) *ClipsListCall {
-	c.opts = append(c.opts, SetQueryParameter("broadcaster_id", id))
-	return c
+// BroadcasterID sets the BroadcasterID query parameter.
+func (api *ClipsListCall) BroadcasterID(broadcasterID string) *ClipsListCall {
+	api.opts = append(api.opts, SetQueryParameter("broadcaster_id", broadcasterID))
+	return api
 }
 
-// GameID filters the results to those with the specified game ID.
-func (c *ClipsListCall) GameID(id string) *ClipsListCall {
-	c.opts = append(c.opts, SetQueryParameter("game_id", id))
-	return c
+// GameID sets the GameID query parameter.
+func (api *ClipsListCall) GameID(gameID string) *ClipsListCall {
+	api.opts = append(api.opts, SetQueryParameter("game_id", gameID))
+	return api
 }
 
-// StartedAt filters the results to those created after the specified time.
-func (c *ClipsListCall) StartedAt(t time.Time) *ClipsListCall {
-	c.opts = append(c.opts, SetQueryParameter("started_at", t.Format(time.RFC3339)))
-	return c
+// Before sets the Before query parameter.
+func (api *ClipsListCall) Before(before string) *ClipsListCall {
+	api.opts = append(api.opts, SetQueryParameter("before", before))
+	return api
 }
 
-// EndedAt filters the results to those created before the specified time.
-func (c *ClipsListCall) EndedAt(t time.Time) *ClipsListCall {
-	c.opts = append(c.opts, SetQueryParameter("ended_at", t.Format(time.RFC3339)))
-	return c
+// After sets the After query parameter.
+func (api *ClipsListCall) After(after string) *ClipsListCall {
+	api.opts = append(api.opts, SetQueryParameter("after", after))
+	return api
 }
 
-// First filters the results to the first n clips.
-func (c *ClipsListCall) First(n int) *ClipsListCall {
-	c.opts = append(c.opts, SetQueryParameter("first", fmt.Sprint(n)))
-	return c
+// First sets the First query parameter.
+func (api *ClipsListCall) First(first int) *ClipsListCall {
+	api.opts = append(api.opts, SetQueryParameter("first", first))
+	return api
 }
 
-// Before filters the results to those before the specified cursor.
-func (c *ClipsListCall) Before(cursor string) *ClipsListCall {
-	c.opts = append(c.opts, SetQueryParameter("before", cursor))
-	return c
+// IsFeatured sets the IsFeatured query parameter.
+func (api *ClipsListCall) IsFeatured(isFeatured bool) *ClipsListCall {
+	api.opts = append(api.opts, SetQueryParameter("is_featured", isFeatured))
+	return api
 }
 
-// After filters the results to those after the specified cursor.
-func (c *ClipsListCall) After(cursor string) *ClipsListCall {
-	c.opts = append(c.opts, SetQueryParameter("after", cursor))
-	return c
+// StartedAt sets the StartedAt query parameter.
+func (api *ClipsListCall) StartedAt(startedAt time.Time) *ClipsListCall {
+	api.opts = append(api.opts, SetQueryParameter("started_at", startedAt.Format(time.RFC3339)))
+	return api
 }
 
-// Featured filters the results to only those that are featured.
-func (c *ClipsListCall) Featured() *ClipsListCall {
-	c.opts = append(c.opts, SetQueryParameter("is_featured", "true"))
-	return c
+// EndedAt sets the EndedAt query parameter.
+func (api *ClipsListCall) EndedAt(endedAt time.Time) *ClipsListCall {
+	api.opts = append(api.opts, SetQueryParameter("ended_at", endedAt.Format(time.RFC3339)))
+	return api
 }
 
-// Do executes the call.
-func (c *ClipsListCall) Do(ctx context.Context, opts ...RequestOption) (*ClipsListResponse, error) {
-	res, err := c.resource.client.DoRequest(ctx, http.MethodGet, EndpointClips, nil, append(c.opts, opts...)...)
+// Do executes the request.
+func (api *ClipsListCall) Do(ctx context.Context, opts ...RequestOption) (*ClipsListResponse, error) {
+	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/clips", nil, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -111,24 +280,11 @@ func (c *ClipsListCall) Do(ctx context.Context, opts ...RequestOption) (*ClipsLi
 	}
 
 	return &ClipsListResponse{
-		Header: res.Header,
-		Data:   data.Data,
-		Cursor: data.Pagination.Cursor,
+		Status:     res.Status,
+		StatusCode: res.StatusCode,
+		Header:     res.Header,
+		Data:       data.Data,
+		Pagination: data.Pagination,
+		Request:    res.Request,
 	}, nil
-}
-
-// UnmarshalJSON implements the json.Unmarshaler interface for ClipDuration.
-func (d *ClipDuration) UnmarshalJSON(data []byte) error {
-	var duration float64
-	if err := json.Unmarshal(data, &duration); err != nil {
-		return err
-	}
-
-	*d = ClipDuration(time.Duration(float64(time.Second) * duration))
-	return nil
-}
-
-// AsDuration converts the ClipDuration to a time.Duration.
-func (d ClipDuration) AsDuration() time.Duration {
-	return time.Duration(d)
 }

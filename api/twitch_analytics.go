@@ -40,8 +40,8 @@ type ExtensionAnalyticsListCall struct {
 	opts     []RequestOption
 }
 
-// ExtensionAnalyticsResponse represents the response from a GET request to /helix/analytics/extensions.
-type ExtensionAnalyticsResponse struct {
+// ExtensionAnalyticsListResponse represents the response from a GET request to /helix/analytics/extensions.
+type ExtensionAnalyticsListResponse struct {
 	// Status is the HTTP status text returned by the Twitch API. For example, "200 OK".
 	Status string
 	// StatusCode is the HTTP status code returned by the Twitch API. For example, 200.
@@ -108,7 +108,7 @@ func (api *ExtensionAnalyticsListCall) EndedAt(endedAt time.Time) *ExtensionAnal
 }
 
 // Do executes the request.
-func (api *ExtensionAnalyticsListCall) Do(ctx context.Context, opts ...RequestOption) (*ExtensionAnalyticsResponse, error) {
+func (api *ExtensionAnalyticsListCall) Do(ctx context.Context, opts ...RequestOption) (*ExtensionAnalyticsListResponse, error) {
 	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/analytics/extensions", nil, opts...)
 	if err != nil {
 		return nil, err
@@ -120,7 +120,7 @@ func (api *ExtensionAnalyticsListCall) Do(ctx context.Context, opts ...RequestOp
 		return nil, err
 	}
 
-	return &ExtensionAnalyticsResponse{
+	return &ExtensionAnalyticsListResponse{
 		Status:     res.Status,
 		StatusCode: res.StatusCode,
 		Header:     res.Header,
@@ -146,8 +146,8 @@ type GameAnalyticsListCall struct {
 	opts     []RequestOption
 }
 
-// GameAnalyticsResponse represents the response from a GET request to /helix/analytics/games.
-type GameAnalyticsResponse struct {
+// GameAnalyticsListResponse represents the response from a GET request to /helix/analytics/games.
+type GameAnalyticsListResponse struct {
 	// Status is the HTTP status text returned by the Twitch API. For example, "200 OK".
 	Status string
 	// StatusCode is the HTTP status code returned by the Twitch API. For example, 200.
@@ -214,7 +214,7 @@ func (api *GameAnalyticsListCall) After(after string) *GameAnalyticsListCall {
 }
 
 // Do executes the request.
-func (api *GameAnalyticsListCall) Do(ctx context.Context, opts ...RequestOption) (*GameAnalyticsResponse, error) {
+func (api *GameAnalyticsListCall) Do(ctx context.Context, opts ...RequestOption) (*GameAnalyticsListResponse, error) {
 	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/analytics/games", nil, opts...)
 	if err != nil {
 		return nil, err
@@ -226,7 +226,7 @@ func (api *GameAnalyticsListCall) Do(ctx context.Context, opts ...RequestOption)
 		return nil, err
 	}
 
-	return &GameAnalyticsResponse{
+	return &GameAnalyticsListResponse{
 		Status:     res.Status,
 		StatusCode: res.StatusCode,
 		Header:     res.Header,

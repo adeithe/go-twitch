@@ -43,7 +43,7 @@ var (
 	AnalyticsResource                = NewTwitchAPIResource("Analytics", AnalyticsExtensionsResource, AnalyticsGamesResource)
 	AnalyticsExtensionsResource      = NewTwitchAPIResource("Extensions")
 	AnalyticsGamesResource           = NewTwitchAPIResource("Games")
-	BitsResource                     = NewTwitchAPIResource("Bits", BitsLeaderboardResource, BitsCheermotesResource, BitsExtensionsResource)
+	BitsResource                     = NewTwitchAPIResource("Bits", BitsCheermotesResource, BitsExtensionsResource, BitsLeaderboardResource)
 	BitsLeaderboardResource          = NewTwitchAPIResource("Leaderboard")
 	BitsCheermotesResource           = NewTwitchAPIResource("Cheermotes")
 	BitsExtensionsResource           = NewTwitchAPIResource("Extensions")
@@ -51,18 +51,34 @@ var (
 	ChannelEditorsResource           = NewTwitchAPIResource("Editors")
 	ChannelFollowedResource          = NewTwitchAPIResource("Followed")
 	ChannelFollowersResource         = NewTwitchAPIResource("Followers")
-	ChannelPointsResource            = NewTwitchAPIResource("ChannelPoints", ChannelPointsRewardsResource, ChannelPointsRedemptionsResource)
+	ChannelPointsResource            = NewTwitchAPIResource("ChannelPoints", ChannelPointsRedemptionsResource, ChannelPointsRewardsResource)
 	ChannelPointsRewardsResource     = NewTwitchAPIResource("Rewards")
 	ChannelPointsRedemptionsResource = NewTwitchAPIResource("Redemptions")
 	CharityResource                  = NewTwitchAPIResource("Charity", CharityCampaignResource, CharityDonationsResource)
 	CharityCampaignResource          = NewTwitchAPIResource("Campaign")
 	CharityDonationsResource         = NewTwitchAPIResource("Donations")
-	ChatResource                     = NewTwitchAPIResource("Chat", ChatChattersResource)
-	ChatChattersResource             = NewTwitchAPIResource("Chatters")
+	ChatResource                     = NewTwitchAPIResource("Chat", ChatBadgesResource, ChatChattersResource, ChatEmotesResource, ChatEmoteSetsResource, ChatSettingsResource, ChatSharedResource, ChatAnnouncementResource, ChatShoutoutResource)
+	ChatChattersResource             = NewTwitchAPIResource("Chatters", ChatChattersUserResource)
+	ChatChattersUserResource         = NewTwitchAPIResource("User", ChatChattersUserColorResource)
+	ChatChattersUserColorResource    = NewTwitchAPIResource("Color")
+	ChatEmotesResource               = NewTwitchAPIResource("Emotes", ChatChannelEmotesResource, ChatEmotesGlobalResource, ChatUserEmotesResource)
+	ChatChannelEmotesResource        = NewTwitchAPIResource("Channel")
+	ChatUserEmotesResource           = NewTwitchAPIResource("User")
+	ChatEmotesGlobalResource         = NewTwitchAPIResource("Global")
+	ChatEmoteSetsResource            = NewTwitchAPIResource("EmoteSets")
+	ChatBadgesResource               = NewTwitchAPIResource("Badges", ChatBadgesGlobalResource)
+	ChatBadgesGlobalResource         = NewTwitchAPIResource("Global")
+	ChatSettingsResource             = NewTwitchAPIResource("Settings")
+	ChatSharedResource               = NewTwitchAPIResource("Shared")
+	ChatAnnouncementResource         = NewTwitchAPIResource("Announcement")
+	ChatShoutoutResource             = NewTwitchAPIResource("Shoutout")
+	ClipsResource                    = NewTwitchAPIResource("Clips", ClipsDownloadResource)
+	ClipsDownloadResource            = NewTwitchAPIResource("Download")
 
 	// Resources is the list of top-level API resources to generate. Subresources are included automatically.
 	Resources = []*TwitchAPIResource{
-		AdsResource, AnalyticsResource, BitsResource,
+		AdsResource, AnalyticsResource, BitsResource, ChannelsResource,
+		ChannelPointsResource, CharityResource, ChatResource, ClipsResource,
 	}
 
 	// Endpoints is the list of all API endpoints to generate. Resource mapping is done automatically using the Resource field.
@@ -483,7 +499,7 @@ var (
 		{
 			// https://dev.twitch.tv/docs/api/reference/#get-charity-campaign-donations
 			Resource: CharityDonationsResource,
-			Name:     "CharityCampaign",
+			Name:     "CharityDonations",
 			Method:   http.MethodGet,
 			Path:     api.EndpointCharityGetCampaign,
 			DocsURL:  "#get-charity-campaign-donations",
@@ -498,7 +514,7 @@ var (
 				First         int    `query:"-"`
 			}{},
 			Response: struct {
-				Data       api.CharityCampaign
+				Data       api.CharityCampaignDonation
 				Pagination api.Pagination
 			}{},
 		},
@@ -527,19 +543,335 @@ var (
 				Pagination api.Pagination
 			}{},
 		},
+		{
+			// https://dev.twitch.tv/docs/api/reference/#get-channel-emotes
+			Resource: ChatChannelEmotesResource,
+			Name:     "ChannelEmotes",
+			Method:   http.MethodGet,
+			Path:     api.EndpointChatGetChannelEmotes,
+			DocsURL:  "#get-channel-emotes",
+			Comments: []string{
+				"Gets the list of custom emotes for a broadcaster.",
+				"Broadcasters create these custom emotes for users who subscribe to or follow the channel or cheer Bits in the chat window.", "",
+				"With the exception of custom follower emotes, users may use custom emotes in any Twitch chat.", "",
+				"# Authorization", "", "Requires an app access token or user access token.",
+			},
+			Params: struct {
+				BroadcasterID string `query:"required"`
+			}{},
+			Response: BasicResponse[api.Emote]{},
+		},
+		{
+			// https://dev.twitch.tv/docs/api/reference/#get-global-emotes
+			Resource: ChatEmotesGlobalResource,
+			Name:     "GlobalEmotes",
+			Method:   http.MethodGet,
+			Path:     api.EndpointChatGetGlobalEmotes,
+			DocsURL:  "#get-global-emotes",
+			Comments: []string{
+				"Gets the list of global emotes.", "Global emotes are Twitch-created emotes that users can use in any Twitch chat.", "",
+				"# Authorization", "", "Requires an app access token or user access token.",
+			},
+			Response: BasicResponse[api.Emote]{},
+		},
+		{
+			// https://dev.twitch.tv/docs/api/reference/#get-emote-sets
+			Resource: ChatEmoteSetsResource,
+			Name:     "EmoteSets",
+			Method:   http.MethodGet,
+			Path:     api.EndpointChatGetEmoteSets,
+			DocsURL:  "#get-emote-sets",
+			Comments: []string{
+				"Gets emotes for one or more specified emote sets.", "",
+				"An emote set groups emotes that have a similar context.",
+				"For example, Twitch places all the subscriber emotes that a broadcaster uploads for their channel in the same emote set.", "",
+				"# Authorization", "", "Requires an app access token or user access token.",
+			},
+			Params: struct {
+				EmoteSetID []string `query:"required"`
+			}{},
+			Response: BasicResponse[api.Emote]{},
+		},
+		{
+			// https://dev.twitch.tv/docs/api/reference/#get-channel-chat-badges
+			Resource: ChatBadgesResource,
+			Name:     "ChannelChatBadges",
+			Method:   http.MethodGet,
+			Path:     api.EndpointChatGetChannelBadges,
+			DocsURL:  "#get-channel-chat-badges",
+			Comments: []string{
+				"Gets the list of custom chat badges for a broadcaster.", "",
+				"The list is empty if the broadcaster hasnt created custom chat badges.", "",
+				"# Authorization", "", "Requires an app access token or user access token.",
+			},
+			Params: struct {
+				BroadcasterID string `query:"required"`
+			}{},
+			Response: BasicResponse[api.ChatBadge]{},
+		},
+		{
+			// https://dev.twitch.tv/docs/api/reference/#get-global-chat-badges
+			Resource: ChatBadgesGlobalResource,
+			Name:     "GlobalChatBadges",
+			Method:   http.MethodGet,
+			Path:     api.EndpointChatGetGlobalBadges,
+			DocsURL:  "#get-global-chat-badges",
+			Comments: []string{"Gets list of chat badges on Twitch, which users may use in any chat room."},
+			Response: BasicResponse[api.ChatBadge]{},
+		},
+		{
+			// https://dev.twitch.tv/docs/api/reference/#get-chat-settings
+			Resource: ChatSettingsResource,
+			Name:     "ChatSettings",
+			Method:   http.MethodGet,
+			Path:     api.EndpointChatGetSettings,
+			DocsURL:  "#get-chat-settings",
+			Comments: []string{
+				"Gets the chat settings for a channel.", "",
+				"# Authorization", "", "Requires an app access token or user access token.",
+			},
+			Params: struct {
+				BroadcasterID string `query:"required"`
+				ModeratorID   string `query:"required"`
+			}{},
+			Response: BasicResponse[api.ChatSettings]{},
+		},
+		{
+			// https://dev.twitch.tv/docs/api/reference/#get-shared-chat-session
+			Resource: ChatSharedResource,
+			Name:     "SharedChatSession",
+			Method:   http.MethodGet,
+			Path:     api.EndpointChatGetSharedChatSession,
+			DocsURL:  "#get-shared-chat-session",
+			Comments: []string{
+				"Retrieves the active shared chat session for a channel.", "",
+				"# Authorization", "", "Requires a user access token that includes the moderator:read:chat_settings scope.",
+			},
+			Params: struct {
+				BroadcasterID string `query:"required"`
+			}{},
+			Response: BasicResponse[api.SharedChatSession]{},
+		},
+		{
+			// https://dev.twitch.tv/docs/api/reference/#get-user-emotes
+			Resource: ChatUserEmotesResource,
+			Name:     "UserEmotes",
+			Method:   http.MethodGet,
+			Path:     api.EndpointChatGetUserEmotes,
+			DocsURL:  "#get-user-emotes",
+			Comments: []string{
+				"Retrieves emotes available to the user across all channels.", "",
+				"# Authorization", "",
+				"Requires a user access token that includes the user:read:emotes scope.", "",
+				"Query parameter user_id must match the user_id in the user access token.",
+			},
+			Params: struct {
+				UserID        string `query:"required"`
+				BroadcasterID string `query:"-"`
+				After         string `query:"-"`
+			}{},
+			Response: struct {
+				Data       api.Emote
+				Template   string
+				Pagination api.Pagination
+			}{},
+		},
+		{
+			// https://dev.twitch.tv/docs/api/reference/#update-chat-settings
+			Resource: ChatSettingsResource,
+			Name:     "ChatSettings",
+			Method:   http.MethodPatch,
+			Path:     api.EndpointChatUpdateSettings,
+			DocsURL:  "#update-chat-settings",
+			Comments: []string{
+				"Updates the chat settings for a channel.", "",
+				"# Authorization", "", "Requires a user access token that includes the moderator:manage:chat_settings scope.",
+			},
+			Params: struct {
+				BroadcasterID                 string `query:"required"`
+				ModeratorID                   string `query:"required"`
+				EmoteMode                     bool   `body:"-"`
+				FollowerMode                  bool   `body:"-"`
+				FollowerModeDuration          int    `body:"-"`
+				NonModeratorChatDelay         bool   `body:"-"`
+				NonModeratorChatDelayDuration int    `body:"-"`
+				SlowMode                      bool   `body:"-"`
+				SlowModeWaitTime              int    `body:"-"`
+				SubscriberMode                bool   `body:"-"`
+				UniqueChatMode                bool   `body:"-"`
+			}{},
+			Response: BasicResponse[api.ChatSettings]{},
+		},
+		{
+			// https://dev.twitch.tv/docs/api/reference/#send-chat-announcement
+			Resource: ChatAnnouncementResource,
+			Name:     "ChatAnnouncement",
+			Method:   http.MethodPost,
+			Path:     api.EndpointChatSendAnnouncement,
+			DocsURL:  "#send-chat-announcement",
+			Comments: []string{
+				"Sends an announcement to a chat room.", "",
+				"# Rate Limits", "", "One announcement may be sent every 2 seconds.", "",
+				"# Authorization", "", "Requires a user access token that includes the moderator:manage:announcements scope.",
+			},
+			Params: struct {
+				BroadcasterID string `query:"required"`
+				ModeratorID   string `query:"required"`
+				Message       string `body:"required"`
+				Color         string `body:"-"`
+			}{},
+		},
+		{
+			// https://dev.twitch.tv/docs/api/reference/#send-a-shoutout
+			Resource: ChatShoutoutResource,
+			Name:     "ChatShoutout",
+			Method:   http.MethodPost,
+			Path:     api.EndpointChatSendShoutout,
+			DocsURL:  "#send-a-shoutout",
+			Comments: []string{
+				"Sends a shoutout in chat to another channel.", "",
+				"# Rate Limits", "",
+				"The broadcaster may send a Shoutout once every 2 minutes.", "",
+				"They may send the same broadcaster a Shoutout once every 60 minutes.", "",
+				"# Authorization", "", "Requires a user access token that includes the moderator:manage:shoutouts scope.",
+			},
+			Params: struct {
+				FromBroadcasterID string `query:"required"`
+				ToBroadcasterID   string `query:"required"`
+				ModeratorID       string `query:"required"`
+			}{},
+		},
+		{
+			// https://dev.twitch.tv/docs/api/reference/#send-chat-message
+			Resource: ChatResource,
+			Name:     "SendMessage",
+			Method:   http.MethodPost,
+			Path:     api.EndpointChatSendMessage,
+			DocsURL:  "#send-chat-message",
+			Comments: []string{
+				"Sends a message to the specified chat room.", "",
+				"# Rate Limits", "", "A user may send 20 messages every 30 seconds per channel.", "",
+				"# Authorization", "", "Requires an app access token or user access token that includes the user:write:chat scope.", "",
+				"If app access token used, then additionally requires user:bot scope from chatting user, and either channel:bot scope from broadcaster or moderator status.",
+			},
+			Params: struct {
+				BroadcasterID         string `body:"required"`
+				SenderID              string `body:"required"`
+				Message               string `body:"required"`
+				ReplayParentMessageID string `body:"-"`
+				ForSourceOnly         bool   `body:"-"`
+			}{},
+			Response: BasicResponse[api.OutboundChatMessage]{},
+		},
+		{
+			// https://dev.twitch.tv/docs/api/reference/#get-user-chat-color
+			Resource: ChatChattersUserColorResource,
+			Name:     "UserChatColor",
+			Method:   http.MethodGet,
+			Path:     api.EndpointChatGetUserColor,
+			DocsURL:  "#get-user-chat-color",
+			Comments: []string{
+				"Gets the chat color for a user.", "",
+				"# Authorization", "", "Requires an app access token or user access token.",
+			},
+			Params: struct {
+				UserID []string `query:"required"`
+			}{},
+			Response: BasicResponse[api.UserChatColor]{},
+		},
+		{
+			// https://dev.twitch.tv/docs/api/reference/#update-user-chat-color
+			Resource: ChatChattersUserColorResource,
+			Name:     "UserChatColor",
+			Method:   http.MethodPut,
+			Path:     api.EndpointChatUpdateUserColor,
+			DocsURL:  "#update-user-chat-color",
+			Comments: []string{
+				"Updates the display color for the user in chat.", "",
+				"# Authorization", "", "Requires a user access token that includes the user:manage:chat_color scope.",
+			},
+			Params: struct {
+				UserID string `query:"required"`
+				Color  string `query:"required"`
+			}{},
+		},
+		{
+			// https://dev.twitch.tv/docs/api/reference/#create-clip
+			Resource: ClipsResource,
+			Name:     "CreateClip",
+			Method:   http.MethodPost,
+			Path:     api.EndpointClips,
+			DocsURL:  "#create-clip",
+			Comments: []string{
+				"Creates a clip for a stream.", "",
+				"# Authorization", "", "Requires a user access token that includes the clips:edit scope.",
+			},
+			Params: struct {
+				BroadcasterID string `query:"-"`
+				HasDelay      bool   `query:"-"`
+			}{},
+			Response: BasicResponse[api.Clip]{},
+		},
+		{
+			// https://dev.twitch.tv/docs/api/reference/#get-clips
+			Resource: ClipsResource,
+			Name:     "Clips",
+			Method:   http.MethodGet,
+			Path:     api.EndpointClips,
+			DocsURL:  "#get-clips",
+			Comments: []string{},
+			Params: struct {
+				ID            []string  `query:"-"`
+				BroadcasterID string    `query:"-"`
+				GameID        string    `query:"-"`
+				Before        string    `query:"-"`
+				After         string    `query:"-"`
+				First         int       `query:"-"`
+				IsFeatured    bool      `query:"-"`
+				StartedAt     time.Time `query:"-"`
+				EndedAt       time.Time `query:"-"`
+			}{},
+			Response: struct {
+				Data       api.Clip
+				Pagination api.Pagination
+			}{},
+		},
+		{
+			// https://dev.twitch.tv/docs/api/reference/#get-clips-download
+			Resource: ClipsDownloadResource,
+			Name:     "ClipDownload",
+			Method:   http.MethodGet,
+			Path:     api.EndpointClipsGetClipsDownload,
+			DocsURL:  "#get-clips-download",
+			Comments: []string{
+				"Provides URLs to download the video file for the specified clips.", "",
+				"# Rate Limits", "", "Limited to 100 requests per minute.", "",
+				"# Authorization", "", "Requires an app access token or user access token that includes the editor:manage:clips or channel:manage:clips scope.",
+			},
+			Params: struct {
+				ClipID        string `query:"required"`
+				EditorID      string `query:"-"`
+				BroadcasterID string `query:"-"`
+			}{},
+			Response: BasicResponse[api.DownloadableClip]{},
+		},
 	}
 )
+
+var resourceMapping map[*TwitchAPIResource][]*TwitchAPIEndpoint
 
 func NewTwitchAPIResource(name string, subresources ...*TwitchAPIResource) *TwitchAPIResource {
 	return &TwitchAPIResource{Name: name, SubResources: subresources}
 }
 
-func main() {
-	resourceMapping := make(map[*TwitchAPIResource][]*TwitchAPIEndpoint)
+func init() {
+	resourceMapping = make(map[*TwitchAPIResource][]*TwitchAPIEndpoint)
 	for _, e := range Endpoints {
 		resourceMapping[e.Resource] = append(resourceMapping[e.Resource], e)
 	}
+}
 
+func main() {
 	var resourceCount, endpointCount int
 	for _, resource := range Resources {
 		tmplOutput := GetFileName(resource)
@@ -565,7 +897,7 @@ func main() {
 			continue
 		}
 
-		count, err := GenerateResource(out, resource, endpoints)
+		numResources, numEndpoints, err := GenerateResource(out, resource, endpoints)
 		if err != nil {
 			slog.Error("failed to generate resource",
 				slog.String("output", tmplOutput),
@@ -573,29 +905,26 @@ func main() {
 				slog.Any("error", err),
 			)
 		}
-
-		for _, subresource := range resource.SubResources {
-			subresource.Name = resource.Name + subresource.Name
-			n, err := GenerateResource(out, subresource, resourceMapping[subresource])
-			if err != nil {
-				slog.Error("failed to generate subresource",
-					slog.String("output", tmplOutput),
-					slog.String("template", TemplateAPIResource),
-					slog.Any("error", err),
-				)
-			}
-			count += n
-			resourceCount++
-		}
-		endpointCount += count
+		resourceCount += numResources
+		endpointCount += numEndpoints
 		_ = out.Close()
 	}
-	slog.Info("generated resources", slog.Int("endpoints", endpointCount))
+	slog.Info("generated resources", slog.Int("resources", resourceCount), slog.Int("endpoints", endpointCount))
 }
 
-func GenerateResource(w io.Writer, resource *TwitchAPIResource, endpoints []*TwitchAPIEndpoint) (n int, err error) {
+func GenerateResource(w io.Writer, resource *TwitchAPIResource, endpoints []*TwitchAPIEndpoint) (numResources, numEndpoints int, err error) {
 	if err = Generate(w, TemplateAPIResource, resource); err != nil {
 		return
+	}
+
+	for _, subresource := range resource.SubResources {
+		subresource.Name = resource.Name + subresource.Name
+		nr, ne, err := GenerateResource(w, subresource, resourceMapping[subresource])
+		if err != nil {
+			return numResources, numEndpoints, err
+		}
+		numResources += nr
+		numEndpoints += ne
 	}
 
 	for _, endpoint := range endpoints {
@@ -606,8 +935,9 @@ func GenerateResource(w io.Writer, resource *TwitchAPIResource, endpoints []*Twi
 		if err = Generate(w, TemplateAPICall, endpoint); err != nil {
 			return
 		}
-		n++
+		numEndpoints++
 	}
+	numResources++
 	return
 }
 

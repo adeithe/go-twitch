@@ -10,21 +10,185 @@ import (
 type BitsResource struct {
 	client *Client
 
-	// Leaderboard provides access to the Twitch Leaderboard API.
-	Leaderboard *BitsLeaderboardResource
 	// Cheermotes provides access to the Twitch Cheermotes API.
 	Cheermotes *BitsCheermotesResource
 	// Extensions provides access to the Twitch Extensions API.
 	Extensions *BitsExtensionsResource
+	// Leaderboard provides access to the Twitch Leaderboard API.
+	Leaderboard *BitsLeaderboardResource
 }
 
 // NewBitsResource creates a new BitsResource.
 func NewBitsResource(client *Client) *BitsResource {
 	r := &BitsResource{client: client}
-	r.Leaderboard = NewBitsLeaderboardResource(client)
 	r.Cheermotes = NewBitsCheermotesResource(client)
 	r.Extensions = NewBitsExtensionsResource(client)
+	r.Leaderboard = NewBitsLeaderboardResource(client)
 	return r
+}
+
+// BitsCheermotesResource represents the Twitch BitsCheermotes API.
+type BitsCheermotesResource struct {
+	client *Client
+}
+
+// NewBitsCheermotesResource creates a new BitsCheermotesResource.
+func NewBitsCheermotesResource(client *Client) *BitsCheermotesResource {
+	return &BitsCheermotesResource{client}
+}
+
+// BitsCheermotesListCall represents a GET call to a Twitch BitsCheermotes API endpoint.
+type BitsCheermotesListCall struct {
+	resource *BitsCheermotesResource
+	opts     []RequestOption
+}
+
+// BitsCheermotesListResponse represents the response from a GET request to /helix/bits/cheermotes.
+type BitsCheermotesListResponse struct {
+	// Status is the HTTP status text returned by the Twitch API. For example, "200 OK".
+	Status string
+	// StatusCode is the HTTP status code returned by the Twitch API. For example, 200.
+	StatusCode int
+	// Header contains the HTTP headers from the Twitch API response.
+	Header http.Header
+	// Data is the Cheermote data returned by the Twitch API.
+	Data []Cheermote
+	// Request is the HTTP request that was sent to the Twitch API.
+	Request *http.Request
+}
+
+// List creates a new GET request to /helix/bits/cheermotes.
+//
+// Gets a list of Cheermotes that users can use to cheer Bits in any Bits-enabled chat room.
+//
+// # Authorization
+//
+// Requires an app access token or user access token.
+//
+// Check the [Official Twitch Documentation] for more information.
+//
+// [Official Twitch Documentation]: https://dev.twitch.tv/docs/api/reference/#get-cheermotes
+func (r *BitsCheermotesResource) List() *BitsCheermotesListCall {
+	return &BitsCheermotesListCall{resource: r}
+}
+
+// BroadcasterID sets the BroadcasterID query parameter.
+func (api *BitsCheermotesListCall) BroadcasterID(broadcasterID string) *BitsCheermotesListCall {
+	api.opts = append(api.opts, SetQueryParameter("broadcaster_id", broadcasterID))
+	return api
+}
+
+// Do executes the request.
+func (api *BitsCheermotesListCall) Do(ctx context.Context, opts ...RequestOption) (*BitsCheermotesListResponse, error) {
+	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/bits/cheermotes", nil, opts...)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = res.Body.Close() }()
+
+	data, err := decodeResponse[Cheermote](res)
+	if err != nil {
+		return nil, err
+	}
+
+	return &BitsCheermotesListResponse{
+		Status:     res.Status,
+		StatusCode: res.StatusCode,
+		Header:     res.Header,
+		Data:       data.Data,
+		Request:    res.Request,
+	}, nil
+}
+
+// BitsExtensionsResource represents the Twitch BitsExtensions API.
+type BitsExtensionsResource struct {
+	client *Client
+}
+
+// NewBitsExtensionsResource creates a new BitsExtensionsResource.
+func NewBitsExtensionsResource(client *Client) *BitsExtensionsResource {
+	return &BitsExtensionsResource{client}
+}
+
+// BitsExtensionTransactionsListCall represents a GET call to a Twitch BitsExtensions API endpoint.
+type BitsExtensionTransactionsListCall struct {
+	resource *BitsExtensionsResource
+	opts     []RequestOption
+}
+
+// BitsExtensionTransactionsListResponse represents the response from a GET request to /helix/extensions/transactions.
+type BitsExtensionTransactionsListResponse struct {
+	// Status is the HTTP status text returned by the Twitch API. For example, "200 OK".
+	Status string
+	// StatusCode is the HTTP status code returned by the Twitch API. For example, 200.
+	StatusCode int
+	// Header contains the HTTP headers from the Twitch API response.
+	Header http.Header
+	// Data is the ExtensionTransaction data returned by the Twitch API.
+	Data []ExtensionTransaction
+	// Request is the HTTP request that was sent to the Twitch API.
+	Request *http.Request
+}
+
+// List creates a new GET request to /helix/extensions/transactions.
+//
+// Gets a list of transactions for an extension. A transaction records the exchange of a currency (for example, Bits) for a digital product.
+//
+// # Authorization
+//
+// Requires an app access token.
+//
+// Check the [Official Twitch Documentation] for more information.
+//
+// [Official Twitch Documentation]: https://dev.twitch.tv/docs/api/reference/#get-extension-transactions
+func (r *BitsExtensionsResource) List() *BitsExtensionTransactionsListCall {
+	return &BitsExtensionTransactionsListCall{resource: r}
+}
+
+// ID sets the ID query parameter.
+func (api *BitsExtensionTransactionsListCall) ID(iD string) *BitsExtensionTransactionsListCall {
+	api.opts = append(api.opts, SetQueryParameter("id", iD))
+	return api
+}
+
+// ExtensionID sets the ExtensionID query parameter.
+func (api *BitsExtensionTransactionsListCall) ExtensionID(extensionID string) *BitsExtensionTransactionsListCall {
+	api.opts = append(api.opts, SetQueryParameter("extension_id", extensionID))
+	return api
+}
+
+// After sets the After query parameter.
+func (api *BitsExtensionTransactionsListCall) After(after string) *BitsExtensionTransactionsListCall {
+	api.opts = append(api.opts, SetQueryParameter("after", after))
+	return api
+}
+
+// First sets the First query parameter.
+func (api *BitsExtensionTransactionsListCall) First(first int) *BitsExtensionTransactionsListCall {
+	api.opts = append(api.opts, SetQueryParameter("first", first))
+	return api
+}
+
+// Do executes the request.
+func (api *BitsExtensionTransactionsListCall) Do(ctx context.Context, opts ...RequestOption) (*BitsExtensionTransactionsListResponse, error) {
+	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/extensions/transactions", nil, opts...)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = res.Body.Close() }()
+
+	data, err := decodeResponse[ExtensionTransaction](res)
+	if err != nil {
+		return nil, err
+	}
+
+	return &BitsExtensionTransactionsListResponse{
+		Status:     res.Status,
+		StatusCode: res.StatusCode,
+		Header:     res.Header,
+		Data:       data.Data,
+		Request:    res.Request,
+	}, nil
 }
 
 // BitsLeaderboardResource represents the Twitch BitsLeaderboard API.
@@ -43,8 +207,8 @@ type BitsLeaderboardListCall struct {
 	opts     []RequestOption
 }
 
-// BitsLeaderboardResponse represents the response from a GET request to /helix/bits/leaderboard.
-type BitsLeaderboardResponse struct {
+// BitsLeaderboardListResponse represents the response from a GET request to /helix/bits/leaderboard.
+type BitsLeaderboardListResponse struct {
 	// Status is the HTTP status text returned by the Twitch API. For example, "200 OK".
 	Status string
 	// StatusCode is the HTTP status code returned by the Twitch API. For example, 200.
@@ -101,7 +265,7 @@ func (api *BitsLeaderboardListCall) StartedAt(startedAt time.Time) *BitsLeaderbo
 }
 
 // Do executes the request.
-func (api *BitsLeaderboardListCall) Do(ctx context.Context, opts ...RequestOption) (*BitsLeaderboardResponse, error) {
+func (api *BitsLeaderboardListCall) Do(ctx context.Context, opts ...RequestOption) (*BitsLeaderboardListResponse, error) {
 	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/bits/leaderboard", nil, opts...)
 	if err != nil {
 		return nil, err
@@ -113,177 +277,13 @@ func (api *BitsLeaderboardListCall) Do(ctx context.Context, opts ...RequestOptio
 		return nil, err
 	}
 
-	return &BitsLeaderboardResponse{
+	return &BitsLeaderboardListResponse{
 		Status:     res.Status,
 		StatusCode: res.StatusCode,
 		Header:     res.Header,
 		Total:      data.Total,
 		Data:       data.Data,
 		DateRange:  data.DateRange,
-		Request:    res.Request,
-	}, nil
-}
-
-// BitsCheermotesResource represents the Twitch BitsCheermotes API.
-type BitsCheermotesResource struct {
-	client *Client
-}
-
-// NewBitsCheermotesResource creates a new BitsCheermotesResource.
-func NewBitsCheermotesResource(client *Client) *BitsCheermotesResource {
-	return &BitsCheermotesResource{client}
-}
-
-// BitsCheermotesListCall represents a GET call to a Twitch BitsCheermotes API endpoint.
-type BitsCheermotesListCall struct {
-	resource *BitsCheermotesResource
-	opts     []RequestOption
-}
-
-// BitsCheermotesResponse represents the response from a GET request to /helix/bits/cheermotes.
-type BitsCheermotesResponse struct {
-	// Status is the HTTP status text returned by the Twitch API. For example, "200 OK".
-	Status string
-	// StatusCode is the HTTP status code returned by the Twitch API. For example, 200.
-	StatusCode int
-	// Header contains the HTTP headers from the Twitch API response.
-	Header http.Header
-	// Data is the Cheermote data returned by the Twitch API.
-	Data []Cheermote
-	// Request is the HTTP request that was sent to the Twitch API.
-	Request *http.Request
-}
-
-// List creates a new GET request to /helix/bits/cheermotes.
-//
-// Gets a list of Cheermotes that users can use to cheer Bits in any Bits-enabled chat room.
-//
-// # Authorization
-//
-// Requires an app access token or user access token.
-//
-// Check the [Official Twitch Documentation] for more information.
-//
-// [Official Twitch Documentation]: https://dev.twitch.tv/docs/api/reference/#get-cheermotes
-func (r *BitsCheermotesResource) List() *BitsCheermotesListCall {
-	return &BitsCheermotesListCall{resource: r}
-}
-
-// BroadcasterID sets the BroadcasterID query parameter.
-func (api *BitsCheermotesListCall) BroadcasterID(broadcasterID string) *BitsCheermotesListCall {
-	api.opts = append(api.opts, SetQueryParameter("broadcaster_id", broadcasterID))
-	return api
-}
-
-// Do executes the request.
-func (api *BitsCheermotesListCall) Do(ctx context.Context, opts ...RequestOption) (*BitsCheermotesResponse, error) {
-	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/bits/cheermotes", nil, opts...)
-	if err != nil {
-		return nil, err
-	}
-	defer func() { _ = res.Body.Close() }()
-
-	data, err := decodeResponse[Cheermote](res)
-	if err != nil {
-		return nil, err
-	}
-
-	return &BitsCheermotesResponse{
-		Status:     res.Status,
-		StatusCode: res.StatusCode,
-		Header:     res.Header,
-		Data:       data.Data,
-		Request:    res.Request,
-	}, nil
-}
-
-// BitsExtensionsResource represents the Twitch BitsExtensions API.
-type BitsExtensionsResource struct {
-	client *Client
-}
-
-// NewBitsExtensionsResource creates a new BitsExtensionsResource.
-func NewBitsExtensionsResource(client *Client) *BitsExtensionsResource {
-	return &BitsExtensionsResource{client}
-}
-
-// BitsExtensionTransactionsListCall represents a GET call to a Twitch BitsExtensions API endpoint.
-type BitsExtensionTransactionsListCall struct {
-	resource *BitsExtensionsResource
-	opts     []RequestOption
-}
-
-// BitsExtensionTransactionsResponse represents the response from a GET request to /helix/extensions/transactions.
-type BitsExtensionTransactionsResponse struct {
-	// Status is the HTTP status text returned by the Twitch API. For example, "200 OK".
-	Status string
-	// StatusCode is the HTTP status code returned by the Twitch API. For example, 200.
-	StatusCode int
-	// Header contains the HTTP headers from the Twitch API response.
-	Header http.Header
-	// Data is the ExtensionTransaction data returned by the Twitch API.
-	Data []ExtensionTransaction
-	// Request is the HTTP request that was sent to the Twitch API.
-	Request *http.Request
-}
-
-// List creates a new GET request to /helix/extensions/transactions.
-//
-// Gets a list of transactions for an extension. A transaction records the exchange of a currency (for example, Bits) for a digital product.
-//
-// # Authorization
-//
-// Requires an app access token.
-//
-// Check the [Official Twitch Documentation] for more information.
-//
-// [Official Twitch Documentation]: https://dev.twitch.tv/docs/api/reference/#get-extension-transactions
-func (r *BitsExtensionsResource) List() *BitsExtensionTransactionsListCall {
-	return &BitsExtensionTransactionsListCall{resource: r}
-}
-
-// ID sets the ID query parameter.
-func (api *BitsExtensionTransactionsListCall) ID(iD string) *BitsExtensionTransactionsListCall {
-	api.opts = append(api.opts, SetQueryParameter("id", iD))
-	return api
-}
-
-// ExtensionID sets the ExtensionID query parameter.
-func (api *BitsExtensionTransactionsListCall) ExtensionID(extensionID string) *BitsExtensionTransactionsListCall {
-	api.opts = append(api.opts, SetQueryParameter("extension_id", extensionID))
-	return api
-}
-
-// After sets the After query parameter.
-func (api *BitsExtensionTransactionsListCall) After(after string) *BitsExtensionTransactionsListCall {
-	api.opts = append(api.opts, SetQueryParameter("after", after))
-	return api
-}
-
-// First sets the First query parameter.
-func (api *BitsExtensionTransactionsListCall) First(first int) *BitsExtensionTransactionsListCall {
-	api.opts = append(api.opts, SetQueryParameter("first", first))
-	return api
-}
-
-// Do executes the request.
-func (api *BitsExtensionTransactionsListCall) Do(ctx context.Context, opts ...RequestOption) (*BitsExtensionTransactionsResponse, error) {
-	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/extensions/transactions", nil, opts...)
-	if err != nil {
-		return nil, err
-	}
-	defer func() { _ = res.Body.Close() }()
-
-	data, err := decodeResponse[ExtensionTransaction](res)
-	if err != nil {
-		return nil, err
-	}
-
-	return &BitsExtensionTransactionsResponse{
-		Status:     res.Status,
-		StatusCode: res.StatusCode,
-		Header:     res.Header,
-		Data:       data.Data,
 		Request:    res.Request,
 	}, nil
 }

@@ -201,7 +201,7 @@ func (r *TwitchAPIResource) UsesPackage(pkg string) bool {
 	}
 
 	for _, e := range Endpoints {
-		if e.Resource != r {
+		if e.Resource != r || e.Params == nil {
 			continue
 		}
 
@@ -217,6 +217,12 @@ func (r *TwitchAPIResource) UsesPackage(pkg string) bool {
 }
 
 func (r *TwitchAPIResource) HasBody() bool {
+	for _, s := range r.SubResources {
+		if s.HasBody() {
+			return true
+		}
+	}
+
 	for _, e := range Endpoints {
 		if e.Resource != r {
 			continue
@@ -224,12 +230,6 @@ func (r *TwitchAPIResource) HasBody() bool {
 
 		if e.HasBody() {
 			return true
-		}
-
-		for _, s := range r.SubResources {
-			if s.HasBody() {
-				return true
-			}
 		}
 	}
 	return false
@@ -264,9 +264,9 @@ func (q QueryParam) AsVariadicParam() string {
 }
 
 func (q BodyParam) Kind() string {
-	return strings.TrimPrefix(q.Type, "[]")
+	return strings.TrimPrefix(strings.TrimPrefix(q.Type, "[]"), "api.")
 }
 
 func (q BodyParam) AsVariadicParam() string {
-	return strings.Replace(q.Type, "[]", "...", 1)
+	return strings.Replace(q.Kind(), "[]", "...", 1)
 }

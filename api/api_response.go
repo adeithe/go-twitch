@@ -19,6 +19,7 @@ type ResponseData[T any] struct {
 
 	Data       []T            `json:"data"`
 	Errors     []ConduitError `json:"errors,omitempty"`
+	Template   string         `json:"template,omitempty"`
 	DateRange  DateRange      `json:"date_range,omitempty"`
 	Pagination Pagination     `json:"pagination,omitempty"`
 
