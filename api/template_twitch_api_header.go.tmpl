@@ -1,0 +1,15 @@
+package api
+
+import (
+{{- if .HasBody }}
+	"bytes"
+{{- end }}
+	"context"
+{{- if .HasBody }}
+	"encoding/json"
+{{- end }}
+	"net/http"
+{{- if .UsesPackage "time" }}
+	"time"
+{{- end }}
+)

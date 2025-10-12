@@ -39,35 +39,6 @@ type CreateBanRequest struct {
 	reason        string
 }
 
-const (
-	// EndpointModerationCheckAutoModStatus is the endpoint for checking if a message would be held by AutoMod.
-	EndpointModerationCheckAutoModStatus = TwitchAPIVersionHelix + "/moderation/enforcements/status"
-	// EndpointModerationManageHeldAutoModMessages is the endpoint for managing a message held by AutoMod.
-	EndpointModerationManageHeldAutoModMessages = TwitchAPIVersionHelix + "/moderation/automod/message"
-	// EndpointModerationAutoModSettings is the endpoint for getting and maanaging AutoMod settings for a channel.
-	EndpointModerationAutoModSettings = TwitchAPIVersionHelix + "/moderation/automod/settings"
-	// EndpointModerationGetBannedUsers is the endpoint for getting banned users in a channel.
-	EndpointModerationGetBannedUsers = TwitchAPIVersionHelix + "/moderation/banned"
-	// EndpointModerationBans is the endpoint for managing banned users in a channel.
-	EndpointModerationBans = TwitchAPIVersionHelix + "/moderation/bans"
-	// EndpointModerationUnbanRequests is the endpoint for managing unban requests for a channel.
-	EndpointModerationUnbanRequests = TwitchAPIVersionHelix + "/moderation/unban_requests"
-	// EndpointModerationBlockedTerms is the endpoint for managing a channels blocked terms.
-	EndpointModerationBlockedTerms = TwitchAPIVersionHelix + "/moderation/blocked_terms"
-	// EndpointModerationDeleteChatMessages is the endpoint for deleting chat messages in a channel.
-	EndpointModerationDeleteChatMessages = TwitchAPIVersionHelix + "/moderation/chat"
-	// EndpointModerationModeratedChannels is the endpoint for checking which channels the authenticated user moderates.
-	EndpointModerationModeratedChannels = TwitchAPIVersionHelix + "/moderation/channels"
-	// EndpointModerationModerators is the endpoint for managing moderators in a channel.
-	EndpointModerationModerators = TwitchAPIVersionHelix + "/moderation/moderators"
-	// EndpointModerationVIPs is the endpoint for managing VIPs in a channel.
-	EndpointModerationVIPs = TwitchAPIVersionHelix + "/channels/vips"
-	// EndpointModerationShieldMode is the endpoint for managing a channels Shield Mode settings.
-	EndpointModerationShieldMode = TwitchAPIVersionHelix + "/moderation/shield_mode"
-	// EndpointModerationWarnChatUser is the endpoint for warning a user in chat.
-	EndpointModerationWarnChatUser = TwitchAPIVersionHelix + "/moderation/warnings"
-)
-
 // CreateBan creates a request to ban a user from a channel.
 //
 // Required Scope: moderator:manage:banned_users
@@ -115,7 +86,7 @@ func (c *CreateBanRequest) Do(ctx context.Context, opts ...RequestOption) ([]Cha
 	query := url.Values{}
 	query.Set("broadcaster_id", c.broadcasterID)
 	query.Set("moderator_id", c.moderatorID)
-	res, err := c.resource.client.doRequest(ctx, http.MethodPost, fmt.Sprintf("%s?%s", EndpointModerationBans, query.Encode()), bytes.NewReader(bs), opts...)
+	res, err := c.resource.client.DoRequest(ctx, http.MethodPost, fmt.Sprintf("%s?%s", EndpointModerationBans, query.Encode()), bytes.NewReader(bs), opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -156,7 +127,7 @@ func (c *RemoveBanRequest) Do(ctx context.Context, opts ...RequestOption) error 
 	query.Set("moderator_id", c.moderatorID)
 	query.Set("user_id", c.userID)
 
-	res, err := c.resource.client.doRequest(ctx, http.MethodDelete, fmt.Sprintf("%s?%s", EndpointModerationBans, query.Encode()), nil, opts...)
+	res, err := c.resource.client.DoRequest(ctx, http.MethodDelete, fmt.Sprintf("%s?%s", EndpointModerationBans, query.Encode()), nil, opts...)
 	if err != nil {
 		return err
 	}
@@ -193,7 +164,7 @@ func (c *ClearChatRequest) Do(ctx context.Context, opts ...RequestOption) error 
 	query.Set("moderator_id", c.moderatorID)
 	query.Set("message_id", c.messageID)
 
-	res, err := c.resource.client.doRequest(ctx, http.MethodDelete, fmt.Sprintf("%s?%s", EndpointModerationDeleteChatMessages, query.Encode()), nil, opts...)
+	res, err := c.resource.client.DoRequest(ctx, http.MethodDelete, fmt.Sprintf("%s?%s", EndpointModerationDeleteChatMessages, query.Encode()), nil, opts...)
 	if err != nil {
 		return err
 	}

@@ -5,15 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
-	"time"
 )
-
-// ConduitShard is a shard for a Twitch Eventsub Conduit.
-type ConduitShard struct {
-	ID        string    `json:"id"`
-	Status    string    `json:"status"`
-	Transport Transport `json:"transport"`
-}
 
 // ConduitShardsResponse represents the response from the Twitch Eventsub Conduit Shards API.
 type ConduitShardsResponse struct {
@@ -21,19 +13,6 @@ type ConduitShardsResponse struct {
 	Shards []ConduitShard
 	Cursor string
 }
-
-// Transport is the transport method for a Twitch Eventsub Conduit Shard.
-type Transport struct {
-	Method         string     `json:"method"`
-	Callback       *string    `json:"callback,omitempty"`
-	Secret         *string    `json:"secret,omitempty"`
-	SessionID      *string    `json:"session_id,omitempty"`
-	ConnectedAt    *time.Time `json:"connected_at,omitempty"`
-	DisconnectedAt *time.Time `json:"disconnected_at,omitempty"`
-}
-
-// EndpointConduitsShards is the endpoint for the Twitch Eventsub Conduit Shards API.
-const EndpointConduitsShards = TwitchAPIVersionHelix + "/eventsub/conduits/shards"
 
 // NewWebhookTransport creates a new webhook transport for a Twitch Eventsub Conduit Shard.
 func NewWebhookTransport(callback, secret string) Transport {
@@ -92,7 +71,7 @@ func (c *ConduitShardListCall) After(cursor string) *ConduitShardListCall {
 
 // Do executes the request.
 func (c *ConduitShardListCall) Do(ctx context.Context, opts ...RequestOption) (*ConduitShardsResponse, error) {
-	res, err := c.resource.client.doRequest(ctx, http.MethodGet, EndpointConduitsShards, nil, opts...)
+	res, err := c.resource.client.DoRequest(ctx, http.MethodGet, EndpointConduitsShards, nil, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -144,7 +123,7 @@ func (c *ConduitShardUpdateCall) Do(ctx context.Context, opts ...RequestOption) 
 		return nil, err
 	}
 
-	res, err := c.resource.client.doRequest(ctx, http.MethodPatch, EndpointConduitsShards, bytes.NewReader(bs), opts...)
+	res, err := c.resource.client.DoRequest(ctx, http.MethodPatch, EndpointConduitsShards, bytes.NewReader(bs), opts...)
 	if err != nil {
 		return nil, err
 	}

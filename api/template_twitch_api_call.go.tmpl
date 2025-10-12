@@ -1,0 +1,119 @@
+{{ $EndpointName := EndpointName . }}
+{{ $QueryParams := GetQueryParams . -}}
+{{ $BodyParams := GetBodyParams . -}}
+{{ $ResponseFields := GetResponseFields . -}}
+// {{ $EndpointName }} represents a {{ .Method }} call to a Twitch {{ .Resource.Name }} API endpoint.
+type {{ $EndpointName }} struct {
+	resource *{{ ResourceName .Resource }}
+{{- if gt (len $BodyParams) 0 }}
+	body     map[string]any
+{{- end }}
+{{- if gt (len $QueryParams) 0 }}
+	opts     []RequestOption
+{{- end }}
+}
+
+// {{ .Name }}Response represents the response from a {{ .Method }} request to {{ .Path }}.
+type {{ .Name }}Response struct {
+	// Status is the HTTP status text returned by the Twitch API. For example, "200 OK".
+	Status string
+	// StatusCode is the HTTP status code returned by the Twitch API. For example, 200.
+	StatusCode int
+	// Header contains the HTTP headers from the Twitch API response.
+	Header http.Header
+{{- range $ResponseFields }}
+	// {{ .Name }} is the {{ .RawType }} data returned by the Twitch API.
+	{{ .Name }} {{ .Type }}
+{{- end }}
+	// Request is the HTTP request that was sent to the Twitch API.
+	Request *http.Request
+}
+
+// {{ MethodName .Method }} creates a new {{ .Method }} request to {{ .Path }}.
+{{- if gt (len .Comments) 0 }}
+//
+{{- end -}}
+{{- range .Comments }}
+//{{if gt (len .) 0 }} {{ . }}{{ end }}
+{{- end -}}
+{{- if gt (len .DocsURL) 0 }}
+//
+// Check the [Official Twitch Documentation] for more information.
+//
+// [Official Twitch Documentation]: {{ .DocsURL }}
+{{- end }}
+func (r *{{ ResourceName .Resource }}) {{ MethodName .Method }}() *{{ $EndpointName }} {
+	return &{{ $EndpointName }}{resource: r{{ if .HasBody }}, body: make(map[string]any){{ end }}}
+}
+
+{{- range $QueryParams -}}
+{{ $varName := ToCamelCase .Name }}
+{{ $paramName := ToSnakeCase .Name }}
+{{- if eq $varName "type" }}{{ $varName = "t" }}{{ end }}
+// {{ .Name }} {{ if .Slice }}adds to{{else}}sets{{ end }} the {{ .Name }} query parameter.
+func (api *{{ $EndpointName }}) {{ .Name }}({{ $varName }}{{ if .Slice }}s{{ end }} {{ .AsVariadicParam }}) *{{ $EndpointName }} {
+{{- if .Slice }}
+	for _, {{ $varName }} := range {{ $varName }}{{ if .Slice }}s{{ end }} {
+		api.opts = append(api.opts, AddQueryParameter("{{ $paramName }}", {{ $varName }}))
+	}
+{{- else }}
+	api.opts = append(api.opts, SetQueryParameter("{{ $paramName }}", {{ $varName }}{{ if eq .Type "time.Time" }}.Format(time.RFC3339){{ end }}))
+{{- end }}
+	return api
+}
+{{- end }}
+
+{{- range $BodyParams -}}
+{{ $varName := ToCamelCase .Name }}
+{{ $paramName := ToSnakeCase .Name }}
+// {{ .Name }} sets the {{ .Name }} body parameter.
+func (api *{{ $EndpointName }}) {{ .Name }}({{ $varName }}{{ if .Slice }}s{{ end }} {{ .AsVariadicParam }}) *{{ $EndpointName }} {
+	api.body["{{ $paramName }}"] = {{ $varName }}{{ if .Slice }}s{{ end }}
+	return api
+}
+{{- end }}
+
+// Do executes the request.
+func (api *{{ $EndpointName }}) Do(ctx context.Context, opts ...RequestOption) (*{{ .Name }}Response, error) {
+{{- if .HasBody }}
+	bs, err := json.Marshal(api.body)
+	if err != nil {
+		return nil, err
+	}
+{{ end }}
+	res, err := api.resource.client.DoRequest(ctx, "{{ .Method }}", "{{ .Path }}", {{ if .HasBody }}bytes.NewReader(bs){{ else }}nil{{ end }}, opts...)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = res.Body.Close() }()
+{{ if (.HasResponseField "Data") }}
+	data, err := decodeResponse[{{ ResponseType . }}](res)
+{{- else }}
+	_, err = decodeResponse[{{ ResponseType . }}](res)
+{{- end }}
+	if err != nil {
+		return nil, err
+	}
+
+	return &{{ .Name }}Response{
+		Status:     res.Status,
+		StatusCode: res.StatusCode,
+		Header:     res.Header,
+{{- if (.HasResponseField "Total") }}
+		Total:      data.Total,
+{{- end }}
+{{- if (.HasResponseField "Points") }}
+		Points:     data.Points,
+{{- end }}
+{{- if (.HasResponseField "Data") }}
+		Data:       data.Data,
+{{- end }}
+{{- if (.HasResponseField "DateRange") }}
+		DateRange:  data.DateRange,
+{{- end }}
+{{- if (.HasResponseField "Pagination") }}
+		Pagination: data.Pagination,
+{{- end }}
+		Request:    res.Request,
+	}, nil
+}

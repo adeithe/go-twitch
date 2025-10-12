@@ -44,19 +44,33 @@ func WithBearerToken(token string) RequestOption {
 }
 
 // SetQueryParameter sets a query parameter on the request, replacing any existing values.
-func SetQueryParameter(key, value string) RequestOption {
+func SetQueryParameter[T any](key string, value T) RequestOption {
 	return func(r *http.Request) {
 		q := r.URL.Query()
-		q.Set(key, value)
+		q.Set(key, fmt.Sprint(value))
 		r.URL.RawQuery = q.Encode()
 	}
 }
 
 // AddQueryParameter adds a query parameter to the request without replacing any existing values.
-func AddQueryParameter(key, value string) RequestOption {
+func AddQueryParameter[T any](key string, value T) RequestOption {
 	return func(r *http.Request) {
 		q := r.URL.Query()
-		q.Add(key, value)
+		q.Add(key, fmt.Sprint(value))
 		r.URL.RawQuery = q.Encode()
+	}
+}
+
+// SetHeader sets a header on the request, replacing any existing values.
+func SetHeader[T any](key string, value T) RequestOption {
+	return func(r *http.Request) {
+		r.Header.Set(key, fmt.Sprint(value))
+	}
+}
+
+// AddHeader adds a header to the request without replacing any existing values.
+func AddHeader[T any](key string, value T) RequestOption {
+	return func(r *http.Request) {
+		r.Header.Add(key, fmt.Sprint(value))
 	}
 }

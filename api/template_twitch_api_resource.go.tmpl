@@ -1,0 +1,24 @@
+{{ $ResourceName := ResourceName . }}
+// {{ ResourceName . }} represents the Twitch {{ .Name }} API.
+type {{ ResourceName . }} struct {
+	client *Client
+{{- if gt (len .SubResources) 0 }}
+{{ range .SubResources }}
+	// {{ .Name }} provides access to the Twitch {{ .Name }} API.
+	{{ .Name }} *{{ $.Name }}{{ .Name }}Resource
+{{- end }}
+{{- end }}
+}
+
+// New{{ $ResourceName }} creates a new {{ $ResourceName }}.
+func New{{ $ResourceName }}(client *Client) *{{ $ResourceName }} {
+{{- if gt (len .SubResources) 0 }}
+	r := &{{ $ResourceName }}{client: client}
+{{- range .SubResources }}
+	r.{{ .Name }} = New{{ $.Name }}{{ .Name }}Resource(client)
+{{- end }}
+	return r
+{{- else }}
+	return &{{ $ResourceName }}{client}
+{{- end }}
+}

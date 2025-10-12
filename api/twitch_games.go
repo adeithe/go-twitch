@@ -6,21 +6,6 @@ import (
 	"net/http"
 )
 
-// Game represents a game on Twitch.
-type Game struct {
-	ID        string `json:"id"`
-	Name      string `json:"name"`
-	BoxArtURL string `json:"box_art_url"`
-	IGDB      string `json:"igdb_id"`
-}
-
-const (
-	// EndpointGames is the endpoint for the Twitch Games API.
-	EndpointGames = TwitchAPIVersionHelix + "/games"
-	// EndpointGamesTop is the endpoint for the Twitch Top Games API.
-	EndpointGamesTop = TwitchAPIVersionHelix + "/games/top"
-)
-
 // GamesResource provides access to the Twitch Games API.
 type GamesResource struct {
 	client *Client
@@ -85,7 +70,7 @@ func (c *TopGamesListCall) After(cursor string) *TopGamesListCall {
 
 // Do executes the request.
 func (c *TopGamesListCall) Do(ctx context.Context, opts ...RequestOption) (*TopGamesListResponse, error) {
-	res, err := c.resource.client.doRequest(ctx, http.MethodGet, EndpointGamesTop, nil, append(opts, c.opts...)...)
+	res, err := c.resource.client.DoRequest(ctx, http.MethodGet, EndpointGamesTop, nil, append(opts, c.opts...)...)
 	if err != nil {
 		return nil, err
 	}

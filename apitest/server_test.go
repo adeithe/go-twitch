@@ -11,8 +11,8 @@ import (
 )
 
 func TestAPITest(t *testing.T) {
-	chatters := []api.Chatter{
-		{ID: "3456", Username: "testuser", DisplayName: "TestUser"},
+	chatters := []api.UserInfo{
+		{UserID: "3456", UserLogin: "testuser", UserName: "TestUser"},
 	}
 
 	tests := []struct {
@@ -26,7 +26,7 @@ func TestAPITest(t *testing.T) {
 			"No TLS", http.MethodGet, api.EndpointChatGetChatters,
 			[]apitest.MockTwitchAPIOption{},
 			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
-				return apitest.SetMockResponse(mock, http.MethodGet, api.EndpointChatGetChatters, &api.ResponseData[api.Chatter]{
+				return apitest.SetMockResponse(mock, http.MethodGet, api.EndpointChatGetChatters, &api.ResponseData[api.UserInfo]{
 					Total: len(chatters),
 					Data:  chatters,
 				})
@@ -43,7 +43,7 @@ func TestAPITest(t *testing.T) {
 			"No TLS With HTTP2", http.MethodGet, api.EndpointChatGetChatters,
 			[]apitest.MockTwitchAPIOption{apitest.WithTLS(), apitest.EnableHTTP2()},
 			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
-				return apitest.SetMockResponse(mock, http.MethodGet, api.EndpointChatGetChatters, &api.ResponseData[api.Chatter]{
+				return apitest.SetMockResponse(mock, http.MethodGet, api.EndpointChatGetChatters, &api.ResponseData[api.UserInfo]{
 					Total: len(chatters),
 					Data:  chatters,
 				})
@@ -60,7 +60,7 @@ func TestAPITest(t *testing.T) {
 			"With TLS", http.MethodGet, api.EndpointChatGetChatters,
 			[]apitest.MockTwitchAPIOption{apitest.WithTLS()},
 			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
-				return apitest.SetMockResponse(mock, http.MethodGet, api.EndpointChatGetChatters, &api.ResponseData[api.Chatter]{
+				return apitest.SetMockResponse(mock, http.MethodGet, api.EndpointChatGetChatters, &api.ResponseData[api.UserInfo]{
 					Total: len(chatters),
 					Data:  chatters,
 				})
@@ -77,7 +77,7 @@ func TestAPITest(t *testing.T) {
 			"With TLS And HTTP2", http.MethodGet, api.EndpointChatGetChatters,
 			[]apitest.MockTwitchAPIOption{apitest.WithTLS(), apitest.EnableHTTP2()},
 			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
-				return apitest.SetMockResponse(mock, http.MethodGet, api.EndpointChatGetChatters, &api.ResponseData[api.Chatter]{
+				return apitest.SetMockResponse(mock, http.MethodGet, api.EndpointChatGetChatters, &api.ResponseData[api.UserInfo]{
 					Total: len(chatters),
 					Data:  chatters,
 				})

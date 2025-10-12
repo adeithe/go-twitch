@@ -8,27 +8,6 @@ import (
 	"time"
 )
 
-// Clip represents a Twitch clip.
-type Clip struct {
-	ID              string       `json:"id"`
-	URL             string       `json:"url"`
-	EmbedURL        string       `json:"embed_url"`
-	BroadcasterID   string       `json:"broadcaster_id"`
-	BroadcasterName string       `json:"broadcaster_name"`
-	CreatorID       string       `json:"creator_id"`
-	CreatorName     string       `json:"creator_name"`
-	VideoID         string       `json:"video_id"`
-	GameID          string       `json:"game_id"`
-	Language        string       `json:"language"`
-	Title           string       `json:"title"`
-	ViewCount       int          `json:"view_count"`
-	ThumbnailURL    string       `json:"thumbnail_url"`
-	Duration        ClipDuration `json:"duration"`
-	VODOffset       int          `json:"vod_offset"`
-	Featured        bool         `json:"is_featured"`
-	CreatedAt       time.Time    `json:"created_at"`
-}
-
 // ClipDuration represents the duration of a Twitch clip.
 type ClipDuration time.Duration
 
@@ -36,13 +15,6 @@ type ClipDuration time.Duration
 type ClipsResource struct {
 	client *Client
 }
-
-const (
-	// EndpointClips is the endpoint for the Twitch Clips API.
-	EndpointClips = TwitchAPIVersionHelix + "/clips"
-	// EndpointClipsGetClipsDownload is the endpoint for getting clip download URLs.
-	EndpointClipsGetClipsDownload = TwitchAPIVersionHelix + "/clips/downloads"
-)
 
 // NewClipsResource creates a new ClipsResource.
 func NewClipsResource(client *Client) *ClipsResource {
@@ -127,7 +99,7 @@ func (c *ClipsListCall) Featured() *ClipsListCall {
 
 // Do executes the call.
 func (c *ClipsListCall) Do(ctx context.Context, opts ...RequestOption) (*ClipsListResponse, error) {
-	res, err := c.resource.client.doRequest(ctx, http.MethodGet, EndpointClips, nil, append(c.opts, opts...)...)
+	res, err := c.resource.client.DoRequest(ctx, http.MethodGet, EndpointClips, nil, append(c.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}

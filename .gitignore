@@ -5,6 +5,8 @@
 *.so
 *.dylib
 __debug_bin
+codegen
+!codegen/
 
 # Test binary, built with `go test -c`
 *.test

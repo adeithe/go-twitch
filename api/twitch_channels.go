@@ -5,37 +5,10 @@ import (
 	"net/http"
 )
 
-// Channel represents a Twitch channel.
-type Channel struct {
-	ID                          string   `json:"broadcaster_id"`
-	Login                       string   `json:"broadcaster_login"`
-	DisplayName                 string   `json:"broadcaster_name"`
-	GameID                      string   `json:"game_id"`
-	GameName                    string   `json:"game_name"`
-	Title                       string   `json:"title"`
-	Delay                       int      `json:"delay"`
-	Tags                        []string `json:"tags"`
-	ContentClassificationLabels []string `json:"content_classification_labels"`
-	IsBrandedContent            bool     `json:"is_branded_content"`
-}
-
 // ChannelsResource handles channel related API calls.
 type ChannelsResource struct {
 	client *Client
 }
-
-const (
-	// EndpointChannelsGetInformation is the endpoint for getting channel information.
-	EndpointChannelsGetInformation = TwitchAPIVersionHelix + "/channels"
-	// EndpointChannelsModifyInformation is the endpoint for modifying channel information.
-	EndpointChannelsModifyInformation = TwitchAPIVersionHelix + "/channels"
-	// EndpointChannelsGetEditors is the endpoint for getting channel editors.
-	EndpointChannelsGetEditors = TwitchAPIVersionHelix + "/channels/editors"
-	// EndpointChannelsGetFollowedChannels is the endpoint for getting followed channels.
-	EndpointChannelsGetFollowedChannels = TwitchAPIVersionHelix + "/channels/followed"
-	// EndpointChannelsGetFollowers is the endpoint for getting channel followers.
-	EndpointChannelsGetFollowers = TwitchAPIVersionHelix + "/channels/followers"
-)
 
 // NewChannelsResource creates a new ChannelsResource.
 func NewChannelsResource(client *Client) *ChannelsResource {
@@ -69,7 +42,7 @@ func (c *ChannelsListCall) BroadcasterID(ids []string) *ChannelsListCall {
 
 // Do executes the request.
 func (c *ChannelsListCall) Do(ctx context.Context, opts ...RequestOption) (*ChannelsListResponse, error) {
-	res, err := c.resource.client.doRequest(ctx, http.MethodGet, EndpointChannelsGetInformation, nil, append(opts, c.opts...)...)
+	res, err := c.resource.client.DoRequest(ctx, http.MethodGet, EndpointChannelsGetInformation, nil, append(opts, c.opts...)...)
 	if err != nil {
 		return nil, err
 	}

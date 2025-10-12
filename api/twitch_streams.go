@@ -4,26 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"time"
 )
-
-// Stream represents a Twitch stream.
-type Stream struct {
-	ID              string    `json:"id"`
-	UserID          string    `json:"user_id"`
-	UserLogin       string    `json:"user_login"`
-	UserDisplayName string    `json:"user_name"`
-	GameID          string    `json:"game_id"`
-	GameName        string    `json:"game_name"`
-	Type            string    `json:"type"`
-	Title           string    `json:"title"`
-	Tags            []string  `json:"tags"`
-	ViewerCount     int       `json:"viewer_count"`
-	Language        string    `json:"language"`
-	ThumbnailURL    string    `json:"thumbnail_url"`
-	IsMature        bool      `json:"is_mature"`
-	StartedAt       time.Time `json:"started_at"`
-}
 
 // StreamsResource represents the Twitch Streams API.
 type StreamsResource struct {
@@ -47,17 +28,6 @@ type StreamsListResponse struct {
 	Data   []Stream
 	Cursor string
 }
-
-const (
-	// EndpointStreamsGetKey is the endpoint for getting a stream key.
-	EndpointStreamsGetKey = TwitchAPIVersionHelix + "/streams/key"
-	// EndpointStreams is the endpoint for getting stream information.
-	EndpointStreams = TwitchAPIVersionHelix + "/streams"
-	// EndpointStreamsFollowed is the endpoint for getting followed streams.
-	EndpointStreamsFollowed = TwitchAPIVersionHelix + "/streams/followed"
-	// EndpointStreamsMarkers is the endpoint for managing a markers for a stream.
-	EndpointStreamsMarkers = TwitchAPIVersionHelix + "/streams/markers"
-)
 
 // List creates a request to list streams based on the specified criteria.
 //
@@ -128,7 +98,7 @@ func (c *StreamsListCall) After(cursor string) *StreamsListCall {
 
 // Do executes the request.
 func (c *StreamsListCall) Do(ctx context.Context, opts ...RequestOption) (*StreamsListResponse, error) {
-	res, err := c.resource.client.doRequest(ctx, http.MethodGet, EndpointStreams, nil, append(opts, c.opts...)...)
+	res, err := c.resource.client.DoRequest(ctx, http.MethodGet, EndpointStreams, nil, append(opts, c.opts...)...)
 	if err != nil {
 		return nil, err
 	}

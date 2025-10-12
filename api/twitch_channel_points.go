@@ -8,44 +8,6 @@ import (
 	"time"
 )
 
-// CustomReward represents a Twitch Channel Point custom reward.
-type CustomReward struct {
-	ID                          string    `json:"id"`
-	BroadcasterID               string    `json:"broadcaster_id"`
-	BroadcasterLogin            string    `json:"broadcaster_login"`
-	BroadcasterDisplayName      string    `json:"broadcaster_name"`
-	BackgroundColor             string    `json:"background_color"`
-	Title                       string    `json:"title"`
-	Prompt                      string    `json:"prompt"`
-	Cost                        int64     `json:"cost"`
-	Enabled                     bool      `json:"is_enabled"`
-	Paused                      bool      `json:"is_paused"`
-	InStock                     bool      `json:"is_in_stock"`
-	IsUserInputRequired         bool      `json:"is_user_input_required"`
-	RedemptionsSkipRequestQueue bool      `json:"should_redemptions_skip_request_queue"`
-	CooldownExpiresAt           time.Time `json:"cooldown_expires_at"`
-}
-
-// CustomRewardRedemption represents a Twitch Channel Point custom reward redemption.
-type CustomRewardRedemption struct {
-	ID                     string `json:"id"`
-	BroadcasterID          string `json:"broadcaster_id"`
-	BroadcasterLogin       string `json:"broadcaster_login"`
-	BroadcasterDisplayName string `json:"broadcaster_name"`
-	UserID                 string `json:"user_id"`
-	UserLogin              string `json:"user_login"`
-	UserDisplayName        string `json:"user_name"`
-	UserInput              string `json:"user_input"`
-	Status                 string `json:"status"`
-	Reward                 struct {
-		ID     string `json:"id"`
-		Title  string `json:"title"`
-		Prompt string `json:"prompt"`
-		Cost   int64  `json:"cost"`
-	} `json:"reward"`
-	RedeemedAt time.Time `json:"redeemed_at"`
-}
-
 // ChannelPointsResource provides methods for the Twitch Channel Points API.
 type ChannelPointsResource struct {
 	client *Client
@@ -84,21 +46,6 @@ type CustomRewardsListResponse struct {
 	Data   []CustomReward
 }
 
-const (
-	// EndpointChannelPointsCreateCustomRewards is the endpoint for creating custom rewards.
-	EndpointChannelPointsCreateCustomRewards = TwitchAPIVersionHelix + "/channel_points/custom_rewards"
-	// EndpointChannelPointsDeleteCustomReward is the endpoint for deleting a custom reward.
-	EndpointChannelPointsDeleteCustomReward = TwitchAPIVersionHelix + "/channel_points/custom_rewards"
-	// EndpointChannelPointsGetCustomRewards is the endpoint for getting custom rewards.
-	EndpointChannelPointsGetCustomRewards = TwitchAPIVersionHelix + "/channel_points/custom_rewards"
-	// EndpointChannelPointsGetCustomRewardRedemptions is the endpoint for getting custom reward redemptions.
-	EndpointChannelPointsGetCustomRewardRedemptions = TwitchAPIVersionHelix + "/channel_points/custom_rewards/redemptions"
-	// EndpointChannelPointsUpdateCustomReward is the endpoint for updating a custom reward.
-	EndpointChannelPointsUpdateCustomReward = TwitchAPIVersionHelix + "/channel_points/custom_rewards"
-	// EndpointChannelPointsUpdateRedemptionStatus is the endpoint for updating the status of a reward redemption.
-	EndpointChannelPointsUpdateRedemptionStatus = TwitchAPIVersionHelix + "/channel_points/custom_rewards/redemptions"
-)
-
 // List creates a reqyest to list custom channel point rewards for a given broadcaster.
 func (r *CustomRewardsResource) List(broadcasterID string) *CustomRewardsListCall {
 	c := &CustomRewardsListCall{resource: r}
@@ -122,7 +69,7 @@ func (c *CustomRewardsListCall) OnlyManageable() *CustomRewardsListCall {
 
 // Do executes the request.
 func (c *CustomRewardsListCall) Do(ctx context.Context, opts ...RequestOption) (*CustomRewardsListResponse, error) {
-	res, err := c.resource.client.doRequest(ctx, http.MethodGet, EndpointChannelPointsGetCustomRewards, nil, append(opts, c.opts...)...)
+	res, err := c.resource.client.DoRequest(ctx, http.MethodGet, EndpointChannelPointsGetCustomRewards, nil, append(opts, c.opts...)...)
 	if err != nil {
 		return nil, err
 	}
@@ -250,7 +197,7 @@ func (c *CustomRewardsInsertCall) Do(ctx context.Context, opts ...RequestOption)
 		return nil, err
 	}
 
-	res, err := c.resource.client.doRequest(ctx, http.MethodPost, EndpointChannelPointsCreateCustomRewards, bytes.NewReader(bs), append(opts, c.opts...)...)
+	res, err := c.resource.client.DoRequest(ctx, http.MethodPost, EndpointChannelPointsCreateCustomRewards, bytes.NewReader(bs), append(opts, c.opts...)...)
 	if err != nil {
 		return nil, err
 	}
@@ -379,7 +326,7 @@ func (c *CustomRewardsUpdateCall) Do(ctx context.Context, opts ...RequestOption)
 		return nil, err
 	}
 
-	res, err := c.resource.client.doRequest(ctx, http.MethodPatch, EndpointChannelPointsUpdateCustomReward, bytes.NewReader(bs), append(opts, c.opts...)...)
+	res, err := c.resource.client.DoRequest(ctx, http.MethodPatch, EndpointChannelPointsUpdateCustomReward, bytes.NewReader(bs), append(opts, c.opts...)...)
 	if err != nil {
 		return nil, err
 	}
@@ -412,7 +359,7 @@ func (r *CustomRewardsResource) Delete(broadcasterID, id string) *CustomRewardsD
 
 // Do executes the request.
 func (c *CustomRewardsDeleteCall) Do(ctx context.Context, opts ...RequestOption) error {
-	res, err := c.resource.client.doRequest(ctx, http.MethodDelete, EndpointChannelPointsDeleteCustomReward, nil, append(opts, c.opts...)...)
+	res, err := c.resource.client.DoRequest(ctx, http.MethodDelete, EndpointChannelPointsDeleteCustomReward, nil, append(opts, c.opts...)...)
 	if err != nil {
 		return err
 	}
@@ -492,7 +439,7 @@ func (c *CustomRewardsRedemptionListCall) After(cursor string) *CustomRewardsRed
 
 // Do executes the request.
 func (c *CustomRewardsRedemptionListCall) Do(ctx context.Context, opts ...RequestOption) (*CustomRewardsRedemptionListResponse, error) {
-	res, err := c.resource.client.doRequest(ctx, http.MethodGet, EndpointChannelPointsGetCustomRewardRedemptions, nil, append(opts, c.opts...)...)
+	res, err := c.resource.client.DoRequest(ctx, http.MethodGet, EndpointChannelPointsGetCustomRewardRedemptions, nil, append(opts, c.opts...)...)
 	if err != nil {
 		return nil, err
 	}
@@ -547,7 +494,7 @@ func (c *CustomRewardsRedemptionUpdateCall) Fulfill() *CustomRewardsRedemptionUp
 
 // Do executes the request.
 func (c *CustomRewardsRedemptionUpdateCall) Do(ctx context.Context, opts ...RequestOption) (*CustomRewardsRedemptionUpdateResponse, error) {
-	res, err := c.resource.client.doRequest(ctx, http.MethodPatch, EndpointChannelPointsUpdateRedemptionStatus, nil, append(opts, c.opts...)...)
+	res, err := c.resource.client.DoRequest(ctx, http.MethodPatch, EndpointChannelPointsUpdateRedemptionStatus, nil, append(opts, c.opts...)...)
 	if err != nil {
 		return nil, err
 	}

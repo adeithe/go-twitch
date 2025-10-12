@@ -17,17 +17,14 @@ type ResponseData[T any] struct {
 	Total  int `json:"total,omitempty"`  // Only present in some endpoints.
 	Points int `json:"points,omitempty"` // Only present in some endpoints.
 
-	Data       []T        `json:"data"`
-	Pagination Pagination `json:"pagination,omitempty"`
+	Data       []T            `json:"data"`
+	Errors     []ConduitError `json:"errors,omitempty"`
+	DateRange  DateRange      `json:"date_range,omitempty"`
+	Pagination Pagination     `json:"pagination,omitempty"`
 
 	Status  int    `json:"status"`            // If not provided by Twitch, defaults to HTTP status code.
 	Code    string `json:"error"`             // If not provided by Twitch, defaults to HTTP status text.
 	Message string `json:"message,omitempty"` // Only present if status is non-200
-}
-
-// Pagination represents pagination information in a Twitch API response.
-type Pagination struct {
-	Cursor string `json:"cursor,omitempty"`
 }
 
 // TwitchAPIError represents an error returned by the Twitch API.

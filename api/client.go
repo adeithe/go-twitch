@@ -47,13 +47,6 @@ type Client struct {
 	Whispers      *WhispersResource
 }
 
-const (
-	// BaseURL is the base URL for the Twitch API.
-	BaseURL string = "https://api.twitch.tv"
-	// TwitchAPIVersionHelix is the base path for the Helix API.
-	TwitchAPIVersionHelix = "/helix"
-)
-
 // New creates a new API client for Twitch.
 func New(clientID string, opts ...ClientOption) *Client {
 	defaultOpts := []ClientOption{
@@ -97,7 +90,8 @@ func New(clientID string, opts ...ClientOption) *Client {
 	return client
 }
 
-func (c *Client) doRequest(ctx context.Context, method, path string, body io.Reader, opts ...RequestOption) (*http.Response, error) {
+// DoRequest performs an HTTP request to the Twitch API.
+func (c *Client) DoRequest(ctx context.Context, method, path string, body io.Reader, opts ...RequestOption) (*http.Response, error) {
 	url := fmt.Sprintf("%s/%s", BaseURL, strings.TrimPrefix(path, "/"))
 	req, err := http.NewRequestWithContext(ctx, method, url, body)
 	if err != nil {
@@ -110,11 +104,11 @@ func (c *Client) doRequest(ctx context.Context, method, path string, body io.Rea
 		opt(req)
 	}
 
-	if c.bearerToken != "" {
-		if req.Header.Get("Authorization") == "" {
-			req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.bearerToken))
-		}
+	if c.bearerToken != "" && req.Header.Get("Authorization") == "" {
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.bearerToken))
 	}
 
 	return c.httpClient.Do(req)
 }
+
+//go:generate sh -c "cd ../.codegen && go build -o codegen && cd - && exec ../.codegen/codegen"

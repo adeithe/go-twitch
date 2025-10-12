@@ -3,22 +3,7 @@ package api
 import (
 	"context"
 	"net/http"
-	"time"
 )
-
-// User represents a Twitch user.
-type User struct {
-	ID              string    `json:"id"`
-	Login           string    `json:"login"`
-	DisplayName     string    `json:"display_name"`
-	Type            string    `json:"type"`
-	BroadcasterType string    `json:"broadcaster_type"`
-	Description     string    `json:"description"`
-	ProfileImageURL string    `json:"profile_image_url"`
-	OfflineImageURL string    `json:"offline_image_url"`
-	Email           string    `json:"email,omitempty"`
-	CreatedAt       time.Time `json:"created_at"`
-}
 
 // UsersResource represents the Twitch Users API.
 type UsersResource struct {
@@ -41,17 +26,6 @@ type UsersListResponse struct {
 	Header http.Header
 	Data   []User
 }
-
-const (
-	// EndpointUsers is the endpoint for getting users.
-	EndpointUsers = TwitchAPIVersionHelix + "/users"
-	// EndpointUsersBlocks is the endpoint for managing blocked users.
-	EndpointUsersBlocks = TwitchAPIVersionHelix + "/users/blocks"
-	// EndpointUsersAllExtensions is the endpoint for getting all extensions a user has installed.
-	EndpointUsersAllExtensions = TwitchAPIVersionHelix + "/users/extensions/list"
-	// EndpointUsersActiveExtensions is the endpoint for getting active extensions for a user.
-	EndpointUsersActiveExtensions = TwitchAPIVersionHelix + "/users/extensions"
-)
 
 // List creates a request to list users based on the specified criteria.
 //
@@ -78,7 +52,7 @@ func (c *UsersListCall) Login(logins []string) *UsersListCall {
 
 // Do executes the request.
 func (c *UsersListCall) Do(ctx context.Context, opts ...RequestOption) (*UsersListResponse, error) {
-	res, err := c.resource.client.doRequest(ctx, http.MethodGet, EndpointUsers, nil, append(opts, c.opts...)...)
+	res, err := c.resource.client.DoRequest(ctx, http.MethodGet, EndpointUsers, nil, append(opts, c.opts...)...)
 	if err != nil {
 		return nil, err
 	}

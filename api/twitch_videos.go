@@ -2,42 +2,14 @@ package api
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
-	"time"
 )
-
-// Video represents a Twitch video.
-type Video struct {
-	ID              string        `json:"id"`
-	StreamID        string        `json:"stream_id"`
-	UserID          string        `json:"user_id"`
-	UserLogin       string        `json:"user_login"`
-	UserDisplayName string        `json:"user_name"`
-	Title           string        `json:"title"`
-	Description     string        `json:"description"`
-	URL             string        `json:"url"`
-	ThumbnailURL    string        `json:"thumbnail_url"`
-	Viewable        string        `json:"viewable"`
-	ViewCount       int           `json:"view_count"`
-	Language        string        `json:"language"`
-	Type            string        `json:"type"`
-	Duration        VideoDuration `json:"duration"`
-	PublishedAt     time.Time     `json:"published_at"`
-	CreatedAt       time.Time     `json:"created_at"`
-}
-
-// VideoDuration represents the duration of a video.
-type VideoDuration time.Duration
 
 // VideosResource represents the Twitch Videos API.
 type VideosResource struct {
 	client *Client
 }
-
-// EndpointVideos is the endpoint for the Twitch Videos API.
-const EndpointVideos = TwitchAPIVersionHelix + "/videos"
 
 // NewVideosResource creates a new VideosResource.
 func NewVideosResource(client *Client) *VideosResource {
@@ -134,7 +106,7 @@ func (c *VideosListCall) After(cursor string) *VideosListCall {
 
 // Do executes the request.
 func (c *VideosListCall) Do(ctx context.Context, opts ...RequestOption) (*VideosListResponse, error) {
-	res, err := c.resource.client.doRequest(ctx, http.MethodGet, EndpointVideos, nil, append(c.opts, opts...)...)
+	res, err := c.resource.client.DoRequest(ctx, http.MethodGet, EndpointVideos, nil, append(c.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}
@@ -175,7 +147,7 @@ func (r *VideosResource) Delete(ids []string) *VideosDeleteCall {
 
 // Do executes the request.
 func (c *VideosDeleteCall) Do(ctx context.Context, opts ...RequestOption) (*VideosDeleteResponse, error) {
-	res, err := c.resource.client.doRequest(ctx, http.MethodDelete, EndpointVideos, nil, append(c.opts, opts...)...)
+	res, err := c.resource.client.DoRequest(ctx, http.MethodDelete, EndpointVideos, nil, append(c.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}
@@ -190,24 +162,4 @@ func (c *VideosDeleteCall) Do(ctx context.Context, opts ...RequestOption) (*Vide
 		Header: res.Header,
 		Data:   data.Data,
 	}, nil
-}
-
-// UnmarshalJSON implements the json.Unmarshaler interface.
-func (d *VideoDuration) UnmarshalJSON(data []byte) error {
-	var str string
-	if err := json.Unmarshal(data, &str); err != nil {
-		return err
-	}
-
-	parsed, err := time.ParseDuration(str)
-	if err != nil {
-		return err
-	}
-	*d = VideoDuration(parsed)
-	return nil
-}
-
-// AsDuration converts the VideoDuration to a time.Duration.
-func (d VideoDuration) AsDuration() time.Duration {
-	return time.Duration(d)
 }
