@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 )
 
@@ -16,97 +15,107 @@ func NewVideosResource(client *Client) *VideosResource {
 	return &VideosResource{client}
 }
 
-// VideosListCall is a call to the Videos List endpoint.
+// VideosListCall represents a GET call to a Twitch Videos API endpoint.
 type VideosListCall struct {
 	resource *VideosResource
 	opts     []RequestOption
 }
 
-// VideosListResponse is the response from the Videos List endpoint.
+// VideosListResponse represents the response from a GET request to /helix/videos.
 type VideosListResponse struct {
+	// Status is the HTTP status text returned by the Twitch API. For example, "200 OK".
+	Status string
+	// StatusCode is the HTTP status code returned by the Twitch API. For example, 200.
+	StatusCode int
+	// Header contains the HTTP headers from the Twitch API response.
 	Header http.Header
-	Data   []Video
-	Cursor string
+	// Data is the Video data returned by the Twitch API.
+	Data []Video
+	// Pagination is the Pagination data returned by the Twitch API.
+	Pagination Pagination
+	// Request is the HTTP request that was sent to the Twitch API.
+	Request *http.Request
 }
 
-// List creates a new call to list videos.
+// List creates a new GET request to /helix/videos.
 //
-// One of ID, UserID, or GameID must be specified.
+// Gets information about one or more published videos.
+// You may get videos by ID, by user, or by game/category.
+//
+// # Authorization
+//
+// Requires an app access token or user access token.
+//
+// Check the [Official Twitch Documentation] for more information.
+//
+// [Official Twitch Documentation]: https://dev.twitch.tv/docs/api/reference/#get-videos
 func (r *VideosResource) List() *VideosListCall {
 	return &VideosListCall{resource: r}
 }
 
-// ID filters the results to those with the specified ID.
-func (c *VideosListCall) ID(ids []string) *VideosListCall {
-	for _, id := range ids {
-		c.opts = append(c.opts, AddQueryParameter("id", id))
+// ID adds to the ID query parameter.
+func (api *VideosListCall) ID(iDs ...string) *VideosListCall {
+	for _, iD := range iDs {
+		api.opts = append(api.opts, AddQueryParameter("id", iD))
 	}
-	return c
+	return api
 }
 
-// UserID filters the results to those with the specified user ID.
-func (c *VideosListCall) UserID(id string) *VideosListCall {
-	c.opts = append(c.opts, SetQueryParameter("user_id", id))
-	return c
+// UserID adds to the UserID query parameter.
+func (api *VideosListCall) UserID(userIDs ...string) *VideosListCall {
+	for _, userID := range userIDs {
+		api.opts = append(api.opts, AddQueryParameter("user_id", userID))
+	}
+	return api
 }
 
-// GameID filters the results to those with the specified game ID.
-func (c *VideosListCall) GameID(id string) *VideosListCall {
-	c.opts = append(c.opts, SetQueryParameter("game_id", id))
-	return c
+// GameID adds to the GameID query parameter.
+func (api *VideosListCall) GameID(gameIDs ...string) *VideosListCall {
+	for _, gameID := range gameIDs {
+		api.opts = append(api.opts, AddQueryParameter("game_id", gameID))
+	}
+	return api
 }
 
-// Language filters the results to those with the specified language.
-func (c *VideosListCall) Language(language string) *VideosListCall {
-	c.opts = append(c.opts, SetQueryParameter("language", language))
-	return c
+// Language sets the Language query parameter.
+func (api *VideosListCall) Language(language string) *VideosListCall {
+	api.opts = append(api.opts, SetQueryParameter("language", language))
+	return api
 }
 
-// Period filters the results to those with a specified period.
-//
-// Possible values: "all", "day", "week", "month" (default: all)
-func (c *VideosListCall) Period(p string) *VideosListCall {
-	c.opts = append(c.opts, SetQueryParameter("period", p))
-	return c
+// Period sets the Period query parameter.
+func (api *VideosListCall) Period(period string) *VideosListCall {
+	api.opts = append(api.opts, SetQueryParameter("period", period))
+	return api
 }
 
-// Sort sets the order in which to list videos.
-//
-// Possible values: "time", "trending", "views" (default: time)
-func (c *VideosListCall) Sort(s string) *VideosListCall {
-	c.opts = append(c.opts, SetQueryParameter("sort", s))
-	return c
+// Sort sets the Sort query parameter.
+func (api *VideosListCall) Sort(sort string) *VideosListCall {
+	api.opts = append(api.opts, SetQueryParameter("sort", sort))
+	return api
 }
 
-// First sets the maximum number of objects to return.
-func (c *VideosListCall) First(n int) *VideosListCall {
-	c.opts = append(c.opts, SetQueryParameter("first", fmt.Sprint(n)))
-	return c
+// Type sets the Type query parameter.
+func (api *VideosListCall) Type(t string) *VideosListCall {
+	api.opts = append(api.opts, SetQueryParameter("type", t))
+	return api
 }
 
-// Type filters the results to those with the specified type.
-//
-// Possible values: "all", "upload", "archive", "highlight" (default: all)
-func (c *VideosListCall) Type(t string) *VideosListCall {
-	c.opts = append(c.opts, SetQueryParameter("type", t))
-	return c
+// After sets the After query parameter.
+func (api *VideosListCall) After(after string) *VideosListCall {
+	api.opts = append(api.opts, SetQueryParameter("after", after))
+	return api
 }
 
-// Before filters the results to those with a cursor value before the specified cursor.
-func (c *VideosListCall) Before(cursor string) *VideosListCall {
-	c.opts = append(c.opts, SetQueryParameter("before", cursor))
-	return c
-}
-
-// After filters the results to those with a cursor value after the specified cursor.
-func (c *VideosListCall) After(cursor string) *VideosListCall {
-	c.opts = append(c.opts, SetQueryParameter("after", cursor))
-	return c
+// First sets the First query parameter.
+func (api *VideosListCall) First(first int) *VideosListCall {
+	api.opts = append(api.opts, SetQueryParameter("first", first))
+	return api
 }
 
 // Do executes the request.
-func (c *VideosListCall) Do(ctx context.Context, opts ...RequestOption) (*VideosListResponse, error) {
-	res, err := c.resource.client.DoRequest(ctx, http.MethodGet, EndpointVideos, nil, append(c.opts, opts...)...)
+func (api *VideosListCall) Do(ctx context.Context, opts ...RequestOption) (*VideosListResponse, error) {
+	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/videos", nil, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -118,48 +127,72 @@ func (c *VideosListCall) Do(ctx context.Context, opts ...RequestOption) (*Videos
 	}
 
 	return &VideosListResponse{
-		Header: res.Header,
-		Data:   data.Data,
-		Cursor: data.Pagination.Cursor,
+		Status:     res.Status,
+		StatusCode: res.StatusCode,
+		Header:     res.Header,
+		Data:       data.Data,
+		Pagination: data.Pagination,
+		Request:    res.Request,
 	}, nil
 }
 
-// VideosDeleteCall is a call to the Videos Delete endpoint.
+// VideosDeleteCall represents a DELETE call to a Twitch Videos API endpoint.
 type VideosDeleteCall struct {
 	resource *VideosResource
 	opts     []RequestOption
 }
 
-// VideosDeleteResponse is the response from the Videos Delete endpoint.
+// VideosDeleteResponse represents the response from a DELETE request to /helix/videos.
 type VideosDeleteResponse struct {
+	// Status is the HTTP status text returned by the Twitch API. For example, "200 OK".
+	Status string
+	// StatusCode is the HTTP status code returned by the Twitch API. For example, 200.
+	StatusCode int
+	// Header contains the HTTP headers from the Twitch API response.
 	Header http.Header
-	Data   []string
+	// Request is the HTTP request that was sent to the Twitch API.
+	Request *http.Request
 }
 
-// Delete creates a new call to delete videos.
-func (r *VideosResource) Delete(ids []string) *VideosDeleteCall {
-	c := &VideosDeleteCall{resource: r}
-	for _, id := range ids {
-		c.opts = append(c.opts, AddQueryParameter("id", id))
-	}
-	return c
+// Delete creates a new DELETE request to /helix/videos.
+//
+// Deletes one or more videos.
+// You may delete past broadcasts, highlights, or uploads.
+//
+// # Authorization
+//
+// Requires a user access token that includes the channel:manage:videos scope.
+//
+// Check the [Official Twitch Documentation] for more information.
+//
+// [Official Twitch Documentation]: https://dev.twitch.tv/docs/api/reference/#delete-videos
+func (r *VideosResource) Delete() *VideosDeleteCall {
+	return &VideosDeleteCall{resource: r}
+}
+
+// ID sets the ID query parameter.
+func (api *VideosDeleteCall) ID(iD string) *VideosDeleteCall {
+	api.opts = append(api.opts, SetQueryParameter("id", iD))
+	return api
 }
 
 // Do executes the request.
-func (c *VideosDeleteCall) Do(ctx context.Context, opts ...RequestOption) (*VideosDeleteResponse, error) {
-	res, err := c.resource.client.DoRequest(ctx, http.MethodDelete, EndpointVideos, nil, append(c.opts, opts...)...)
+func (api *VideosDeleteCall) Do(ctx context.Context, opts ...RequestOption) (*VideosDeleteResponse, error) {
+	res, err := api.resource.client.DoRequest(ctx, "DELETE", "/helix/videos", nil, opts...)
 	if err != nil {
 		return nil, err
 	}
 	defer func() { _ = res.Body.Close() }()
 
-	data, err := decodeResponse[string](res)
+	_, err = decodeResponse[any](res)
 	if err != nil {
 		return nil, err
 	}
 
 	return &VideosDeleteResponse{
-		Header: res.Header,
-		Data:   data.Data,
+		Status:     res.Status,
+		StatusCode: res.StatusCode,
+		Header:     res.Header,
+		Request:    res.Request,
 	}, nil
 }

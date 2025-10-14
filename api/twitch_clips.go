@@ -31,14 +31,14 @@ func NewClipsDownloadResource(client *Client) *ClipsDownloadResource {
 	return &ClipsDownloadResource{client}
 }
 
-// ClipDownloadListCall represents a GET call to a Twitch ClipsDownload API endpoint.
-type ClipDownloadListCall struct {
+// ClipsDownloadListCall represents a GET call to a Twitch ClipsDownload API endpoint.
+type ClipsDownloadListCall struct {
 	resource *ClipsDownloadResource
 	opts     []RequestOption
 }
 
-// ClipDownloadListResponse represents the response from a GET request to /helix/clips/downloads.
-type ClipDownloadListResponse struct {
+// ClipsDownloadListResponse represents the response from a GET request to /helix/clips/downloads.
+type ClipsDownloadListResponse struct {
 	// Status is the HTTP status text returned by the Twitch API. For example, "200 OK".
 	Status string
 	// StatusCode is the HTTP status code returned by the Twitch API. For example, 200.
@@ -66,30 +66,30 @@ type ClipDownloadListResponse struct {
 // Check the [Official Twitch Documentation] for more information.
 //
 // [Official Twitch Documentation]: https://dev.twitch.tv/docs/api/reference/#get-clips-download
-func (r *ClipsDownloadResource) List() *ClipDownloadListCall {
-	return &ClipDownloadListCall{resource: r}
+func (r *ClipsDownloadResource) List() *ClipsDownloadListCall {
+	return &ClipsDownloadListCall{resource: r}
 }
 
 // ClipID sets the ClipID query parameter.
-func (api *ClipDownloadListCall) ClipID(clipID string) *ClipDownloadListCall {
+func (api *ClipsDownloadListCall) ClipID(clipID string) *ClipsDownloadListCall {
 	api.opts = append(api.opts, SetQueryParameter("clip_id", clipID))
 	return api
 }
 
 // EditorID sets the EditorID query parameter.
-func (api *ClipDownloadListCall) EditorID(editorID string) *ClipDownloadListCall {
+func (api *ClipsDownloadListCall) EditorID(editorID string) *ClipsDownloadListCall {
 	api.opts = append(api.opts, SetQueryParameter("editor_id", editorID))
 	return api
 }
 
 // BroadcasterID sets the BroadcasterID query parameter.
-func (api *ClipDownloadListCall) BroadcasterID(broadcasterID string) *ClipDownloadListCall {
+func (api *ClipsDownloadListCall) BroadcasterID(broadcasterID string) *ClipsDownloadListCall {
 	api.opts = append(api.opts, SetQueryParameter("broadcaster_id", broadcasterID))
 	return api
 }
 
 // Do executes the request.
-func (api *ClipDownloadListCall) Do(ctx context.Context, opts ...RequestOption) (*ClipDownloadListResponse, error) {
+func (api *ClipsDownloadListCall) Do(ctx context.Context, opts ...RequestOption) (*ClipsDownloadListResponse, error) {
 	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/clips/downloads", nil, opts...)
 	if err != nil {
 		return nil, err
@@ -101,7 +101,7 @@ func (api *ClipDownloadListCall) Do(ctx context.Context, opts ...RequestOption) 
 		return nil, err
 	}
 
-	return &ClipDownloadListResponse{
+	return &ClipsDownloadListResponse{
 		Status:     res.Status,
 		StatusCode: res.StatusCode,
 		Header:     res.Header,

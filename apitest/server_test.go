@@ -106,7 +106,7 @@ func TestAPITest(t *testing.T) {
 			require.NoError(t, err)
 			require.NotEmpty(t, token)
 
-			client := api.New(clientID, api.WithHTTPClient(mock.Client()), api.WithClientSecret(secret))
+			client := api.New(clientID, api.WithHTTPClient(mock.Client()))
 			check, err := tt.fetch(client, api.WithBearerToken(token))
 			require.NoError(t, err)
 			require.Exactly(t, 1, endpoint.TimesCalled)

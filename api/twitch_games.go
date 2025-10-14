@@ -2,75 +2,92 @@ package api
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 )
 
-// GamesResource provides access to the Twitch Games API.
+// GamesResource represents the Twitch Games API.
 type GamesResource struct {
 	client *Client
 
-	Top *TopGamesResource
+	// Top provides access to the Twitch Top API.
+	Top *GamesTopResource
 }
 
 // NewGamesResource creates a new GamesResource.
 func NewGamesResource(client *Client) *GamesResource {
-	c := &GamesResource{client: client}
-	c.Top = NewTopGamesResource(client)
-	return c
+	r := &GamesResource{client: client}
+	r.Top = NewGamesTopResource(client)
+	return r
 }
 
-// TopGamesResource provides methods for the Twitch Top Games API.
-type TopGamesResource struct {
+// GamesTopResource represents the Twitch GamesTop API.
+type GamesTopResource struct {
 	client *Client
 }
 
-// NewTopGamesResource creates a new TopGamesResource.
-func NewTopGamesResource(client *Client) *TopGamesResource {
-	return &TopGamesResource{client}
+// NewGamesTopResource creates a new GamesTopResource.
+func NewGamesTopResource(client *Client) *GamesTopResource {
+	return &GamesTopResource{client}
 }
 
-// TopGamesListCall is a request to list top games based on the specified criteria.
+// TopGamesListCall represents a GET call to a Twitch GamesTop API endpoint.
 type TopGamesListCall struct {
-	resource *TopGamesResource
+	resource *GamesTopResource
 	opts     []RequestOption
 }
 
-// TopGamesListResponse is the response from listing top games.
+// TopGamesListResponse represents the response from a GET request to /helix/games/top.
 type TopGamesListResponse struct {
+	// Status is the HTTP status text returned by the Twitch API. For example, "200 OK".
+	Status string
+	// StatusCode is the HTTP status code returned by the Twitch API. For example, 200.
+	StatusCode int
+	// Header contains the HTTP headers from the Twitch API response.
 	Header http.Header
-	Data   []Game
-	Cursor string
+	// Data is the Game data returned by the Twitch API.
+	Data []Game
+	// Pagination is the Pagination data returned by the Twitch API.
+	Pagination Pagination
+	// Request is the HTTP request that was sent to the Twitch API.
+	Request *http.Request
 }
 
-// List creates a request to list top games based on the specified criteria.
-func (r *TopGamesResource) List() *TopGamesListCall {
+// List creates a new GET request to /helix/games/top.
+//
+// Gets information about all broadcasts on Twitch.
+//
+// # Authorization
+//
+// Requires an app access token or user access token.
+//
+// Check the [Official Twitch Documentation] for more information.
+//
+// [Official Twitch Documentation]: https://dev.twitch.tv/docs/api/reference/#get-top-games
+func (r *GamesTopResource) List() *TopGamesListCall {
 	return &TopGamesListCall{resource: r}
 }
 
-// First limits the number of results to the specified amount.
-//
-// Maximum: 100 (default: 20)
-func (c *TopGamesListCall) First(n int) *TopGamesListCall {
-	c.opts = append(c.opts, SetQueryParameter("first", fmt.Sprint(n)))
-	return c
+// Before sets the Before query parameter.
+func (api *TopGamesListCall) Before(before string) *TopGamesListCall {
+	api.opts = append(api.opts, SetQueryParameter("before", before))
+	return api
 }
 
-// Before filters the results to those with a cursor value before the specified cursor.
-func (c *TopGamesListCall) Before(cursor string) *TopGamesListCall {
-	c.opts = append(c.opts, SetQueryParameter("before", cursor))
-	return c
+// After sets the After query parameter.
+func (api *TopGamesListCall) After(after string) *TopGamesListCall {
+	api.opts = append(api.opts, SetQueryParameter("after", after))
+	return api
 }
 
-// After filters the results to those with a cursor value after the specified cursor.
-func (c *TopGamesListCall) After(cursor string) *TopGamesListCall {
-	c.opts = append(c.opts, SetQueryParameter("after", cursor))
-	return c
+// First sets the First query parameter.
+func (api *TopGamesListCall) First(first int) *TopGamesListCall {
+	api.opts = append(api.opts, SetQueryParameter("first", first))
+	return api
 }
 
 // Do executes the request.
-func (c *TopGamesListCall) Do(ctx context.Context, opts ...RequestOption) (*TopGamesListResponse, error) {
-	res, err := c.resource.client.DoRequest(ctx, http.MethodGet, EndpointGamesTop, nil, append(opts, c.opts...)...)
+func (api *TopGamesListCall) Do(ctx context.Context, opts ...RequestOption) (*TopGamesListResponse, error) {
+	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/games/top", nil, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -82,8 +99,80 @@ func (c *TopGamesListCall) Do(ctx context.Context, opts ...RequestOption) (*TopG
 	}
 
 	return &TopGamesListResponse{
-		Header: res.Header,
-		Data:   data.Data,
-		Cursor: data.Pagination.Cursor,
+		Status:     res.Status,
+		StatusCode: res.StatusCode,
+		Header:     res.Header,
+		Data:       data.Data,
+		Pagination: data.Pagination,
+		Request:    res.Request,
+	}, nil
+}
+
+// GamesListCall represents a GET call to a Twitch Games API endpoint.
+type GamesListCall struct {
+	resource *GamesResource
+	opts     []RequestOption
+}
+
+// GamesListResponse represents the response from a GET request to /helix/games.
+type GamesListResponse struct {
+	// Status is the HTTP status text returned by the Twitch API. For example, "200 OK".
+	Status string
+	// StatusCode is the HTTP status code returned by the Twitch API. For example, 200.
+	StatusCode int
+	// Header contains the HTTP headers from the Twitch API response.
+	Header http.Header
+	// Data is the Game data returned by the Twitch API.
+	Data []Game
+	// Request is the HTTP request that was sent to the Twitch API.
+	Request *http.Request
+}
+
+// List creates a new GET request to /helix/games.
+//
+// Gets information about one or more specified games.
+//
+// Check the [Official Twitch Documentation] for more information.
+//
+// [Official Twitch Documentation]: https://dev.twitch.tv/docs/api/reference/#get-games
+func (r *GamesResource) List() *GamesListCall {
+	return &GamesListCall{resource: r}
+}
+
+// ID adds to the ID query parameter.
+func (api *GamesListCall) ID(iDs ...string) *GamesListCall {
+	for _, iD := range iDs {
+		api.opts = append(api.opts, AddQueryParameter("id", iD))
+	}
+	return api
+}
+
+// Name adds to the Name query parameter.
+func (api *GamesListCall) Name(names ...string) *GamesListCall {
+	for _, name := range names {
+		api.opts = append(api.opts, AddQueryParameter("name", name))
+	}
+	return api
+}
+
+// Do executes the request.
+func (api *GamesListCall) Do(ctx context.Context, opts ...RequestOption) (*GamesListResponse, error) {
+	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/games", nil, opts...)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = res.Body.Close() }()
+
+	data, err := decodeResponse[Game](res)
+	if err != nil {
+		return nil, err
+	}
+
+	return &GamesListResponse{
+		Status:     res.Status,
+		StatusCode: res.StatusCode,
+		Header:     res.Header,
+		Data:       data.Data,
+		Request:    res.Request,
 	}, nil
 }

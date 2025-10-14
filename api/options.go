@@ -8,13 +8,6 @@ import (
 // ClientOption is a function that modifies a Client.
 type ClientOption func(*Client)
 
-// WithClientSecret sets the client secret to use for API requests.
-func WithClientSecret(secret string) ClientOption {
-	return func(c *Client) {
-		c.clientSecret = secret
-	}
-}
-
 // WithDefaultBearerToken sets the bearer token to use for API requests.
 //
 // This can be considered dangerous as if a token is not provided per request, this will become the default token.

@@ -74,15 +74,28 @@ var (
 	ChatShoutoutResource             = NewTwitchAPIResource("Shoutout")
 	ClipsResource                    = NewTwitchAPIResource("Clips", ClipsDownloadResource)
 	ClipsDownloadResource            = NewTwitchAPIResource("Download")
+	ConduitsResource                 = NewTwitchAPIResource("Conduits", ConduitsShardsResource)
+	ConduitsShardsResource           = NewTwitchAPIResource("Shards")
+	GamesResource                    = NewTwitchAPIResource("Games", GamesTopResource)
+	GamesTopResource                 = NewTwitchAPIResource("Top")
+	ModerationResource               = NewTwitchAPIResource("Moderation", ModerationBansResource, ModerationClearChatResource)
+	ModerationBansResource           = NewTwitchAPIResource("Bans")
+	ModerationClearChatResource      = NewTwitchAPIResource("ClearChat")
+	StreamsResource                  = NewTwitchAPIResource("Streams")
+	UsersResource                    = NewTwitchAPIResource("Users")
+	VideosResource                   = NewTwitchAPIResource("Videos")
+	WhispersResource                 = NewTwitchAPIResource("Whispers")
 
 	// Resources is the list of top-level API resources to generate. Subresources are included automatically.
 	Resources = []*TwitchAPIResource{
-		AdsResource, AnalyticsResource, BitsResource, ChannelsResource,
-		ChannelPointsResource, CharityResource, ChatResource, ClipsResource,
+		AdsResource, AnalyticsResource, BitsResource, ChannelsResource, ChannelPointsResource,
+		CharityResource, ChatResource, ClipsResource, ConduitsResource, GamesResource,
+		ModerationResource, StreamsResource, UsersResource, VideosResource, WhispersResource,
 	}
 
 	// Endpoints is the list of all API endpoints to generate. Resource mapping is done automatically using the Resource field.
 	Endpoints = []*TwitchAPIEndpoint{
+		// Ads
 		{
 			// https://dev.twitch.tv/docs/api/reference/#start-commercial
 			Resource: AdsResource,
@@ -133,6 +146,7 @@ var (
 			}{},
 			Response: BasicResponse[api.AdsSnoozed]{},
 		},
+		// Analytics
 		{
 			// https://dev.twitch.tv/docs/api/reference/#get-extension-analytics
 			Resource: AnalyticsExtensionsResource,
@@ -181,6 +195,7 @@ var (
 				Pagination api.Pagination
 			}{},
 		},
+		// Bits
 		{
 			// https://dev.twitch.tv/docs/api/reference/#get-bits-leaderboard
 			Resource: BitsLeaderboardResource,
@@ -239,6 +254,7 @@ var (
 			}{},
 			Response: BasicResponse[api.ExtensionTransaction]{},
 		},
+		// Channels
 		{
 			// https://dev.twitch.tv/docs/api/reference/#get-channel-information
 			Resource: ChannelsResource,
@@ -340,6 +356,7 @@ var (
 				Pagination api.Pagination
 			}{},
 		},
+		// Channel Points
 		{
 			// https://dev.twitch.tv/docs/api/reference/#create-custom-rewards
 			Resource: ChannelPointsRewardsResource,
@@ -479,6 +496,7 @@ var (
 			}{},
 			Response: BasicResponse[api.CustomRewardRedemption]{},
 		},
+		// Charity
 		{
 			// https://dev.twitch.tv/docs/api/reference/#get-charity-campaign
 			Resource: CharityCampaignResource,
@@ -518,6 +536,7 @@ var (
 				Pagination api.Pagination
 			}{},
 		},
+		// Chat
 		{
 			// https://dev.twitch.tv/docs/api/reference/#get-chatters
 			Resource: ChatChattersResource,
@@ -795,6 +814,7 @@ var (
 				Color  string `query:"required"`
 			}{},
 		},
+		// Clips
 		{
 			// https://dev.twitch.tv/docs/api/reference/#create-clip
 			Resource: ClipsResource,
@@ -839,7 +859,7 @@ var (
 		{
 			// https://dev.twitch.tv/docs/api/reference/#get-clips-download
 			Resource: ClipsDownloadResource,
-			Name:     "ClipDownload",
+			Name:     "ClipsDownload",
 			Method:   http.MethodGet,
 			Path:     api.EndpointClipsGetClipsDownload,
 			DocsURL:  "#get-clips-download",
@@ -854,6 +874,327 @@ var (
 				BroadcasterID string `query:"-"`
 			}{},
 			Response: BasicResponse[api.DownloadableClip]{},
+		},
+		// Conduits
+		{
+			// https://dev.twitch.tv/docs/api/reference/#get-conduits
+			Resource: ConduitsResource,
+			Name:     "Conduits",
+			Method:   http.MethodGet,
+			Path:     api.EndpointConduits,
+			DocsURL:  "#get-conduits",
+			Comments: []string{
+				"Gets all conduits for a client ID.", "",
+				"# Authorization", "", "Requires an app access token.",
+			},
+			Response: BasicResponse[api.Conduit]{},
+		},
+		{
+			// https://dev.twitch.tv/docs/api/reference/#create-conduits
+			Resource: ConduitsResource,
+			Name:     "Conduits",
+			Method:   http.MethodPost,
+			Path:     api.EndpointConduits,
+			DocsURL:  "#create-conduits",
+			Comments: []string{
+				"Creates a new conduit.", "",
+				"# Authorization", "", "Requires an app access token.",
+			},
+			Params: struct {
+				ShardCount int `body:"required"`
+			}{},
+			Response: BasicResponse[api.Conduit]{},
+		},
+		{
+			// https://dev.twitch.tv/docs/api/reference/#update-conduits
+			Resource: ConduitsResource,
+			Name:     "Conduits",
+			Method:   http.MethodPatch,
+			Path:     api.EndpointConduits,
+			DocsURL:  "#update-conduits",
+			Comments: []string{
+				"Updates a conduit’s shard count.", "To delete shards, update the count to a lower number, and the shards above the count will be deleted.",
+				"For example, if the existing shard count is 100, by resetting shard count to 50, shards 50-99 are disabled.", "",
+				"# Authorization", "", "Requires an app access token.",
+			},
+			Params: struct {
+				ID         string `body:"required"`
+				ShardCount int    `body:"required"`
+			}{},
+			Response: BasicResponse[api.Conduit]{},
+		},
+		{
+			// https://dev.twitch.tv/docs/api/reference/#delete-conduit
+			Resource: ConduitsResource,
+			Name:     "Conduits",
+			Method:   http.MethodDelete,
+			Path:     api.EndpointConduits,
+			DocsURL:  "#delete-conduit",
+			Comments: []string{
+				"Deletes a conduit.",
+				"Note that it may take some time for Eventsub subscriptions on a deleted conduit to show as disabled when calling Get Eventsub Subscriptions.", "",
+				"# Authorization", "", "Requires an app access token.",
+			},
+			Params: struct {
+				ID string `query:"required"`
+			}{},
+		},
+		{
+			// https://dev.twitch.tv/docs/api/reference/#get-conduit-shards
+			Resource: ConduitsShardsResource,
+			Name:     "ConduitsShard",
+			Method:   http.MethodGet,
+			Path:     api.EndpointConduitsShards,
+			DocsURL:  "#get-conduits-shards",
+			Comments: []string{
+				"Gets a lists of all shards for a conduit.", "",
+				"# Authorization", "", "Requires an app access token.",
+			},
+			Params: struct {
+				ConduitID string `query:"required"`
+				Status    string `query:"-"`
+				After     string `query:"-"`
+			}{},
+			Response: struct {
+				Data       api.ConduitShard
+				Pagination api.Pagination
+			}{},
+		},
+		{
+			// https://dev.twitch.tv/docs/api/reference/#update-conduit-shards
+			Resource: ConduitsShardsResource,
+			Name:     "ConduitsShard",
+			Method:   http.MethodPatch,
+			Path:     api.EndpointConduitsShards,
+			DocsURL:  "#update-conduit-shards",
+			Comments: []string{
+				"Updates a conduit shard.", "",
+				"Shard IDs are indexed starting at 0, so a conduit with a shard_count of 5 will have shards with IDs 0 through 4.", "",
+				"# Authorization", "", "Requires an app access token.",
+			},
+			Params: struct {
+				ConduitID string             `body:"required"`
+				Shards    []api.ConduitShard `body:"required"`
+			}{},
+			Response: BasicResponse[api.ConduitShard]{},
+		},
+		// Entitlements
+		// EventSub
+		// Games
+		{
+			// https://dev.twitch.tv/docs/api/reference/#get-top-games
+			Resource: GamesTopResource,
+			Name:     "TopGames",
+			Method:   http.MethodGet,
+			Path:     api.EndpointGamesTop,
+			DocsURL:  "#get-top-games",
+			Comments: []string{
+				"Gets information about all broadcasts on Twitch.", "",
+				"# Authorization", "", "Requires an app access token or user access token.",
+			},
+			Params: struct {
+				Before string `query:"-"`
+				After  string `query:"-"`
+				First  int    `query:"-"`
+			}{},
+			Response: struct {
+				Data       api.Game
+				Pagination api.Pagination
+			}{},
+		},
+		{
+			// https://dev.twitch.tv/docs/api/reference/#get-games
+			Resource: GamesResource,
+			Name:     "Games",
+			Method:   http.MethodGet,
+			Path:     api.EndpointGames,
+			DocsURL:  "#get-games",
+			Comments: []string{"Gets information about one or more specified games."},
+			Params: struct {
+				ID   []string `query:"required"`
+				Name []string `query:"required"`
+			}{},
+			Response: BasicResponse[api.Game]{},
+		},
+		// Goals
+		// Guest Star
+		// Hype Train
+		// Moderation
+		{
+			// https://dev.twitch.tv/docs/api/reference/#ban-user
+			Resource: ModerationBansResource,
+			Name:     "BanUser",
+			Method:   http.MethodPost,
+			Path:     api.EndpointModerationBans,
+			DocsURL:  "#ban-user",
+			Comments: []string{
+				"Bans a user from participating in the specified broadcaster's chat room or puts them in a timeout.", "",
+				"If the user is currently in a timeout, you can call this endpoint to change the duration of the timeout or ban them altogether.",
+				"If the user is currently banned, you cannot call this method to put them in a timeout instead.", "",
+				"# Authorization", "", "Requires a user access token that includes the moderator:manage:banned_users scope.",
+			},
+			Params: struct {
+				BroadcasterID string            `query:"required"`
+				ModeratorID   string            `query:"required"`
+				Data          []api.OutboundBan `body:"required"`
+			}{},
+			Response: BasicResponse[api.IssuedBan]{},
+		},
+		{
+			// https://dev.twitch.tv/docs/api/reference/#unban-user
+			Resource: ModerationBansResource,
+			Name:     "UnbanUser",
+			Method:   http.MethodDelete,
+			Path:     api.EndpointModerationBans,
+			DocsURL:  "#unban-user",
+			Comments: []string{
+				"Removes the ban or timeout that was placed on the specified user.", "",
+				"# Authorization", "", "Requires a user access token that includes the moderator:manage:banned_users scope.",
+			},
+			Params: struct {
+				BroadcasterID string `query:"required"`
+				ModeratorID   string `query:"required"`
+				UserID        string `query:"required"`
+			}{},
+		},
+		{
+			// https://dev.twitch.tv/docs/api/reference/#delete-chat-messages
+			Resource: ModerationClearChatResource,
+			Name:     "ChatMessages",
+			Method:   http.MethodDelete,
+			Path:     api.EndpointModerationDeleteChatMessages,
+			DocsURL:  "#delete-chat-messages",
+			Comments: []string{
+				"Removes a single chat message or all chat messages from the broadcaster's chat room.", "",
+				"# Authorization", "", "Requires a user access token that includes the moderator:manage:chat_messages scope.",
+			},
+			Params: struct {
+				BroadcasterID string `query:"required"`
+				ModeratorID   string `query:"required"`
+				MessageID     string `query:"-"`
+			}{},
+		},
+		// Polls
+		// Predictions
+		// Raids
+		// Schedule
+		// Search
+		// Streams
+		{
+			// https://dev.twitch.tv/docs/api/reference/#get-streams
+			Resource: StreamsResource,
+			Name:     "Streams",
+			Method:   http.MethodGet,
+			Path:     api.EndpointStreams,
+			DocsURL:  "#get-streams",
+			Comments: []string{
+				"Gets a list of all streams.", "The list is in descending order by the number of viewers watching the stream.",
+				"Because viewers come and go during a stream, it's possible to find duplicate or missing streams in the list as you page through the results.", "",
+				"# Authorization", "", "Requires an app access token or user access token.",
+			},
+			Params: struct {
+				ID       []string `query:"-"`
+				UserID   []string `query:"-"`
+				GameID   []string `query:"-"`
+				Language string   `query:"-"`
+				Period   string   `query:"-"`
+				Type     string   `query:"-"`
+				Before   string   `query:"-"`
+				After    string   `query:"-"`
+				First    int      `query:"-"`
+			}{},
+			Response: struct {
+				Data       api.Stream
+				Pagination api.Pagination
+			}{},
+		},
+		// Subscriptions
+		// Tags
+		// Teams
+		// Users
+		{
+			// https://dev.twitch.tv/docs/api/reference/#get-users
+			Resource: UsersResource,
+			Name:     "Users",
+			Method:   http.MethodGet,
+			Path:     api.EndpointUsers,
+			DocsURL:  "#get-users",
+			Comments: []string{
+				"Gets information about one or more users.", "You may specify users by ID or by login name.", "",
+				"You may look up users using their user ID, login name, or both but the sum total of the number of users you may look up is 100.", "For example, you may specify 50 IDs and 50 names or 100 IDs or names, but you cannot specify 100 IDs and 100 names.", "",
+				"If you don't specify IDs or login names, the request returns information about the user in the access token if you specify a user access token.", "",
+				"# Authorization", "", "Requires an app access token or user access token.", "",
+				"To include the user's verified email address in the response, you must use a user access token that includes the user:read:email scope.",
+			},
+			Params: struct {
+				ID    []string `query:"-"`
+				Login []string `query:"-"`
+			}{},
+			Response: BasicResponse[api.User]{},
+		},
+		// Videos
+		{
+			// https://dev.twitch.tv/docs/api/reference/#get-videos
+			Resource: VideosResource,
+			Name:     "Videos",
+			Method:   http.MethodGet,
+			Path:     api.EndpointVideos,
+			DocsURL:  "#get-videos",
+			Comments: []string{
+				"Gets information about one or more published videos.", "You may get videos by ID, by user, or by game/category.", "",
+				"# Authorization", "", "Requires an app access token or user access token.",
+			},
+			Params: struct {
+				ID       []string `query:"-"`
+				UserID   []string `query:"-"`
+				GameID   []string `query:"-"`
+				Language string   `query:"-"`
+				Period   string   `query:"-"`
+				Sort     string   `query:"-"`
+				Type     string   `query:"-"`
+				After    string   `query:"-"`
+				First    int      `query:"-"`
+			}{},
+			Response: struct {
+				Data       api.Video
+				Pagination api.Pagination
+			}{},
+		},
+		{
+			// https://dev.twitch.tv/docs/api/reference/#delete-videos
+			Resource: VideosResource,
+			Name:     "Videos",
+			Method:   http.MethodDelete,
+			Path:     api.EndpointVideos,
+			DocsURL:  "#delete-videos",
+			Comments: []string{
+				"Deletes one or more videos.", "You may delete past broadcasts, highlights, or uploads.", "",
+				"# Authorization", "", "Requires a user access token that includes the channel:manage:videos scope.",
+			},
+			Params: struct {
+				ID string `query:"required"`
+			}{},
+		},
+		// Whispers
+		{
+			// https://dev.twitch.tv/docs/api/reference/#send-whisper
+			Resource: WhispersResource,
+			Name:     "SendWhisper",
+			Method:   http.MethodPost,
+			Path:     api.EndpointWhispers,
+			DocsURL:  "#send-whisper",
+			Comments: []string{
+				"Sends a whisper message to the specified user.", "",
+				"# Rate Limits", "", "You may whisper to a maximum of 40 unique recipients per day.",
+				"Within the per day limit, you may whisper a maximum of 3 whispers per second and a maximum of 100 whispers per minute.", "",
+				"# Authorization", "", "The user sending the whisper must have a verified phone number (see the Phone Number setting in your Security and Privacy settings).", "",
+				"Requires a user access token that includes the user:manage:whispers scope.",
+			},
+			Params: struct {
+				FromUserID string `query:"required"`
+				ToUserID   string `query:"required"`
+				Message    string `body:"required"`
+			}{},
 		},
 	}
 )

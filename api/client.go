@@ -11,10 +11,9 @@ import (
 
 // Client is a client for interacting with the Twitch API.
 type Client struct {
-	clientID     string
-	clientSecret string
-	bearerToken  string
-	httpClient   HTTPClient
+	clientID    string
+	bearerToken string
+	httpClient  HTTPClient
 
 	Ads           *AdsResource
 	Analytics     *AnalyticsResource

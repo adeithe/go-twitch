@@ -604,7 +604,7 @@ type ConduitShard struct {
 	// ID is the ID of the conduit shard.
 	ID string `json:"id"`
 	// Status is the current status of the conduit shard.
-	Status string `json:"status"`
+	Status string `json:"status,omitempty"`
 	// Transport is the transport method for the conduit shard.
 	Transport Transport `json:"transport"`
 }
@@ -1173,6 +1173,16 @@ type BannedUser struct {
 	CreatedAt time.Time `json:"created_at"`
 	// ExpiresAt is the UTC timestamp of when the ban expires, if applicable.
 	ExpiresAt *time.Time `json:"expires_at,omitempty"`
+}
+
+// OutboundBan represents a request to ban a user from a Twitch channel.
+type OutboundBan struct {
+	// UserID is the ID of the user to be banned.
+	UserID string `json:"user_id"`
+	// Reason is the reason for the ban. Maximum length: 500 characters.
+	Reason string `json:"reason,omitempty"`
+	// Duration is the duration of the ban in seconds. If not specified, the ban is permanent.
+	Duration *int `json:"duration,omitempty"`
 }
 
 // IssuedBan represents a ban that has been issued on a Twitch channel.

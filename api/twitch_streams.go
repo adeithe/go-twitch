@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 )
 
@@ -16,89 +15,108 @@ func NewStreamsResource(client *Client) *StreamsResource {
 	return &StreamsResource{client}
 }
 
-// StreamsListCall is a call to the Streams List endpoint.
+// StreamsListCall represents a GET call to a Twitch Streams API endpoint.
 type StreamsListCall struct {
 	resource *StreamsResource
 	opts     []RequestOption
 }
 
-// StreamsListResponse is the response from the Streams List endpoint.
+// StreamsListResponse represents the response from a GET request to /helix/streams.
 type StreamsListResponse struct {
+	// Status is the HTTP status text returned by the Twitch API. For example, "200 OK".
+	Status string
+	// StatusCode is the HTTP status code returned by the Twitch API. For example, 200.
+	StatusCode int
+	// Header contains the HTTP headers from the Twitch API response.
 	Header http.Header
-	Data   []Stream
-	Cursor string
+	// Data is the Stream data returned by the Twitch API.
+	Data []Stream
+	// Pagination is the Pagination data returned by the Twitch API.
+	Pagination Pagination
+	// Request is the HTTP request that was sent to the Twitch API.
+	Request *http.Request
 }
 
-// List creates a request to list streams based on the specified criteria.
+// List creates a new GET request to /helix/streams.
 //
-// Requires an app or user access token. No scope is required.
+// Gets a list of all streams.
+// The list is in descending order by the number of viewers watching the stream.
+// Because viewers come and go during a stream, it's possible to find duplicate or missing streams in the list as you page through the results.
+//
+// # Authorization
+//
+// Requires an app access token or user access token.
+//
+// Check the [Official Twitch Documentation] for more information.
+//
+// [Official Twitch Documentation]: https://dev.twitch.tv/docs/api/reference/#get-streams
 func (r *StreamsResource) List() *StreamsListCall {
 	return &StreamsListCall{resource: r}
 }
 
-// UserID filters the results to the specified user IDs.
-func (c *StreamsListCall) UserID(ids []string) *StreamsListCall {
-	for _, id := range ids {
-		c.opts = append(c.opts, AddQueryParameter("user_id", id))
+// ID adds to the ID query parameter.
+func (api *StreamsListCall) ID(iDs ...string) *StreamsListCall {
+	for _, iD := range iDs {
+		api.opts = append(api.opts, AddQueryParameter("id", iD))
 	}
-	return c
+	return api
 }
 
-// Username filters the results to the specified usernames.
-func (c *StreamsListCall) Username(usernames []string) *StreamsListCall {
-	for _, username := range usernames {
-		c.opts = append(c.opts, AddQueryParameter("user_login", username))
+// UserID adds to the UserID query parameter.
+func (api *StreamsListCall) UserID(userIDs ...string) *StreamsListCall {
+	for _, userID := range userIDs {
+		api.opts = append(api.opts, AddQueryParameter("user_id", userID))
 	}
-	return c
+	return api
 }
 
-// GameID filters the results to the specified game IDs.
-func (c *StreamsListCall) GameID(ids []string) *StreamsListCall {
-	for _, id := range ids {
-		c.opts = append(c.opts, AddQueryParameter("game_id", id))
+// GameID adds to the GameID query parameter.
+func (api *StreamsListCall) GameID(gameIDs ...string) *StreamsListCall {
+	for _, gameID := range gameIDs {
+		api.opts = append(api.opts, AddQueryParameter("game_id", gameID))
 	}
-	return c
+	return api
 }
 
-// Type filters the results to the specified stream types.
-//
-// Possible values: "all", "live" (Default: "all")
-func (c *StreamsListCall) Type(t string) *StreamsListCall {
-	c.opts = append(c.opts, SetQueryParameter("type", t))
-	return c
+// Language sets the Language query parameter.
+func (api *StreamsListCall) Language(language string) *StreamsListCall {
+	api.opts = append(api.opts, SetQueryParameter("language", language))
+	return api
 }
 
-// Languages filters the results to the specified stream languages.
-func (c *StreamsListCall) Languages(languages []string) *StreamsListCall {
-	for _, language := range languages {
-		c.opts = append(c.opts, AddQueryParameter("language", language))
-	}
-	return c
+// Period sets the Period query parameter.
+func (api *StreamsListCall) Period(period string) *StreamsListCall {
+	api.opts = append(api.opts, SetQueryParameter("period", period))
+	return api
 }
 
-// First limits the number of results to the specified amount.
-//
-// Maximum: 100 (default: 20)
-func (c *StreamsListCall) First(n int) *StreamsListCall {
-	c.opts = append(c.opts, SetQueryParameter("first", fmt.Sprint(n)))
-	return c
+// Type sets the Type query parameter.
+func (api *StreamsListCall) Type(t string) *StreamsListCall {
+	api.opts = append(api.opts, SetQueryParameter("type", t))
+	return api
 }
 
-// Before filters the results to streams that started before the specified cursor.
-func (c *StreamsListCall) Before(cursor string) *StreamsListCall {
-	c.opts = append(c.opts, SetQueryParameter("before", cursor))
-	return c
+// Before sets the Before query parameter.
+func (api *StreamsListCall) Before(before string) *StreamsListCall {
+	api.opts = append(api.opts, SetQueryParameter("before", before))
+	return api
 }
 
-// After filters the results to streams that started after the specified cursor.
-func (c *StreamsListCall) After(cursor string) *StreamsListCall {
-	c.opts = append(c.opts, SetQueryParameter("after", cursor))
-	return c
+// After sets the After query parameter.
+func (api *StreamsListCall) After(after string) *StreamsListCall {
+	api.opts = append(api.opts, SetQueryParameter("after", after))
+	return api
+}
+
+// First sets the First query parameter.
+func (api *StreamsListCall) First(first int) *StreamsListCall {
+	api.opts = append(api.opts, SetQueryParameter("first", first))
+	return api
 }
 
 // Do executes the request.
-func (c *StreamsListCall) Do(ctx context.Context, opts ...RequestOption) (*StreamsListResponse, error) {
-	res, err := c.resource.client.DoRequest(ctx, http.MethodGet, EndpointStreams, nil, append(opts, c.opts...)...)
+func (api *StreamsListCall) Do(ctx context.Context, opts ...RequestOption) (*StreamsListResponse, error) {
+	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/streams", nil, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -110,8 +128,11 @@ func (c *StreamsListCall) Do(ctx context.Context, opts ...RequestOption) (*Strea
 	}
 
 	return &StreamsListResponse{
-		Header: res.Header,
-		Data:   data.Data,
-		Cursor: data.Pagination.Cursor,
+		Status:     res.Status,
+		StatusCode: res.StatusCode,
+		Header:     res.Header,
+		Data:       data.Data,
+		Pagination: data.Pagination,
+		Request:    res.Request,
 	}, nil
 }
