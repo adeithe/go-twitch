@@ -963,7 +963,51 @@ var Endpoints = []*TwitchAPIEndpoint{
 		}{},
 		Response: BasicResponse[api.UpdatedDropEntitlement]{},
 	},
+	// Extensions
+	{
+		// https://dev.twitch.tv/docs/api/reference/#get-extensions
+		Resource: ExtensionsResource,
+		Name:     "Extensions",
+		Method:   http.MethodGet,
+		Path:     api.EndpointExtensions,
+		DocsURL:  "#get-extensions",
+		Comments: []string{
+			"Gets information about an extension.", "",
+			"# Authorization", "", "Requires a signed JSON Web Token (JWT) created by an Extension Backend Service (EBS).",
+			"The signed JWT must include the \"role\" field (see JWT Schema), and the \"role\" field must be set to external.",
+		},
+		Params: struct {
+			ExtensionID      string `query:"-,required"`
+			ExtensionVersion string `query:"-"`
+		}{},
+		Response: BasicResponse[api.Extension]{},
+	},
 	// EventSub
+	{
+		// https://dev.twitch.tv/docs/api/reference/#get-eventsub-subscriptions
+		Resource: EventSubResource,
+		Name:     "EventSubSubscriptions",
+		Method:   http.MethodGet,
+		Path:     api.EndpointEventSubSubscriptions,
+		DocsURL:  "#get-eventsub-subscriptions",
+		Comments: []string{
+			"Gets a list of all EventSub subscriptions that the authenticated app has created.", "",
+			"# Authorization", "", "Requires an app access token.",
+		},
+		Params: struct {
+			SubscriptionID string `query:"-"`
+			Status         string `query:"-"`
+			Type           string `query:"-"`
+			UserID         string `query:"-"`
+			After          string `query:"-"`
+		}{},
+		Response: struct {
+			TotalCost  int
+			MaxCost    int
+			Data       api.EventSubSubscription
+			Pagination api.Pagination
+		}{},
+	},
 	// Games
 	{
 		// https://dev.twitch.tv/docs/api/reference/#get-top-games
@@ -1001,8 +1045,61 @@ var Endpoints = []*TwitchAPIEndpoint{
 		Response: BasicResponse[api.Game]{},
 	},
 	// Goals
+	{
+		// https://dev.twitch.tv/docs/api/reference/#get-creator-goals
+		Resource: GoalsResource,
+		Name:     "Goals",
+		Method:   http.MethodGet,
+		Path:     api.EndpointGoals,
+		DocsURL:  "#get-creator-goals",
+		Comments: []string{
+			"Gets the broadcaster's list of active goals. Use this endpoint to get the current progress of each goal.", "",
+			"# Authorization", "", "Requires a user access token that includes the channel:read:goals scope.",
+		},
+		Params: struct {
+			BroadcasterID string `query:"broadcaster_id,required"`
+		}{},
+		Response: BasicResponse[api.CreatorGoal]{},
+	},
 	// Guest Star
+	{
+		// https://dev.twitch.tv/docs/api/reference/#get-guest-star-session
+		Resource: GuestStarResource,
+		Name:     "GuestStarSession",
+		Method:   http.MethodGet,
+		Path:     api.EndpointGuestStarSession,
+		DocsURL:  "#get-guest-star-session",
+		Comments: []string{
+			"Gets information about an ongoing Guest Star session for a particular channel.", "",
+			"# Authorization", "",
+			"Requires OAuth Scope: channel:read:guest_star, channel:manage:guest_star, moderator:read:guest_star or moderator:manage:guest_star.", "",
+			"Guests must be either invited or assigned a slot within the session.",
+		},
+		Params: struct {
+			BroadcasterID string `query:"broadcaster_id,required"`
+			ModeratorID   string `query:"moderator_id,required"`
+		}{},
+		Response: BasicResponse[api.GuestStarSession]{},
+	},
 	// Hype Train
+	{
+		// https://dev.twitch.tv/docs/api/reference/#get-hype-train-status
+		Resource: HypeTrainResource,
+		Name:     "HypeTrainStatus",
+		Method:   http.MethodGet,
+		Path:     api.EndpointHypeTrainGetStatus,
+		DocsURL:  "#get-hype-train-status",
+		Comments: []string{
+			"Get the status of a Hype Train for the specified broadcaster.", "",
+			"# Authorization", "", "Requires an user access token.", "",
+			"Requires OAuth Scope: channel:read:hype_train.", "",
+			"Requires that the user access token belongs to BroadcasterID.",
+		},
+		Params: struct {
+			BroadcasterID string `query:"broadcaster_id,required"`
+		}{},
+		Response: BasicResponse[api.HypeTrainStatusInfo]{},
+	},
 	// Moderation
 	{
 		// https://dev.twitch.tv/docs/api/reference/#ban-user
@@ -1059,11 +1156,257 @@ var Endpoints = []*TwitchAPIEndpoint{
 		}{},
 	},
 	// Polls
+	{
+		// https://dev.twitch.tv/docs/api/reference/#get-polls
+		Resource: PollsResource,
+		Name:     "Polls",
+		Method:   http.MethodGet,
+		Path:     api.EndpointPolls,
+		DocsURL:  "#get-polls",
+		Comments: []string{
+			"Gets a list of polls that have been created in the past 90 days.", "",
+			"# Authorization", "", "Requires a user access token that includes the channel:read:polls or channel:manage:polls scope.",
+		},
+		Params: struct {
+			ID            []string `query:"-"`
+			BroadcasterID string   `query:"-,required"`
+			After         string   `query:"-"`
+			First         int      `query:"-"`
+		}{},
+		Response: struct {
+			Data       api.Poll
+			Pagination api.Pagination
+		}{},
+	},
+	{
+		// https://dev.twitch.tv/docs/api/reference/#create-poll
+		Resource: PollsResource,
+		Name:     "Polls",
+		Method:   http.MethodPost,
+		Path:     api.EndpointPolls,
+		DocsURL:  "#create-poll",
+		Comments: []string{
+			"Creates a poll that viewers in the broadcaster's channel can vote on.", "",
+			"The poll begins as soon as it's created. You may run only one poll at a time.", "",
+			"# Authorization", "", "Requires a user access token that includes the channel:manage:polls scope.",
+		},
+		Params: struct {
+			BroadcasterID              string               `body:"broadcaster_id,required"`
+			Title                      string               `body:"title,required"`
+			Choices                    []api.OutboundChoice `body:"choices,required"`
+			Duration                   int                  `body:"duration,required"`
+			ChannelPointsPerVote       int                  `body:"channel_points_per_vote"`
+			ChannelPointsVotingEnabled bool                 `body:"channel_points_voting_enabled"`
+		}{},
+		Response: BasicResponse[api.Poll]{},
+	},
+	{
+		// https://dev.twitch.tv/docs/api/reference/#end-poll
+		Resource: PollsResource,
+		Name:     "Polls",
+		Method:   http.MethodPatch,
+		Path:     api.EndpointPolls,
+		DocsURL:  "#end-poll",
+		Comments: []string{
+			"Ends an active poll. You have the option to end it or end it and archive it.", "",
+			"# Authorization", "", "Requires a user access token that includes the channel:manage:polls scope.",
+		},
+		Params: struct {
+			BroadcasterID string `body:"broadcaster_id,required"`
+			ID            string `body:"id,required"`
+			Status        string `body:"status,required"`
+		}{},
+		Response: BasicResponse[api.Poll]{},
+	},
 	// Predictions
+	{
+		// https://dev.twitch.tv/docs/api/reference/#get-predictions
+		Resource: PredictionsResource,
+		Name:     "Predictions",
+		Method:   http.MethodGet,
+		Path:     api.EndpointPredictions,
+		DocsURL:  "#get-predictions",
+		Comments: []string{
+			"Gets a list of Channel Points Predictions that the broadcaster created.", "",
+			"# Authorization", "", "Requires a user access token that includes the channel:read:predictions or channel:manage:predictions scope.",
+		},
+		Params: struct {
+			BroadcasterID string   `query:"-,required"`
+			ID            []string `query:"-"`
+			After         string   `query:"-"`
+			First         int      `query:"-"`
+		}{},
+		Response: struct {
+			Data       api.Prediction
+			Pagination api.Pagination
+		}{},
+	},
+	{
+		// https://dev.twitch.tv/docs/api/reference/#create-prediction
+		Resource: PredictionsResource,
+		Name:     "Predictions",
+		Method:   http.MethodPost,
+		Path:     api.EndpointPredictions,
+		DocsURL:  "#create-prediction",
+		Comments: []string{
+			"Creates a Channel Points Prediction.", "",
+			"With a Channel Points Prediction, the broadcaster poses a question and viewers try to predict the outcome. The prediction runs as soon as it's created. The broadcaster may run only one prediction at a time.", "",
+			"# Authorization", "", "Requires a user access token that includes the channel:manage:predictions scope.",
+		},
+		Params: struct {
+			BroadcasterID    string               `body:"-,required"`
+			Title            string               `body:"title,required"`
+			Outcome          []api.OutboundChoice `body:"outcomes"`
+			PredictionWindow int                  `body:"prediction_window,required"`
+		}{},
+		Response: BasicResponse[api.Prediction]{},
+	},
+	{
+		// https://dev.twitch.tv/docs/api/reference/#end-prediction
+		Resource: PredictionsResource,
+		Name:     "Predictions",
+		Method:   http.MethodPatch,
+		Path:     api.EndpointPredictions,
+		DocsURL:  "#end-prediction",
+		Comments: []string{
+			"Locks, resolves, or cancels a Channel Points Prediction.", "",
+			"# Authorization", "", "Requires a user access token that includes the channel:manage:predictions scope.",
+		},
+		Params: struct {
+			BroadcasterID    string `body:"-,required"`
+			ID               string `body:"-,required"`
+			Status           string `body:"-,required"`
+			WinningOutcomeID string `body:"-"`
+		}{},
+		Response: BasicResponse[api.Prediction]{},
+	},
 	// Raids
+	{
+		// https://dev.twitch.tv/docs/api/reference/#start-a-raid
+		Resource: RaidsResource,
+		Name:     "Raid",
+		Method:   http.MethodPost,
+		Path:     api.EndpointRaids,
+		DocsURL:  "#start-a-raid",
+		Comments: []string{
+			"Raid another channel by sending the broadcaster's viewers to the targeted channel.", "",
+			"When you call the API from a chat bot or extension, the Twitch UX pops up a window at the top of the chat room that identifies the number of viewers in the raid.",
+			"The raid occurs when the broadcaster clicks Raid Now or after the 90-second countdown expires.", "",
+			"# Rate Limit", "", "The limit is 10 requests within a 10-minute window.", "",
+			"# Authorization", "", "Requires a user access token that includes the channel:manage:raids scope.",
+		},
+		Params: struct {
+			FromBroadcasterID string `body:"from_broadcaster_id,required"`
+			ToBroadcasterID   string `body:"to_broadcaster_id,required"`
+		}{},
+		Response: BasicResponse[api.InitializedRaid]{},
+	},
+	{
+		// https://dev.twitch.tv/docs/api/reference/#cancel-a-raid
+		Resource: RaidsResource,
+		Name:     "Raid",
+		Method:   http.MethodDelete,
+		Path:     api.EndpointRaids,
+		DocsURL:  "#cancel-a-raid",
+		Comments: []string{
+			"Cancels a pending raid that was initiated by the broadcaster.", "",
+			"You can cancel a raid at any point up until the broadcaster clicks Raid Now in the Twitch UX or the 90-second countdown expires.", "",
+			"# Rate Limit", "", "The limit is 10 requests within a 10-minute window.", "",
+			"# Authorization", "", "Requires a user access token that includes the channel:manage:raids scope.",
+		},
+		Params: struct {
+			BroadcasterID string `query:"-,required"`
+		}{},
+	},
 	// Schedule
+	{
+		// https://dev.twitch.tv/docs/api/reference/#get-channel-stream-schedule
+		Resource: ScheduleResource,
+		Name:     "ChannelStreamSchedule",
+		Method:   http.MethodGet,
+		Path:     api.EndpointScheduleGetChannelCalendar,
+		DocsURL:  "#get-channel-stream-schedule",
+		Comments: []string{
+			"Gets the broadcaster's streaming schedule. You can get the entire schedule or specific segments of the schedule.", "",
+			"# Authorization", "", "Requires an app access token or user access token.",
+		},
+		Params: struct {
+			BroadcasterID string    `query:"-,required"`
+			ID            string    `query:"-"`
+			After         string    `query:"-"`
+			First         int       `query:"-"`
+			StartTime     time.Time `query:"-"`
+		}{},
+		Response: struct {
+			Data       api.StreamSchedule
+			Pagination api.Pagination
+		}{},
+	},
 	// Search
+	{
+		// https://dev.twitch.tv/docs/api/reference/#search-categories
+		Resource: SearchCategoriesResource,
+		Name:     "SearchCategories",
+		Method:   http.MethodGet,
+		Path:     api.EndpointSearchCategories,
+		DocsURL:  "#search-categories",
+		Comments: []string{
+			"Gets the games or categories that match the specified query.", "",
+			"To match, the category's name must contain all parts of the query string.",
+			"For example, if the query string is 42, the response includes any category name that contains 42 in the title.",
+			"If the query string is a phrase like love computer, the response includes any category name that contains the words love and computer anywhere in the name.",
+			"The comparison is case insensitive.", "",
+			"# Authorization", "", "Requires an app access token or user access token.",
+		},
+		Params: struct {
+			Query string `query:"-,required"`
+			After string `query:"-"`
+			First int    `query:"-"`
+		}{},
+		Response: struct {
+			Data       api.CategorySearchResult
+			Pagination api.Pagination
+		}{},
+	},
+	{
+		// https://dev.twitch.tv/docs/api/reference/#search-channels
+		Resource: SearchChannelsResource,
+		Name:     "SearchChannels",
+		Method:   http.MethodGet,
+		Path:     api.EndpointSearchChannels,
+		DocsURL:  "#search-channels",
+		Comments: []string{
+			"Gets the channels that match the specified query and have streamed content within the past 6 months.", "",
+			"# Authorization", "", "Requires an app access token or user access token.",
+		},
+		Params: struct {
+			Query    string `query:"-,required"`
+			After    string `query:"-"`
+			First    int    `query:"-"`
+			LiveOnly bool   `query:"-"`
+		}{},
+		Response: struct {
+			Data       api.CategorySearchResult
+			Pagination api.Pagination
+		}{},
+	},
 	// Streams
+	{
+		// https://dev.twitch.tv/docs/api/reference/#get-stream-key
+		Resource: StreamKeyResource,
+		Name:     "StreamKey",
+		Method:   http.MethodGet,
+		Path:     api.EndpointStreamsGetKey,
+		DocsURL:  "#get-stream-key",
+		Comments: []string{
+			"Gets the channel's stream key.", "",
+			"# Authorization", "", "Requires a user access token that includes the channel:read:stream_key scope.",
+		},
+		Params: struct {
+			BroadcasterID string `query:"broadcaster_id,required"`
+		}{},
+		Response: BasicResponse[api.StreamKey]{},
+	},
 	{
 		// https://dev.twitch.tv/docs/api/reference/#get-streams
 		Resource: StreamsResource,
@@ -1092,7 +1435,110 @@ var Endpoints = []*TwitchAPIEndpoint{
 			Pagination api.Pagination
 		}{},
 	},
+	{
+		// https://dev.twitch.tv/docs/api/reference/#get-followed-streams
+		Resource: StreamsFollowedResource,
+		Name:     "StreamsFollowed",
+		Method:   http.MethodGet,
+		Path:     api.EndpointStreamsFollowed,
+		DocsURL:  "#get-followed-streams",
+		Comments: []string{
+			"Gets the list of broadcasters that the user follows and that are streaming live.", "",
+			"# Authorization", "", "Requires a user access token that includes the user:read:follows scope.",
+		},
+		Params: struct {
+			UserID string `query:"user_id,required"`
+			After  string `query:"-"`
+			First  int    `query:"-"`
+		}{},
+		Response: struct {
+			Data       api.Stream
+			Pagination api.Pagination
+		}{},
+	},
+	{
+		// https://dev.twitch.tv/docs/api/reference/#create-stream-marker
+		Resource: StreamsMarkersResource,
+		Name:     "StreamMarker",
+		Method:   http.MethodPost,
+		Path:     api.EndpointStreamsMarkers,
+		DocsURL:  "#create-stream-marker",
+		Comments: []string{
+			"Creates a marker for a stream that is currently live.", "",
+			"# Authorization", "", "Requires a user access token that includes the channel:manage:broadcast scope.",
+		},
+		Params: struct {
+			BroadcasterID string `body:"user_id,required"`
+			Description   string `body:"description"`
+		}{},
+		Response: BasicResponse[api.StreamMarkerData]{},
+	},
+	{
+		// https://dev.twitch.tv/docs/api/reference/#get-stream-markers
+		Resource: StreamsMarkersResource,
+		Name:     "StreamMarker",
+		Method:   http.MethodGet,
+		Path:     api.EndpointStreamsMarkers,
+		DocsURL:  "#get-stream-markers",
+		Comments: []string{
+			"Gets a list of markers from the user's most recent stream or from the specified VOD/video.", "",
+			"A marker is an arbitrary point in a live stream that the broadcaster or editor marked, so they can return to that spot later to create video highlights (see Video Producer, Highlights in the Twitch UX).", "",
+			"# Authorization", "", "Requires a user access token that includes the user:read:broadcast or channel:manage:broadcast scope.",
+		},
+		Params: struct {
+			BroadcasterID string `query:"user_id,required"`
+			VideoID       string `query:"-,required"`
+			Before        string `query:"-"`
+			After         string `query:"-"`
+			First         int    `query:"-"`
+		}{},
+		Response: BasicResponse[api.StreamMarkerData]{},
+	},
 	// Subscriptions
+	{
+		// https://dev.twitch.tv/docs/api/reference/#get-broadcaster-subscriptions
+		Resource: SubscriptionsResource,
+		Name:     "BroadcasterSubscriptions",
+		Method:   http.MethodGet,
+		Path:     api.EndpointSubscriptionsGetBroadcasterSubscriptions,
+		DocsURL:  "#get-broadcaster-subscriptions",
+		Comments: []string{
+			"Gets a list of users that subscribe to the specified broadcaster.", "",
+			"# Authorization", "", "Requires a user access token that includes the channel:read:subscriptions scope.", "",
+			"A Twitch extensions may use an app access token if the broadcaster has granted the channel:read:subscriptions scope from within the Twitch Extensions manager.",
+		},
+		Params: struct {
+			UserID        []string `query:"-"`
+			BroadcasterID string   `query:"broadcaster_id,required"`
+			Before        string   `query:"-"`
+			After         string   `query:"-"`
+			First         int      `query:"-"`
+		}{},
+		Response: struct {
+			Total      int
+			Points     int
+			Data       api.ChannelSubscription
+			Pagination api.Pagination
+		}{},
+	},
+	{
+		// https://dev.twitch.tv/docs/api/reference/#check-user-subscription
+		Resource: SubscriptionsUserResource,
+		Name:     "UserSubscription",
+		Method:   http.MethodGet,
+		Path:     api.EndpointSubscriptionsCheckUserSubscription,
+		DocsURL:  "#check-user-subscription",
+		Comments: []string{
+			"Checks whether the user subscribes to the broadcaster's channel.", "",
+			"# Authorization", "", "Requires a user access token that includes the user:read:subscriptions scope.", "",
+			"A Twitch extensions may use an app access token if the broadcaster has granted the user:read:subscriptions scope from within the Twitch Extensions manager.",
+		},
+		Params: struct {
+			BroadcasterID string `query:"broadcaster_id,required"`
+			UserID        string `query:"user_id,required"`
+		}{},
+		Response: BasicResponse[api.UserSubscriptionStatus]{},
+	},
 	// Teams
 	{
 		// https://dev.twitch.tv/docs/api/reference/#get-channel-teams

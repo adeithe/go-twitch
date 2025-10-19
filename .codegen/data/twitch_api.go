@@ -120,7 +120,7 @@ func (e TwitchAPIEndpoint) GetQueryParams() (out []helpers.Parameter) {
 			continue
 		}
 
-		fieldName := helpers.ToCamelCase(field.Name)
+		fieldName := helpers.ToSnakeCase(field.Name)
 		tags := strings.Split(structTag, ",")
 		if len(tags) > 0 && len(tags[0]) > 0 && tags[0] != "-" {
 			fieldName = tags[0]
@@ -151,7 +151,7 @@ func (e TwitchAPIEndpoint) GetBodyParams() (out []helpers.Parameter) {
 			continue
 		}
 
-		fieldName := helpers.ToCamelCase(field.Name)
+		fieldName := helpers.ToSnakeCase(field.Name)
 		tags := strings.Split(structTag, ",")
 		if len(tags) > 0 && len(tags[0]) > 0 && tags[0] != "-" {
 			fieldName = tags[0]

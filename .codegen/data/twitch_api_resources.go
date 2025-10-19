@@ -83,18 +83,54 @@ var (
 	EntitlementsResource = NewTwitchAPIResource("Entitlements", EntitlementsDropsResource)
 	// EntitlementsDropsResource is the resource for the Twitch Entitlements Drops API
 	EntitlementsDropsResource = NewTwitchAPIResource("Drops")
+	// ExtensionsResource is the resource for the Twitch Extensions API
+	ExtensionsResource = NewTwitchAPIResource("Extensions")
+	// EventSubResource is the resource for the Twitch EventSub API
+	EventSubResource = NewTwitchAPIResource("EventSub")
 	// GamesResource is the resource for the Twitch Games API
 	GamesResource = NewTwitchAPIResource("Games", GamesTopResource)
 	// GamesTopResource is the resource for the Twitch Games Top API
 	GamesTopResource = NewTwitchAPIResource("Top")
+	// GoalsResource is the resource for the Twitch Goals API
+	GoalsResource = NewTwitchAPIResource("Goals")
+	// GuestStarResource is the resource for the Twitch Guest Star API
+	GuestStarResource = NewTwitchAPIResource("GuestStar", GuestStarSessionResource)
+	// GuestStarSessionResource is the resource for the Twitch Guest Star Session API
+	GuestStarSessionResource = NewTwitchAPIResource("Session")
+	// HypeTrainResource is the resource for the Twitch Hype Train API
+	HypeTrainResource = NewTwitchAPIResource("HypeTrain")
 	// ModerationResource is the resource for the Twitch Moderation API
 	ModerationResource = NewTwitchAPIResource("Moderation", ModerationBansResource, ModerationClearChatResource)
 	// ModerationBansResource is the resource for the Twitch Moderation Bans API
 	ModerationBansResource = NewTwitchAPIResource("Bans")
 	// ModerationClearChatResource is the resource for the Twitch Moderation Clear Chat API
 	ModerationClearChatResource = NewTwitchAPIResource("ClearChat")
+	// PollsResource is the resource for the Twitch Polls API
+	PollsResource = NewTwitchAPIResource("Polls")
+	// PredictionsResource is the resource for the Twitch Predictions API
+	PredictionsResource = NewTwitchAPIResource("Predictions")
+	// RaidsResource is the resource for the Twitch Raids API
+	RaidsResource = NewTwitchAPIResource("Raids")
+	// ScheduleResource is the resource for the Twitch Schedule API
+	ScheduleResource = NewTwitchAPIResource("Schedule")
+	// SearchResource is the resource for the Twitch Search API
+	SearchResource = NewTwitchAPIResource("Search", SearchCategoriesResource, SearchChannelsResource)
+	// SearchCategoriesResource is the resource for the Twitch Search Categories API
+	SearchCategoriesResource = NewTwitchAPIResource("Categories")
+	// SearchChannelsResource is the resource for the Twitch Search Channels API
+	SearchChannelsResource = NewTwitchAPIResource("Channels")
 	// StreamsResource is the resource for the Twitch Streams API
-	StreamsResource = NewTwitchAPIResource("Streams")
+	StreamsResource = NewTwitchAPIResource("Streams", StreamKeyResource, StreamsFollowedResource, StreamsMarkersResource)
+	// StreamKeyResource is the resource for the Twitch Stream Key API
+	StreamKeyResource = NewTwitchAPIResource("StreamKey")
+	// StreamsFollowedResource is the resource for the Twitch Streams Followed API
+	StreamsFollowedResource = NewTwitchAPIResource("Followed")
+	// StreamsMarkersResource is the resource for the Twitch Streams Markers API
+	StreamsMarkersResource = NewTwitchAPIResource("Markers")
+	// SubscriptionsResource is the resource for the Twitch Subscriptions API
+	SubscriptionsResource = NewTwitchAPIResource("Subscriptions", SubscriptionsUserResource)
+	// SubscriptionsUserResource is the resource for the Twitch Subscriptions User API
+	SubscriptionsUserResource = NewTwitchAPIResource("Subscribed")
 	// TeamsResource is the resource for the Twitch Teams API
 	TeamsResource = NewTwitchAPIResource("Teams", TeamsChannelsResource)
 	// TeamsChannelsResource is the resource for the Twitch Teams Channels API
@@ -108,9 +144,11 @@ var (
 
 	// Resources is the list of top-level API resources to generate. Subresources are included automatically.
 	Resources = []*TwitchAPIResource{
-		AdsResource, AnalyticsResource, BitsResource, ChannelsResource, ChannelPointsResource, CharityResource,
-		ChatResource, ClipsResource, ConduitsResource, CCLResource, EntitlementsResource, GamesResource,
-		ModerationResource, StreamsResource, TeamsResource, UsersResource, VideosResource, WhispersResource,
+		AdsResource, AnalyticsResource, BitsResource, ChannelsResource, ChannelPointsResource,
+		CharityResource, ChatResource, ClipsResource, ConduitsResource, CCLResource, EntitlementsResource,
+		ExtensionsResource, EventSubResource, GamesResource, GoalsResource, GuestStarResource, HypeTrainResource,
+		ModerationResource, PollsResource, PredictionsResource, RaidsResource, ScheduleResource, SearchResource,
+		StreamsResource, SubscriptionsResource, TeamsResource, UsersResource, VideosResource, WhispersResource,
 	}
 )
 

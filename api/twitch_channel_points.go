@@ -505,7 +505,7 @@ func (api *ChannelPointRewardsListCall) ID(ids ...string) *ChannelPointRewardsLi
 
 // BroadcasterID sets the BroadcasterID query parameter.
 func (api *ChannelPointRewardsListCall) BroadcasterID(broadcasterID string) *ChannelPointRewardsListCall {
-	api.opts = append(api.opts, SetQueryParameter("broadcaster_id", broadcasterID))
+	api.opts = append(api.opts, SetQueryParameter("broadcaster", broadcasterID))
 	return api
 }
 
@@ -602,7 +602,7 @@ func (api *ChannelPointRewardsModifyCall) Prompt(prompt string) *ChannelPointRew
 
 // BackgroundColor sets the BackgroundColor body parameter.
 func (api *ChannelPointRewardsModifyCall) BackgroundColor(backgroundColor string) *ChannelPointRewardsModifyCall {
-	api.body["backgroundColor"] = backgroundColor
+	api.body["background_color"] = backgroundColor
 	return api
 }
 
@@ -614,61 +614,61 @@ func (api *ChannelPointRewardsModifyCall) Cost(cost int) *ChannelPointRewardsMod
 
 // MaxPerStream sets the MaxPerStream body parameter.
 func (api *ChannelPointRewardsModifyCall) MaxPerStream(maxPerStream int) *ChannelPointRewardsModifyCall {
-	api.body["maxPerStream"] = maxPerStream
+	api.body["max_per_stream"] = maxPerStream
 	return api
 }
 
 // MaxPerUserPerStream sets the MaxPerUserPerStream body parameter.
 func (api *ChannelPointRewardsModifyCall) MaxPerUserPerStream(maxPerUserPerStream int) *ChannelPointRewardsModifyCall {
-	api.body["maxPerUserPerStream"] = maxPerUserPerStream
+	api.body["max_per_user_per_stream"] = maxPerUserPerStream
 	return api
 }
 
 // GlobalCooldownSeconds sets the GlobalCooldownSeconds body parameter.
 func (api *ChannelPointRewardsModifyCall) GlobalCooldownSeconds(globalCooldownSeconds int) *ChannelPointRewardsModifyCall {
-	api.body["globalCooldownSeconds"] = globalCooldownSeconds
+	api.body["global_cooldown_seconds"] = globalCooldownSeconds
 	return api
 }
 
 // IsPaused sets the IsPaused body parameter.
 func (api *ChannelPointRewardsModifyCall) IsPaused(isPaused bool) *ChannelPointRewardsModifyCall {
-	api.body["isPaused"] = isPaused
+	api.body["is_paused"] = isPaused
 	return api
 }
 
 // IsEnabled sets the IsEnabled body parameter.
 func (api *ChannelPointRewardsModifyCall) IsEnabled(isEnabled bool) *ChannelPointRewardsModifyCall {
-	api.body["isEnabled"] = isEnabled
+	api.body["is_enabled"] = isEnabled
 	return api
 }
 
 // IsUserInputRequired sets the IsUserInputRequired body parameter.
 func (api *ChannelPointRewardsModifyCall) IsUserInputRequired(isUserInputRequired bool) *ChannelPointRewardsModifyCall {
-	api.body["isUserInputRequired"] = isUserInputRequired
+	api.body["is_user_input_required"] = isUserInputRequired
 	return api
 }
 
 // IsMaxPerStreamEnabled sets the IsMaxPerStreamEnabled body parameter.
 func (api *ChannelPointRewardsModifyCall) IsMaxPerStreamEnabled(isMaxPerStreamEnabled bool) *ChannelPointRewardsModifyCall {
-	api.body["isMaxPerStreamEnabled"] = isMaxPerStreamEnabled
+	api.body["is_max_per_stream_enabled"] = isMaxPerStreamEnabled
 	return api
 }
 
 // IsMaxPerUserPerStreamEnabled sets the IsMaxPerUserPerStreamEnabled body parameter.
 func (api *ChannelPointRewardsModifyCall) IsMaxPerUserPerStreamEnabled(isMaxPerUserPerStreamEnabled bool) *ChannelPointRewardsModifyCall {
-	api.body["isMaxPerUserPerStreamEnabled"] = isMaxPerUserPerStreamEnabled
+	api.body["is_max_per_user_per_stream_enabled"] = isMaxPerUserPerStreamEnabled
 	return api
 }
 
 // IsGlobalCooldownEnabled sets the IsGlobalCooldownEnabled body parameter.
 func (api *ChannelPointRewardsModifyCall) IsGlobalCooldownEnabled(isGlobalCooldownEnabled bool) *ChannelPointRewardsModifyCall {
-	api.body["isGlobalCooldownEnabled"] = isGlobalCooldownEnabled
+	api.body["is_global_cooldown_enabled"] = isGlobalCooldownEnabled
 	return api
 }
 
 // ShouldRedemptionsSkipRequestQueue sets the ShouldRedemptionsSkipRequestQueue body parameter.
 func (api *ChannelPointRewardsModifyCall) ShouldRedemptionsSkipRequestQueue(shouldRedemptionsSkipRequestQueue bool) *ChannelPointRewardsModifyCall {
-	api.body["shouldRedemptionsSkipRequestQueue"] = shouldRedemptionsSkipRequestQueue
+	api.body["should_redemptions_skip_request_queue"] = shouldRedemptionsSkipRequestQueue
 	return api
 }
 

@@ -14,8 +14,10 @@ type HTTPClient interface {
 
 // ResponseData represents a generic response from the Twitch API.
 type ResponseData[T any] struct {
-	Total  int `json:"total,omitempty"`  // Only present in some endpoints.
-	Points int `json:"points,omitempty"` // Only present in some endpoints.
+	Total     int `json:"total,omitempty"`          // Only present in some endpoints.
+	TotalCost int `json:"total_cost,omitempty"`     // Only present in some endpoints.
+	MaxCost   int `json:"max_total_cost,omitempty"` // Only present in some endpoints.
+	Points    int `json:"points,omitempty"`         // Only present in some endpoints.
 
 	Data       []T            `json:"data"`
 	Errors     []ConduitError `json:"errors,omitempty"`

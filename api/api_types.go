@@ -1329,6 +1329,12 @@ type Poll struct {
 	EndedAt *time.Time `json:"ended_at,omitempty"`
 }
 
+// OutboundChoice represents a choice when creating a new Twitch poll or prediction.
+type OutboundChoice struct {
+	// Title is the title of the choice.
+	Title string `json:"title"`
+}
+
 // PollChoice represents a choice in a Twitch poll.
 type PollChoice struct {
 	// ID is the ID that uniquely identifies the choice.
@@ -1371,6 +1377,12 @@ type Prediction struct {
 	LockedAt *time.Time `json:"locked_at,omitempty"`
 }
 
+// OutboundPredictionOutcome represents an outcome when creating a new Twitch prediction.
+type OutboundPredictionOutcome struct {
+	// Title is the title of the outcome.
+	Title string `json:"title"`
+}
+
 // PredictionOutcome represents an outcome in a Twitch prediction.
 type PredictionOutcome struct {
 	// ID is the ID that uniquely identifies the outcome.
@@ -1404,7 +1416,7 @@ type PredictionParticipant struct {
 // InitializedRaid represents a raid that has been initialized on a Twitch channel.
 type InitializedRaid struct {
 	// Mature indicates whether the channel being raided contains mature content.
-	Mature bool `json:"mature"`
+	Mature bool `json:"is_mature"`
 	// CreatedAt is the UTC timestamp of when the raid was created.
 	CreatedAt time.Time `json:"created_at"`
 }
@@ -1455,6 +1467,16 @@ type StreamScheduleCategory struct {
 	ID string `json:"id"`
 	// Name is the name of the category.
 	Name string `json:"name"`
+}
+
+// CategorySearchResult represents a search result for a Twitch category.
+type CategorySearchResult struct {
+	// ID is the ID that uniquely identifies the category.
+	ID string
+	// Name is the name of the category.
+	Name string
+	// BoxArtURL is the URL to the box art of the category.
+	BoxArtURL string
 }
 
 // ChannelSearchResult represents a search result for a Twitch channel.
@@ -1817,8 +1839,8 @@ func (d VideoDuration) AsDuration() time.Duration {
 	return time.Duration(d)
 }
 
-// NewWebhookTransport creates a new webhook transport for a Twitch Eventsub Conduit Shard.
-func NewWebhookTransport(callback, secret string) Transport {
+// WithWebhookTransport creates a new webhook transport for a Twitch Eventsub Conduit Shard.
+func WithWebhookTransport(callback, secret string) Transport {
 	return Transport{
 		Method:   "webhook",
 		Callback: &callback,
@@ -1826,10 +1848,15 @@ func NewWebhookTransport(callback, secret string) Transport {
 	}
 }
 
-// NewWebSocketTransport creates a new websocket transport for a Twitch Eventsub Conduit Shard.
-func NewWebSocketTransport(sessionID string) Transport {
+// WithWebSocketTransport creates a new websocket transport for a Twitch Eventsub Conduit Shard.
+func WithWebSocketTransport(sessionID string) Transport {
 	return Transport{
 		Method:    "websocket",
 		SessionID: &sessionID,
 	}
+}
+
+// WithChoice creates a new outbound choice with the given title.
+func WithChoice(title string) OutboundChoice {
+	return OutboundChoice{Title: title}
 }

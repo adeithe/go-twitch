@@ -931,55 +931,55 @@ func (api *ChatSettingsModifyCall) ModeratorID(moderatorID string) *ChatSettings
 
 // EmoteMode sets the EmoteMode body parameter.
 func (api *ChatSettingsModifyCall) EmoteMode(emoteMode bool) *ChatSettingsModifyCall {
-	api.body["emoteMode"] = emoteMode
+	api.body["emote_mode"] = emoteMode
 	return api
 }
 
 // FollowerMode sets the FollowerMode body parameter.
 func (api *ChatSettingsModifyCall) FollowerMode(followerMode bool) *ChatSettingsModifyCall {
-	api.body["followerMode"] = followerMode
+	api.body["follower_mode"] = followerMode
 	return api
 }
 
 // FollowerModeDuration sets the FollowerModeDuration body parameter.
 func (api *ChatSettingsModifyCall) FollowerModeDuration(followerModeDuration int) *ChatSettingsModifyCall {
-	api.body["followerModeDuration"] = followerModeDuration
+	api.body["follower_mode_duration"] = followerModeDuration
 	return api
 }
 
 // NonModeratorChatDelay sets the NonModeratorChatDelay body parameter.
 func (api *ChatSettingsModifyCall) NonModeratorChatDelay(nonModeratorChatDelay bool) *ChatSettingsModifyCall {
-	api.body["nonModeratorChatDelay"] = nonModeratorChatDelay
+	api.body["non_moderator_chat_delay"] = nonModeratorChatDelay
 	return api
 }
 
 // NonModeratorChatDelayDuration sets the NonModeratorChatDelayDuration body parameter.
 func (api *ChatSettingsModifyCall) NonModeratorChatDelayDuration(nonModeratorChatDelayDuration int) *ChatSettingsModifyCall {
-	api.body["nonModeratorChatDelayDuration"] = nonModeratorChatDelayDuration
+	api.body["non_moderator_chat_delay_duration"] = nonModeratorChatDelayDuration
 	return api
 }
 
 // SlowMode sets the SlowMode body parameter.
 func (api *ChatSettingsModifyCall) SlowMode(slowMode bool) *ChatSettingsModifyCall {
-	api.body["slowMode"] = slowMode
+	api.body["slow_mode"] = slowMode
 	return api
 }
 
 // SlowModeWaitTime sets the SlowModeWaitTime body parameter.
 func (api *ChatSettingsModifyCall) SlowModeWaitTime(slowModeWaitTime int) *ChatSettingsModifyCall {
-	api.body["slowModeWaitTime"] = slowModeWaitTime
+	api.body["slow_mode_wait_time"] = slowModeWaitTime
 	return api
 }
 
 // SubscriberMode sets the SubscriberMode body parameter.
 func (api *ChatSettingsModifyCall) SubscriberMode(subscriberMode bool) *ChatSettingsModifyCall {
-	api.body["subscriberMode"] = subscriberMode
+	api.body["subscriber_mode"] = subscriberMode
 	return api
 }
 
 // UniqueChatMode sets the UniqueChatMode body parameter.
 func (api *ChatSettingsModifyCall) UniqueChatMode(uniqueChatMode bool) *ChatSettingsModifyCall {
-	api.body["uniqueChatMode"] = uniqueChatMode
+	api.body["unique_chat_mode"] = uniqueChatMode
 	return api
 }
 
@@ -1344,13 +1344,13 @@ func (api *SendMessageInsertCall) Message(message string) *SendMessageInsertCall
 
 // ReplayParentMessageID sets the ReplayParentMessageID body parameter.
 func (api *SendMessageInsertCall) ReplayParentMessageID(replayParentMessageID string) *SendMessageInsertCall {
-	api.body["replayParentMessageID"] = replayParentMessageID
+	api.body["replay_parent_message_id"] = replayParentMessageID
 	return api
 }
 
 // ForSourceOnly sets the ForSourceOnly body parameter.
 func (api *SendMessageInsertCall) ForSourceOnly(forSourceOnly bool) *SendMessageInsertCall {
-	api.body["forSourceOnly"] = forSourceOnly
+	api.body["for_source_only"] = forSourceOnly
 	return api
 }
 

@@ -154,7 +154,7 @@ func (r *ConduitsShardsResource) Modify(conduitID string, shards ConduitShard) *
 
 // ConduitID sets the ConduitID body parameter.
 func (api *ConduitsShardModifyCall) ConduitID(conduitID string) *ConduitsShardModifyCall {
-	api.body["conduitID"] = conduitID
+	api.body["conduit_id"] = conduitID
 	return api
 }
 

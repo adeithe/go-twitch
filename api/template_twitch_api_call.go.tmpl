@@ -63,16 +63,15 @@ func (r *{{ .Resource.ResourceName }}) {{ MethodName .Method }}({{ .Initializati
 
 {{- range $QueryParams -}}
 {{ $varName := .ParameterName }}
-{{ $paramName := ToSnakeCase .Name }}
-{{- if eq $varName "type" }}{{ $varName = "t" }}{{ end }}
+{{ if eq $varName "type" }}{{ $varName = "t" }}{{ end }}
 // {{ .Name }} {{ if .Slice }}adds to{{else}}sets{{ end }} the {{ .Name }} query parameter.
 func (api *{{ $EndpointName }}) {{ .Name }}({{ $varName }}{{ if .Slice }}s{{ end }} {{ .AsVariadicParam }}) *{{ $EndpointName }} {
 {{- if .Slice }}
 	for _, {{ $varName }} := range {{ $varName }}{{ if .Slice }}s{{ end }} {
-		api.opts = append(api.opts, AddQueryParameter("{{ $paramName }}", {{ $varName }}))
+		api.opts = append(api.opts, AddQueryParameter("{{ .FieldName }}", {{ $varName }}))
 	}
 {{- else }}
-	api.opts = append(api.opts, SetQueryParameter("{{ $paramName }}", {{ $varName }}{{ if eq .Type "time.Time" }}.Format(time.RFC3339){{ end }}))
+	api.opts = append(api.opts, SetQueryParameter("{{ .FieldName }}", {{ $varName }}{{ if eq .Type "time.Time" }}.Format(time.RFC3339){{ end }}))
 {{- end }}
 	return api
 }
@@ -82,7 +81,7 @@ func (api *{{ $EndpointName }}) {{ .Name }}({{ $varName }}{{ if .Slice }}s{{ end
 {{ $varName := .ParameterName }}
 // {{ .Name }} sets the {{ .Name }} body parameter.
 func (api *{{ $EndpointName }}) {{ .Name }}({{ $varName }}{{ if .Slice }}s{{ end }} {{ .AsVariadicParam }}) *{{ $EndpointName }} {
-	api.body["{{ .FieldName }}"] = {{ $varName }}{{ if .Slice }}s{{ end }}
+	api.body["{{ .FieldName }}"] = {{ $varName }}{{ if .Slice }}s{{ end }}{{ if eq .Type "time.Time" }}.Format(time.RFC3339){{ end }}
 	return api
 }
 {{- end }}
@@ -113,6 +112,12 @@ func (api *{{ $EndpointName }}) Do(ctx context.Context, opts ...RequestOption) (
 		Status:     res.Status,
 		StatusCode: res.StatusCode,
 		Header:     res.Header,
+{{- if (.HasResponseField "TotalCost") }}
+		TotalCost:  data.TotalCost,
+{{- end }}
+{{- if (.HasResponseField "MaxTotalCost") }}
+		MaxCost:    data.MaxTotalCost,
+{{- end }}
 {{- if (.HasResponseField "Total") }}
 		Total:      data.Total,
 {{- end }}
