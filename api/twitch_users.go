@@ -59,9 +59,9 @@ func (r *UsersResource) List() *UsersListCall {
 }
 
 // ID adds to the ID query parameter.
-func (api *UsersListCall) ID(iDs ...string) *UsersListCall {
-	for _, iD := range iDs {
-		api.opts = append(api.opts, AddQueryParameter("id", iD))
+func (api *UsersListCall) ID(ids ...string) *UsersListCall {
+	for _, id := range ids {
+		api.opts = append(api.opts, AddQueryParameter("id", id))
 	}
 	return api
 }

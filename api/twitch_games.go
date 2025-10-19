@@ -135,14 +135,17 @@ type GamesListResponse struct {
 // Check the [Official Twitch Documentation] for more information.
 //
 // [Official Twitch Documentation]: https://dev.twitch.tv/docs/api/reference/#get-games
-func (r *GamesResource) List() *GamesListCall {
-	return &GamesListCall{resource: r}
+func (r *GamesResource) List(id string, name string) *GamesListCall {
+	c := &GamesListCall{resource: r}
+	return c.
+		ID(id).
+		Name(name)
 }
 
 // ID adds to the ID query parameter.
-func (api *GamesListCall) ID(iDs ...string) *GamesListCall {
-	for _, iD := range iDs {
-		api.opts = append(api.opts, AddQueryParameter("id", iD))
+func (api *GamesListCall) ID(ids ...string) *GamesListCall {
+	for _, id := range ids {
+		api.opts = append(api.opts, AddQueryParameter("id", id))
 	}
 	return api
 }

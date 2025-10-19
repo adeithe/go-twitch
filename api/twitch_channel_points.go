@@ -67,13 +67,17 @@ type ChannelPointRedemptionsListResponse struct {
 // Check the [Official Twitch Documentation] for more information.
 //
 // [Official Twitch Documentation]: https://dev.twitch.tv/docs/api/reference/#get-custom-reward-redemption
-func (r *ChannelPointsRedemptionsResource) List() *ChannelPointRedemptionsListCall {
-	return &ChannelPointRedemptionsListCall{resource: r}
+func (r *ChannelPointsRedemptionsResource) List(broadcasterID string, rewardID string, status string) *ChannelPointRedemptionsListCall {
+	c := &ChannelPointRedemptionsListCall{resource: r}
+	return c.
+		BroadcasterID(broadcasterID).
+		RewardID(rewardID).
+		Status(status)
 }
 
 // ID sets the ID query parameter.
-func (api *ChannelPointRedemptionsListCall) ID(iD string) *ChannelPointRedemptionsListCall {
-	api.opts = append(api.opts, SetQueryParameter("id", iD))
+func (api *ChannelPointRedemptionsListCall) ID(id string) *ChannelPointRedemptionsListCall {
+	api.opts = append(api.opts, SetQueryParameter("id", id))
 	return api
 }
 
@@ -167,13 +171,19 @@ type ChannelPointRedemptionsModifyResponse struct {
 // Check the [Official Twitch Documentation] for more information.
 //
 // [Official Twitch Documentation]: https://dev.twitch.tv/docs/api/reference/#update-redemption-status
-func (r *ChannelPointsRedemptionsResource) Modify() *ChannelPointRedemptionsModifyCall {
-	return &ChannelPointRedemptionsModifyCall{resource: r}
+func (r *ChannelPointsRedemptionsResource) Modify(id string, broadcasterID string, rewardID string) *ChannelPointRedemptionsModifyCall {
+	c := &ChannelPointRedemptionsModifyCall{resource: r}
+	return c.
+		ID(id).
+		BroadcasterID(broadcasterID).
+		RewardID(rewardID)
 }
 
-// ID sets the ID query parameter.
-func (api *ChannelPointRedemptionsModifyCall) ID(iD string) *ChannelPointRedemptionsModifyCall {
-	api.opts = append(api.opts, SetQueryParameter("id", iD))
+// ID adds to the ID query parameter.
+func (api *ChannelPointRedemptionsModifyCall) ID(ids ...string) *ChannelPointRedemptionsModifyCall {
+	for _, id := range ids {
+		api.opts = append(api.opts, AddQueryParameter("id", id))
+	}
 	return api
 }
 
@@ -255,8 +265,12 @@ type ChannelPointRewardsInsertResponse struct {
 // Check the [Official Twitch Documentation] for more information.
 //
 // [Official Twitch Documentation]: https://dev.twitch.tv/docs/api/reference/#create-custom-rewards
-func (r *ChannelPointsRewardsResource) Insert() *ChannelPointRewardsInsertCall {
-	return &ChannelPointRewardsInsertCall{resource: r, body: make(map[string]any)}
+func (r *ChannelPointsRewardsResource) Insert(broadcasterID string, title string, cost int64) *ChannelPointRewardsInsertCall {
+	c := &ChannelPointRewardsInsertCall{resource: r, body: make(map[string]any)}
+	return c.
+		BroadcasterID(broadcasterID).
+		Title(title).
+		Cost(cost)
 }
 
 // BroadcasterID sets the BroadcasterID query parameter.
@@ -279,7 +293,7 @@ func (api *ChannelPointRewardsInsertCall) Prompt(prompt string) *ChannelPointRew
 
 // BackgroundColor sets the BackgroundColor body parameter.
 func (api *ChannelPointRewardsInsertCall) BackgroundColor(backgroundColor string) *ChannelPointRewardsInsertCall {
-	api.body["background_color"] = backgroundColor
+	api.body["prompt"] = backgroundColor
 	return api
 }
 
@@ -402,13 +416,16 @@ type ChannelPointRewardsDeleteResponse struct {
 // Check the [Official Twitch Documentation] for more information.
 //
 // [Official Twitch Documentation]: https://dev.twitch.tv/docs/api/reference/#delete-custom-reward
-func (r *ChannelPointsRewardsResource) Delete() *ChannelPointRewardsDeleteCall {
-	return &ChannelPointRewardsDeleteCall{resource: r}
+func (r *ChannelPointsRewardsResource) Delete(id string, broadcasterID string) *ChannelPointRewardsDeleteCall {
+	c := &ChannelPointRewardsDeleteCall{resource: r}
+	return c.
+		ID(id).
+		BroadcasterID(broadcasterID)
 }
 
 // ID sets the ID query parameter.
-func (api *ChannelPointRewardsDeleteCall) ID(iD string) *ChannelPointRewardsDeleteCall {
-	api.opts = append(api.opts, SetQueryParameter("id", iD))
+func (api *ChannelPointRewardsDeleteCall) ID(id string) *ChannelPointRewardsDeleteCall {
+	api.opts = append(api.opts, SetQueryParameter("id", id))
 	return api
 }
 
@@ -472,14 +489,16 @@ type ChannelPointRewardsListResponse struct {
 // Check the [Official Twitch Documentation] for more information.
 //
 // [Official Twitch Documentation]: https://dev.twitch.tv/docs/api/reference/#get-custom-reward
-func (r *ChannelPointsRewardsResource) List() *ChannelPointRewardsListCall {
-	return &ChannelPointRewardsListCall{resource: r}
+func (r *ChannelPointsRewardsResource) List(broadcasterID string) *ChannelPointRewardsListCall {
+	c := &ChannelPointRewardsListCall{resource: r}
+	return c.
+		BroadcasterID(broadcasterID)
 }
 
 // ID adds to the ID query parameter.
-func (api *ChannelPointRewardsListCall) ID(iDs ...string) *ChannelPointRewardsListCall {
-	for _, iD := range iDs {
-		api.opts = append(api.opts, AddQueryParameter("id", iD))
+func (api *ChannelPointRewardsListCall) ID(ids ...string) *ChannelPointRewardsListCall {
+	for _, id := range ids {
+		api.opts = append(api.opts, AddQueryParameter("id", id))
 	}
 	return api
 }
@@ -550,13 +569,16 @@ type ChannelPointRewardsModifyResponse struct {
 // Check the [Official Twitch Documentation] for more information.
 //
 // [Official Twitch Documentation]: https://dev.twitch.tv/docs/api/reference/#update-custom-reward
-func (r *ChannelPointsRewardsResource) Modify() *ChannelPointRewardsModifyCall {
-	return &ChannelPointRewardsModifyCall{resource: r, body: make(map[string]any)}
+func (r *ChannelPointsRewardsResource) Modify(id string, broadcasterID string) *ChannelPointRewardsModifyCall {
+	c := &ChannelPointRewardsModifyCall{resource: r, body: make(map[string]any)}
+	return c.
+		ID(id).
+		BroadcasterID(broadcasterID)
 }
 
 // ID sets the ID query parameter.
-func (api *ChannelPointRewardsModifyCall) ID(iD string) *ChannelPointRewardsModifyCall {
-	api.opts = append(api.opts, SetQueryParameter("id", iD))
+func (api *ChannelPointRewardsModifyCall) ID(id string) *ChannelPointRewardsModifyCall {
+	api.opts = append(api.opts, SetQueryParameter("id", id))
 	return api
 }
 
@@ -580,7 +602,7 @@ func (api *ChannelPointRewardsModifyCall) Prompt(prompt string) *ChannelPointRew
 
 // BackgroundColor sets the BackgroundColor body parameter.
 func (api *ChannelPointRewardsModifyCall) BackgroundColor(backgroundColor string) *ChannelPointRewardsModifyCall {
-	api.body["background_color"] = backgroundColor
+	api.body["backgroundColor"] = backgroundColor
 	return api
 }
 
@@ -592,61 +614,61 @@ func (api *ChannelPointRewardsModifyCall) Cost(cost int) *ChannelPointRewardsMod
 
 // MaxPerStream sets the MaxPerStream body parameter.
 func (api *ChannelPointRewardsModifyCall) MaxPerStream(maxPerStream int) *ChannelPointRewardsModifyCall {
-	api.body["max_per_stream"] = maxPerStream
+	api.body["maxPerStream"] = maxPerStream
 	return api
 }
 
 // MaxPerUserPerStream sets the MaxPerUserPerStream body parameter.
 func (api *ChannelPointRewardsModifyCall) MaxPerUserPerStream(maxPerUserPerStream int) *ChannelPointRewardsModifyCall {
-	api.body["max_per_user_per_stream"] = maxPerUserPerStream
+	api.body["maxPerUserPerStream"] = maxPerUserPerStream
 	return api
 }
 
 // GlobalCooldownSeconds sets the GlobalCooldownSeconds body parameter.
 func (api *ChannelPointRewardsModifyCall) GlobalCooldownSeconds(globalCooldownSeconds int) *ChannelPointRewardsModifyCall {
-	api.body["global_cooldown_seconds"] = globalCooldownSeconds
+	api.body["globalCooldownSeconds"] = globalCooldownSeconds
 	return api
 }
 
 // IsPaused sets the IsPaused body parameter.
 func (api *ChannelPointRewardsModifyCall) IsPaused(isPaused bool) *ChannelPointRewardsModifyCall {
-	api.body["is_paused"] = isPaused
+	api.body["isPaused"] = isPaused
 	return api
 }
 
 // IsEnabled sets the IsEnabled body parameter.
 func (api *ChannelPointRewardsModifyCall) IsEnabled(isEnabled bool) *ChannelPointRewardsModifyCall {
-	api.body["is_enabled"] = isEnabled
+	api.body["isEnabled"] = isEnabled
 	return api
 }
 
 // IsUserInputRequired sets the IsUserInputRequired body parameter.
 func (api *ChannelPointRewardsModifyCall) IsUserInputRequired(isUserInputRequired bool) *ChannelPointRewardsModifyCall {
-	api.body["is_user_input_required"] = isUserInputRequired
+	api.body["isUserInputRequired"] = isUserInputRequired
 	return api
 }
 
 // IsMaxPerStreamEnabled sets the IsMaxPerStreamEnabled body parameter.
 func (api *ChannelPointRewardsModifyCall) IsMaxPerStreamEnabled(isMaxPerStreamEnabled bool) *ChannelPointRewardsModifyCall {
-	api.body["is_max_per_stream_enabled"] = isMaxPerStreamEnabled
+	api.body["isMaxPerStreamEnabled"] = isMaxPerStreamEnabled
 	return api
 }
 
 // IsMaxPerUserPerStreamEnabled sets the IsMaxPerUserPerStreamEnabled body parameter.
 func (api *ChannelPointRewardsModifyCall) IsMaxPerUserPerStreamEnabled(isMaxPerUserPerStreamEnabled bool) *ChannelPointRewardsModifyCall {
-	api.body["is_max_per_user_per_stream_enabled"] = isMaxPerUserPerStreamEnabled
+	api.body["isMaxPerUserPerStreamEnabled"] = isMaxPerUserPerStreamEnabled
 	return api
 }
 
 // IsGlobalCooldownEnabled sets the IsGlobalCooldownEnabled body parameter.
 func (api *ChannelPointRewardsModifyCall) IsGlobalCooldownEnabled(isGlobalCooldownEnabled bool) *ChannelPointRewardsModifyCall {
-	api.body["is_global_cooldown_enabled"] = isGlobalCooldownEnabled
+	api.body["isGlobalCooldownEnabled"] = isGlobalCooldownEnabled
 	return api
 }
 
 // ShouldRedemptionsSkipRequestQueue sets the ShouldRedemptionsSkipRequestQueue body parameter.
 func (api *ChannelPointRewardsModifyCall) ShouldRedemptionsSkipRequestQueue(shouldRedemptionsSkipRequestQueue bool) *ChannelPointRewardsModifyCall {
-	api.body["should_redemptions_skip_request_queue"] = shouldRedemptionsSkipRequestQueue
+	api.body["shouldRedemptionsSkipRequestQueue"] = shouldRedemptionsSkipRequestQueue
 	return api
 }
 

@@ -67,8 +67,10 @@ type CharityCampaignListResponse struct {
 // Check the [Official Twitch Documentation] for more information.
 //
 // [Official Twitch Documentation]: https://dev.twitch.tv/docs/api/reference/#get-charity-campaign
-func (r *CharityCampaignResource) List() *CharityCampaignListCall {
-	return &CharityCampaignListCall{resource: r}
+func (r *CharityCampaignResource) List(broadcasterID string) *CharityCampaignListCall {
+	c := &CharityCampaignListCall{resource: r}
+	return c.
+		BroadcasterID(broadcasterID)
 }
 
 // BroadcasterID sets the BroadcasterID query parameter.
@@ -144,8 +146,10 @@ type CharityDonationsListResponse struct {
 // Check the [Official Twitch Documentation] for more information.
 //
 // [Official Twitch Documentation]: https://dev.twitch.tv/docs/api/reference/#get-charity-campaign-donations
-func (r *CharityDonationsResource) List() *CharityDonationsListCall {
-	return &CharityDonationsListCall{resource: r}
+func (r *CharityDonationsResource) List(broadcasterID string) *CharityDonationsListCall {
+	c := &CharityDonationsListCall{resource: r}
+	return c.
+		BroadcasterID(broadcasterID)
 }
 
 // BroadcasterID sets the BroadcasterID query parameter.

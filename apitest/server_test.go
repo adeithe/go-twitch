@@ -32,7 +32,7 @@ func TestAPITest(t *testing.T) {
 				})
 			},
 			func(api *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
-				res, err := api.Chat.Chatters.List().BroadcasterID("1234").ModeratorID("5678").Do(context.Background(), opts...)
+				res, err := api.Chat.Chatters.List("1234", "5678").Do(context.Background(), opts...)
 				return func(t *testing.T) {
 					require.Len(t, chatters, res.Total)
 					require.ElementsMatch(t, res.Data, chatters)
@@ -49,7 +49,7 @@ func TestAPITest(t *testing.T) {
 				})
 			},
 			func(api *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
-				res, err := api.Chat.Chatters.List().BroadcasterID("1234").ModeratorID("5678").Do(context.Background(), opts...)
+				res, err := api.Chat.Chatters.List("1234", "5678").Do(context.Background(), opts...)
 				return func(t *testing.T) {
 					require.Len(t, chatters, res.Total)
 					require.ElementsMatch(t, res.Data, chatters)
@@ -66,7 +66,7 @@ func TestAPITest(t *testing.T) {
 				})
 			},
 			func(api *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
-				res, err := api.Chat.Chatters.List().BroadcasterID("1234").ModeratorID("5678").Do(context.Background(), opts...)
+				res, err := api.Chat.Chatters.List("1234", "5678").Do(context.Background(), opts...)
 				return func(t *testing.T) {
 					require.Len(t, chatters, res.Total)
 					require.ElementsMatch(t, res.Data, chatters)
@@ -83,7 +83,7 @@ func TestAPITest(t *testing.T) {
 				})
 			},
 			func(api *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
-				res, err := api.Chat.Chatters.List().BroadcasterID("1234").ModeratorID("5678").Do(context.Background(), opts...)
+				res, err := api.Chat.Chatters.List("1234", "5678").Do(context.Background(), opts...)
 				return func(t *testing.T) {
 					require.Len(t, chatters, res.Total)
 					require.ElementsMatch(t, res.Data, chatters)

@@ -55,9 +55,9 @@ func (r *StreamsResource) List() *StreamsListCall {
 }
 
 // ID adds to the ID query parameter.
-func (api *StreamsListCall) ID(iDs ...string) *StreamsListCall {
-	for _, iD := range iDs {
-		api.opts = append(api.opts, AddQueryParameter("id", iD))
+func (api *StreamsListCall) ID(ids ...string) *StreamsListCall {
+	for _, id := range ids {
+		api.opts = append(api.opts, AddQueryParameter("id", id))
 	}
 	return api
 }

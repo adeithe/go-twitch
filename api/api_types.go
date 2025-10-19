@@ -1645,6 +1645,28 @@ type ChannelTeam struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
+// Team represents a Twitch team.
+type Team struct {
+	// ID is the ID that uniquely identifies the team.
+	ID string `json:"id"`
+	// TeamName is the name of the team.
+	TeamName string `json:"team_name"`
+	// ThumbnailURL is the URL to the thumbnail of the team.
+	ThumbnailURL string `json:"thumbnail_url"`
+	// BackgroundImageURL is the URL to the background image of the team.
+	BackgroundImageURL string `json:"background_image_url"`
+	// Banner is the URL to the banner of the team.
+	Banner string `json:"banner"`
+	// Info is the description of the team.
+	Info string `json:"info"`
+	// Users is a list of users that are members of the team.
+	Users []UserInfo `json:"users"`
+	// CreatedAt is the UTC timestamp of when the team was created.
+	CreatedAt time.Time `json:"created_at"`
+	// UpdatedAt is the UTC timestamp of when the team was last updated.
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
 // User represents a Twitch user.
 type User struct {
 	// UserID is the ID of the user.
@@ -1793,4 +1815,21 @@ func (d *VideoDuration) UnmarshalJSON(data []byte) error {
 // AsDuration converts the VideoDuration to a time.Duration.
 func (d VideoDuration) AsDuration() time.Duration {
 	return time.Duration(d)
+}
+
+// NewWebhookTransport creates a new webhook transport for a Twitch Eventsub Conduit Shard.
+func NewWebhookTransport(callback, secret string) Transport {
+	return Transport{
+		Method:   "webhook",
+		Callback: &callback,
+		Secret:   &secret,
+	}
+}
+
+// NewWebSocketTransport creates a new websocket transport for a Twitch Eventsub Conduit Shard.
+func NewWebSocketTransport(sessionID string) Transport {
+	return Transport{
+		Method:    "websocket",
+		SessionID: &sessionID,
+	}
 }

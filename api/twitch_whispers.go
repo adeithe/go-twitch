@@ -54,8 +54,12 @@ type SendWhisperInsertResponse struct {
 // Check the [Official Twitch Documentation] for more information.
 //
 // [Official Twitch Documentation]: https://dev.twitch.tv/docs/api/reference/#send-whisper
-func (r *WhispersResource) Insert() *SendWhisperInsertCall {
-	return &SendWhisperInsertCall{resource: r, body: make(map[string]any)}
+func (r *WhispersResource) Insert(fromUserID string, toUserID string, message string) *SendWhisperInsertCall {
+	c := &SendWhisperInsertCall{resource: r, body: make(map[string]any)}
+	return c.
+		FromUserID(fromUserID).
+		ToUserID(toUserID).
+		Message(message)
 }
 
 // FromUserID sets the FromUserID query parameter.

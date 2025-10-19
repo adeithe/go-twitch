@@ -69,8 +69,10 @@ type ChannelEditorsListResponse struct {
 // Check the [Official Twitch Documentation] for more information.
 //
 // [Official Twitch Documentation]: https://dev.twitch.tv/docs/api/reference/#get-channel-editors
-func (r *ChannelsEditorsResource) List() *ChannelEditorsListCall {
-	return &ChannelEditorsListCall{resource: r}
+func (r *ChannelsEditorsResource) List(broadcasterID string) *ChannelEditorsListCall {
+	c := &ChannelEditorsListCall{resource: r}
+	return c.
+		BroadcasterID(broadcasterID)
 }
 
 // BroadcasterID sets the BroadcasterID query parameter.
@@ -147,8 +149,10 @@ type ChannelsFollowedListResponse struct {
 // Check the [Official Twitch Documentation] for more information.
 //
 // [Official Twitch Documentation]: https://dev.twitch.tv/docs/api/reference/#get-followed-channels
-func (r *ChannelsFollowedResource) List() *ChannelsFollowedListCall {
-	return &ChannelsFollowedListCall{resource: r}
+func (r *ChannelsFollowedResource) List(userID string) *ChannelsFollowedListCall {
+	c := &ChannelsFollowedListCall{resource: r}
+	return c.
+		UserID(userID)
 }
 
 // UserID sets the UserID query parameter.
@@ -247,8 +251,10 @@ type ChannelFollowersListResponse struct {
 // Check the [Official Twitch Documentation] for more information.
 //
 // [Official Twitch Documentation]: https://dev.twitch.tv/docs/api/reference/#get-channel-followers
-func (r *ChannelsFollowersResource) List() *ChannelFollowersListCall {
-	return &ChannelFollowersListCall{resource: r}
+func (r *ChannelsFollowersResource) List(broadcasterID string) *ChannelFollowersListCall {
+	c := &ChannelFollowersListCall{resource: r}
+	return c.
+		BroadcasterID(broadcasterID)
 }
 
 // UserID sets the UserID query parameter.
@@ -330,8 +336,10 @@ type ChannelInformationListResponse struct {
 // Check the [Official Twitch Documentation] for more information.
 //
 // [Official Twitch Documentation]: https://dev.twitch.tv/docs/api/reference/#get-channel-information
-func (r *ChannelsResource) List() *ChannelInformationListCall {
-	return &ChannelInformationListCall{resource: r}
+func (r *ChannelsResource) List(broadcasterID string) *ChannelInformationListCall {
+	c := &ChannelInformationListCall{resource: r}
+	return c.
+		BroadcasterID(broadcasterID)
 }
 
 // BroadcasterID adds to the BroadcasterID query parameter.
@@ -394,8 +402,10 @@ type ChannelInformationModifyResponse struct {
 // Check the [Official Twitch Documentation] for more information.
 //
 // [Official Twitch Documentation]: https://dev.twitch.tv/docs/api/reference/#modify-channel-information
-func (r *ChannelsResource) Modify() *ChannelInformationModifyCall {
-	return &ChannelInformationModifyCall{resource: r, body: make(map[string]any)}
+func (r *ChannelsResource) Modify(broadcasterID string) *ChannelInformationModifyCall {
+	c := &ChannelInformationModifyCall{resource: r, body: make(map[string]any)}
+	return c.
+		BroadcasterID(broadcasterID)
 }
 
 // BroadcasterID sets the BroadcasterID query parameter.
@@ -423,13 +433,13 @@ func (api *ChannelInformationModifyCall) Title(title string) *ChannelInformation
 }
 
 // Tags sets the Tags body parameter.
-func (api *ChannelInformationModifyCall) Tags(tagss string) *ChannelInformationModifyCall {
+func (api *ChannelInformationModifyCall) Tags(tagss ...string) *ChannelInformationModifyCall {
 	api.body["tags"] = tagss
 	return api
 }
 
 // ContentClassificationLabels sets the ContentClassificationLabels body parameter.
-func (api *ChannelInformationModifyCall) ContentClassificationLabels(contentClassificationLabelss ChannelContentClassificationLabel) *ChannelInformationModifyCall {
+func (api *ChannelInformationModifyCall) ContentClassificationLabels(contentClassificationLabelss ...ChannelContentClassificationLabel) *ChannelInformationModifyCall {
 	api.body["content_classification_labels"] = contentClassificationLabelss
 	return api
 }

@@ -66,8 +66,10 @@ type ClipsDownloadListResponse struct {
 // Check the [Official Twitch Documentation] for more information.
 //
 // [Official Twitch Documentation]: https://dev.twitch.tv/docs/api/reference/#get-clips-download
-func (r *ClipsDownloadResource) List() *ClipsDownloadListCall {
-	return &ClipsDownloadListCall{resource: r}
+func (r *ClipsDownloadResource) List(clipID string) *ClipsDownloadListCall {
+	c := &ClipsDownloadListCall{resource: r}
+	return c.
+		ClipID(clipID)
 }
 
 // ClipID sets the ClipID query parameter.
@@ -141,8 +143,10 @@ type CreateClipInsertResponse struct {
 // Check the [Official Twitch Documentation] for more information.
 //
 // [Official Twitch Documentation]: https://dev.twitch.tv/docs/api/reference/#create-clip
-func (r *ClipsResource) Insert() *CreateClipInsertCall {
-	return &CreateClipInsertCall{resource: r}
+func (r *ClipsResource) Insert(broadcasterID string) *CreateClipInsertCall {
+	c := &CreateClipInsertCall{resource: r}
+	return c.
+		BroadcasterID(broadcasterID)
 }
 
 // BroadcasterID sets the BroadcasterID query parameter.
@@ -203,6 +207,14 @@ type ClipsListResponse struct {
 
 // List creates a new GET request to /helix/clips.
 //
+// Gets one or more video clips that were captured from streams.
+//
+// At least one of ID, GameID, and BroadcasterID are required. They are mutually exclusive.
+//
+// # Authorization
+//
+// Requires an app access token or user access token.
+//
 // Check the [Official Twitch Documentation] for more information.
 //
 // [Official Twitch Documentation]: https://dev.twitch.tv/docs/api/reference/#get-clips
@@ -211,9 +223,9 @@ func (r *ClipsResource) List() *ClipsListCall {
 }
 
 // ID adds to the ID query parameter.
-func (api *ClipsListCall) ID(iDs ...string) *ClipsListCall {
-	for _, iD := range iDs {
-		api.opts = append(api.opts, AddQueryParameter("id", iD))
+func (api *ClipsListCall) ID(ids ...string) *ClipsListCall {
+	for _, id := range ids {
+		api.opts = append(api.opts, AddQueryParameter("id", id))
 	}
 	return api
 }

@@ -141,13 +141,17 @@ type BitsExtensionTransactionsListResponse struct {
 // Check the [Official Twitch Documentation] for more information.
 //
 // [Official Twitch Documentation]: https://dev.twitch.tv/docs/api/reference/#get-extension-transactions
-func (r *BitsExtensionsResource) List() *BitsExtensionTransactionsListCall {
-	return &BitsExtensionTransactionsListCall{resource: r}
+func (r *BitsExtensionsResource) List(extensionID string) *BitsExtensionTransactionsListCall {
+	c := &BitsExtensionTransactionsListCall{resource: r}
+	return c.
+		ExtensionID(extensionID)
 }
 
-// ID sets the ID query parameter.
-func (api *BitsExtensionTransactionsListCall) ID(iD string) *BitsExtensionTransactionsListCall {
-	api.opts = append(api.opts, SetQueryParameter("id", iD))
+// ID adds to the ID query parameter.
+func (api *BitsExtensionTransactionsListCall) ID(ids ...string) *BitsExtensionTransactionsListCall {
+	for _, id := range ids {
+		api.opts = append(api.opts, AddQueryParameter("id", id))
+	}
 	return api
 }
 

@@ -63,8 +63,10 @@ type SnoozeNextAdInsertResponse struct {
 // Check the [Official Twitch Documentation] for more information.
 //
 // [Official Twitch Documentation]: https://dev.twitch.tv/docs/api/reference/#snooze-next-ad
-func (r *AdsSnoozeResource) Insert() *SnoozeNextAdInsertCall {
-	return &SnoozeNextAdInsertCall{resource: r}
+func (r *AdsSnoozeResource) Insert(broadcasterID string) *SnoozeNextAdInsertCall {
+	c := &SnoozeNextAdInsertCall{resource: r}
+	return c.
+		BroadcasterID(broadcasterID)
 }
 
 // BroadcasterID sets the BroadcasterID query parameter.
@@ -128,8 +130,11 @@ type StartCommercialInsertResponse struct {
 // Check the [Official Twitch Documentation] for more information.
 //
 // [Official Twitch Documentation]: https://dev.twitch.tv/docs/api/reference/#start-commercial
-func (r *AdsResource) Insert() *StartCommercialInsertCall {
-	return &StartCommercialInsertCall{resource: r, body: make(map[string]any)}
+func (r *AdsResource) Insert(broadcasterID string, length int) *StartCommercialInsertCall {
+	c := &StartCommercialInsertCall{resource: r, body: make(map[string]any)}
+	return c.
+		BroadcasterID(broadcasterID).
+		Length(length)
 }
 
 // BroadcasterID sets the BroadcasterID body parameter.
@@ -202,8 +207,10 @@ type AdScheduleListResponse struct {
 // Check the [Official Twitch Documentation] for more information.
 //
 // [Official Twitch Documentation]: https://dev.twitch.tv/docs/api/reference/#get-ad-schedule
-func (r *AdsResource) List() *AdScheduleListCall {
-	return &AdScheduleListCall{resource: r}
+func (r *AdsResource) List(broadcasterID string) *AdScheduleListCall {
+	c := &AdScheduleListCall{resource: r}
+	return c.
+		BroadcasterID(broadcasterID)
 }
 
 // BroadcasterID sets the BroadcasterID query parameter.

@@ -18,15 +18,16 @@ type Client struct {
 	Ads           *AdsResource
 	Analytics     *AnalyticsResource
 	Bits          *BitsResource
-	Channels      *ChannelsResource
 	ChannelPoints *ChannelPointsResource
+	Channels      *ChannelsResource
 	Charity       *CharityResource
 	Chat          *ChatResource
 	Clips         *ClipsResource
 	Conduits      *ConduitsResource
+	ContentLabels *ContentLabelsResource
 	Entitlements  *EntitlementsResource
-	Extensions    *ExtensionsResource
 	EventSub      *EventSubResource
+	Extensions    *ExtensionsResource
 	Games         *GamesResource
 	Goals         *GoalsResource
 	GuestStar     *GuestStarResource
@@ -60,15 +61,16 @@ func New(clientID string, opts ...ClientOption) *Client {
 	client.Ads = NewAdsResource(client)
 	client.Analytics = NewAnalyticsResource(client)
 	client.Bits = NewBitsResource(client)
-	client.Channels = NewChannelsResource(client)
 	client.ChannelPoints = NewChannelPointsResource(client)
+	client.Channels = NewChannelsResource(client)
 	client.Charity = NewCharityResource(client)
 	client.Chat = NewChatResource(client)
 	client.Clips = NewClipsResource(client)
 	client.Conduits = NewConduitsResource(client)
+	client.ContentLabels = NewContentLabelsResource(client)
 	client.Entitlements = NewEntitlementsResource(client)
-	client.Extensions = NewExtensionsResource(client)
 	client.EventSub = NewEventSubResource(client)
+	client.Extensions = NewExtensionsResource(client)
 	client.Games = NewGamesResource(client)
 	client.Goals = NewGoalsResource(client)
 	client.GuestStar = NewGuestStarResource(client)

@@ -65,8 +65,10 @@ type ConduitsShardListResponse struct {
 // Check the [Official Twitch Documentation] for more information.
 //
 // [Official Twitch Documentation]: https://dev.twitch.tv/docs/api/reference/#get-conduits-shards
-func (r *ConduitsShardsResource) List() *ConduitsShardListCall {
-	return &ConduitsShardListCall{resource: r}
+func (r *ConduitsShardsResource) List(conduitID string) *ConduitsShardListCall {
+	c := &ConduitsShardListCall{resource: r}
+	return c.
+		ConduitID(conduitID)
 }
 
 // ConduitID sets the ConduitID query parameter.
@@ -143,18 +145,21 @@ type ConduitsShardModifyResponse struct {
 // Check the [Official Twitch Documentation] for more information.
 //
 // [Official Twitch Documentation]: https://dev.twitch.tv/docs/api/reference/#update-conduit-shards
-func (r *ConduitsShardsResource) Modify() *ConduitsShardModifyCall {
-	return &ConduitsShardModifyCall{resource: r, body: make(map[string]any)}
+func (r *ConduitsShardsResource) Modify(conduitID string, shards ConduitShard) *ConduitsShardModifyCall {
+	c := &ConduitsShardModifyCall{resource: r, body: make(map[string]any)}
+	return c.
+		ConduitID(conduitID).
+		Shards(shards)
 }
 
 // ConduitID sets the ConduitID body parameter.
 func (api *ConduitsShardModifyCall) ConduitID(conduitID string) *ConduitsShardModifyCall {
-	api.body["conduit_id"] = conduitID
+	api.body["conduitID"] = conduitID
 	return api
 }
 
 // Shards sets the Shards body parameter.
-func (api *ConduitsShardModifyCall) Shards(shardss ConduitShard) *ConduitsShardModifyCall {
+func (api *ConduitsShardModifyCall) Shards(shardss ...ConduitShard) *ConduitsShardModifyCall {
 	api.body["shards"] = shardss
 	return api
 }
@@ -273,8 +278,10 @@ type ConduitsInsertResponse struct {
 // Check the [Official Twitch Documentation] for more information.
 //
 // [Official Twitch Documentation]: https://dev.twitch.tv/docs/api/reference/#create-conduits
-func (r *ConduitsResource) Insert() *ConduitsInsertCall {
-	return &ConduitsInsertCall{resource: r, body: make(map[string]any)}
+func (r *ConduitsResource) Insert(shardCount int) *ConduitsInsertCall {
+	c := &ConduitsInsertCall{resource: r, body: make(map[string]any)}
+	return c.
+		ShardCount(shardCount)
 }
 
 // ShardCount sets the ShardCount body parameter.
@@ -332,7 +339,7 @@ type ConduitsModifyResponse struct {
 
 // Modify creates a new PATCH request to /helix/eventsub/conduits.
 //
-// Updates a conduit’s shard count.
+// Updates a conduit's shard count.
 // To delete shards, update the count to a lower number, and the shards above the count will be deleted.
 // For example, if the existing shard count is 100, by resetting shard count to 50, shards 50-99 are disabled.
 //
@@ -343,13 +350,16 @@ type ConduitsModifyResponse struct {
 // Check the [Official Twitch Documentation] for more information.
 //
 // [Official Twitch Documentation]: https://dev.twitch.tv/docs/api/reference/#update-conduits
-func (r *ConduitsResource) Modify() *ConduitsModifyCall {
-	return &ConduitsModifyCall{resource: r, body: make(map[string]any)}
+func (r *ConduitsResource) Modify(id string, shardCount int) *ConduitsModifyCall {
+	c := &ConduitsModifyCall{resource: r, body: make(map[string]any)}
+	return c.
+		ID(id).
+		ShardCount(shardCount)
 }
 
 // ID sets the ID body parameter.
-func (api *ConduitsModifyCall) ID(iD string) *ConduitsModifyCall {
-	api.body["id"] = iD
+func (api *ConduitsModifyCall) ID(id string) *ConduitsModifyCall {
+	api.body["id"] = id
 	return api
 }
 
@@ -416,13 +426,15 @@ type ConduitsDeleteResponse struct {
 // Check the [Official Twitch Documentation] for more information.
 //
 // [Official Twitch Documentation]: https://dev.twitch.tv/docs/api/reference/#delete-conduit
-func (r *ConduitsResource) Delete() *ConduitsDeleteCall {
-	return &ConduitsDeleteCall{resource: r}
+func (r *ConduitsResource) Delete(id string) *ConduitsDeleteCall {
+	c := &ConduitsDeleteCall{resource: r}
+	return c.
+		ID(id)
 }
 
 // ID sets the ID query parameter.
-func (api *ConduitsDeleteCall) ID(iD string) *ConduitsDeleteCall {
-	api.opts = append(api.opts, SetQueryParameter("id", iD))
+func (api *ConduitsDeleteCall) ID(id string) *ConduitsDeleteCall {
+	api.opts = append(api.opts, SetQueryParameter("id", id))
 	return api
 }
 

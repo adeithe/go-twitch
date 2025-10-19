@@ -189,15 +189,9 @@ func (api *GameAnalyticsListCall) Type(t string) *GameAnalyticsListCall {
 	return api
 }
 
-// StartedAt sets the StartedAt query parameter.
-func (api *GameAnalyticsListCall) StartedAt(startedAt time.Time) *GameAnalyticsListCall {
-	api.opts = append(api.opts, SetQueryParameter("started_at", startedAt.Format(time.RFC3339)))
-	return api
-}
-
-// EndedAt sets the EndedAt query parameter.
-func (api *GameAnalyticsListCall) EndedAt(endedAt time.Time) *GameAnalyticsListCall {
-	api.opts = append(api.opts, SetQueryParameter("ended_at", endedAt.Format(time.RFC3339)))
+// After sets the After query parameter.
+func (api *GameAnalyticsListCall) After(after string) *GameAnalyticsListCall {
+	api.opts = append(api.opts, SetQueryParameter("after", after))
 	return api
 }
 
@@ -207,9 +201,15 @@ func (api *GameAnalyticsListCall) First(first int) *GameAnalyticsListCall {
 	return api
 }
 
-// After sets the After query parameter.
-func (api *GameAnalyticsListCall) After(after string) *GameAnalyticsListCall {
-	api.opts = append(api.opts, SetQueryParameter("after", after))
+// StartedAt sets the StartedAt query parameter.
+func (api *GameAnalyticsListCall) StartedAt(startedAt time.Time) *GameAnalyticsListCall {
+	api.opts = append(api.opts, SetQueryParameter("started_at", startedAt.Format(time.RFC3339)))
+	return api
+}
+
+// EndedAt sets the EndedAt query parameter.
+func (api *GameAnalyticsListCall) EndedAt(endedAt time.Time) *GameAnalyticsListCall {
+	api.opts = append(api.opts, SetQueryParameter("ended_at", endedAt.Format(time.RFC3339)))
 	return api
 }
 

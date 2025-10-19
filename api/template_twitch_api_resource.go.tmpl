@@ -1,6 +1,6 @@
-{{ $ResourceName := ResourceName . }}
-// {{ ResourceName . }} represents the Twitch {{ .Name }} API.
-type {{ ResourceName . }} struct {
+{{ $ResourceName := .ResourceName }}
+// {{ $ResourceName }} represents the Twitch {{ .Name }} API.
+type {{ $ResourceName }} struct {
 	client *Client
 {{- if gt (len .SubResources) 0 }}
 {{ range .SubResources }}

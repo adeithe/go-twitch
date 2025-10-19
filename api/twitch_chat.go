@@ -153,8 +153,10 @@ type ChannelChatBadgesListResponse struct {
 // Check the [Official Twitch Documentation] for more information.
 //
 // [Official Twitch Documentation]: https://dev.twitch.tv/docs/api/reference/#get-channel-chat-badges
-func (r *ChatBadgesResource) List() *ChannelChatBadgesListCall {
-	return &ChannelChatBadgesListCall{resource: r}
+func (r *ChatBadgesResource) List(broadcasterID string) *ChannelChatBadgesListCall {
+	c := &ChannelChatBadgesListCall{resource: r}
+	return c.
+		BroadcasterID(broadcasterID)
 }
 
 // BroadcasterID sets the BroadcasterID query parameter.
@@ -256,8 +258,10 @@ type UserChatColorListResponse struct {
 // Check the [Official Twitch Documentation] for more information.
 //
 // [Official Twitch Documentation]: https://dev.twitch.tv/docs/api/reference/#get-user-chat-color
-func (r *ChatChattersUserColorResource) List() *UserChatColorListCall {
-	return &UserChatColorListCall{resource: r}
+func (r *ChatChattersUserColorResource) List(userID string) *UserChatColorListCall {
+	c := &UserChatColorListCall{resource: r}
+	return c.
+		UserID(userID)
 }
 
 // UserID adds to the UserID query parameter.
@@ -319,8 +323,11 @@ type UserChatColorUpdateResponse struct {
 // Check the [Official Twitch Documentation] for more information.
 //
 // [Official Twitch Documentation]: https://dev.twitch.tv/docs/api/reference/#update-user-chat-color
-func (r *ChatChattersUserColorResource) Update() *UserChatColorUpdateCall {
-	return &UserChatColorUpdateCall{resource: r}
+func (r *ChatChattersUserColorResource) Update(userID string, color string) *UserChatColorUpdateCall {
+	c := &UserChatColorUpdateCall{resource: r}
+	return c.
+		UserID(userID).
+		Color(color)
 }
 
 // UserID sets the UserID query parameter.
@@ -394,8 +401,11 @@ type ChatChattersListResponse struct {
 // Check the [Official Twitch Documentation] for more information.
 //
 // [Official Twitch Documentation]: https://dev.twitch.tv/docs/api/reference/#get-chatters
-func (r *ChatChattersResource) List() *ChatChattersListCall {
-	return &ChatChattersListCall{resource: r}
+func (r *ChatChattersResource) List(broadcasterID string, moderatorID string) *ChatChattersListCall {
+	c := &ChatChattersListCall{resource: r}
+	return c.
+		BroadcasterID(broadcasterID).
+		ModeratorID(moderatorID)
 }
 
 // BroadcasterID sets the BroadcasterID query parameter.
@@ -511,8 +521,10 @@ type ChannelEmotesListResponse struct {
 // Check the [Official Twitch Documentation] for more information.
 //
 // [Official Twitch Documentation]: https://dev.twitch.tv/docs/api/reference/#get-channel-emotes
-func (r *ChatEmotesChannelResource) List() *ChannelEmotesListCall {
-	return &ChannelEmotesListCall{resource: r}
+func (r *ChatEmotesChannelResource) List(broadcasterID string) *ChannelEmotesListCall {
+	c := &ChannelEmotesListCall{resource: r}
+	return c.
+		BroadcasterID(broadcasterID)
 }
 
 // BroadcasterID sets the BroadcasterID query parameter.
@@ -657,8 +669,10 @@ type UserEmotesListResponse struct {
 // Check the [Official Twitch Documentation] for more information.
 //
 // [Official Twitch Documentation]: https://dev.twitch.tv/docs/api/reference/#get-user-emotes
-func (r *ChatEmotesUserResource) List() *UserEmotesListCall {
-	return &UserEmotesListCall{resource: r}
+func (r *ChatEmotesUserResource) List(userID string) *UserEmotesListCall {
+	c := &UserEmotesListCall{resource: r}
+	return c.
+		UserID(userID)
 }
 
 // UserID sets the UserID query parameter.
@@ -746,8 +760,10 @@ type EmoteSetsListResponse struct {
 // Check the [Official Twitch Documentation] for more information.
 //
 // [Official Twitch Documentation]: https://dev.twitch.tv/docs/api/reference/#get-emote-sets
-func (r *ChatEmoteSetsResource) List() *EmoteSetsListCall {
-	return &EmoteSetsListCall{resource: r}
+func (r *ChatEmoteSetsResource) List(emoteSetID string) *EmoteSetsListCall {
+	c := &EmoteSetsListCall{resource: r}
+	return c.
+		EmoteSetID(emoteSetID)
 }
 
 // EmoteSetID adds to the EmoteSetID query parameter.
@@ -821,8 +837,11 @@ type ChatSettingsListResponse struct {
 // Check the [Official Twitch Documentation] for more information.
 //
 // [Official Twitch Documentation]: https://dev.twitch.tv/docs/api/reference/#get-chat-settings
-func (r *ChatSettingsResource) List() *ChatSettingsListCall {
-	return &ChatSettingsListCall{resource: r}
+func (r *ChatSettingsResource) List(broadcasterID string, moderatorID string) *ChatSettingsListCall {
+	c := &ChatSettingsListCall{resource: r}
+	return c.
+		BroadcasterID(broadcasterID).
+		ModeratorID(moderatorID)
 }
 
 // BroadcasterID sets the BroadcasterID query parameter.
@@ -891,8 +910,11 @@ type ChatSettingsModifyResponse struct {
 // Check the [Official Twitch Documentation] for more information.
 //
 // [Official Twitch Documentation]: https://dev.twitch.tv/docs/api/reference/#update-chat-settings
-func (r *ChatSettingsResource) Modify() *ChatSettingsModifyCall {
-	return &ChatSettingsModifyCall{resource: r, body: make(map[string]any)}
+func (r *ChatSettingsResource) Modify(broadcasterID string, moderatorID string) *ChatSettingsModifyCall {
+	c := &ChatSettingsModifyCall{resource: r, body: make(map[string]any)}
+	return c.
+		BroadcasterID(broadcasterID).
+		ModeratorID(moderatorID)
 }
 
 // BroadcasterID sets the BroadcasterID query parameter.
@@ -909,55 +931,55 @@ func (api *ChatSettingsModifyCall) ModeratorID(moderatorID string) *ChatSettings
 
 // EmoteMode sets the EmoteMode body parameter.
 func (api *ChatSettingsModifyCall) EmoteMode(emoteMode bool) *ChatSettingsModifyCall {
-	api.body["emote_mode"] = emoteMode
+	api.body["emoteMode"] = emoteMode
 	return api
 }
 
 // FollowerMode sets the FollowerMode body parameter.
 func (api *ChatSettingsModifyCall) FollowerMode(followerMode bool) *ChatSettingsModifyCall {
-	api.body["follower_mode"] = followerMode
+	api.body["followerMode"] = followerMode
 	return api
 }
 
 // FollowerModeDuration sets the FollowerModeDuration body parameter.
 func (api *ChatSettingsModifyCall) FollowerModeDuration(followerModeDuration int) *ChatSettingsModifyCall {
-	api.body["follower_mode_duration"] = followerModeDuration
+	api.body["followerModeDuration"] = followerModeDuration
 	return api
 }
 
 // NonModeratorChatDelay sets the NonModeratorChatDelay body parameter.
 func (api *ChatSettingsModifyCall) NonModeratorChatDelay(nonModeratorChatDelay bool) *ChatSettingsModifyCall {
-	api.body["non_moderator_chat_delay"] = nonModeratorChatDelay
+	api.body["nonModeratorChatDelay"] = nonModeratorChatDelay
 	return api
 }
 
 // NonModeratorChatDelayDuration sets the NonModeratorChatDelayDuration body parameter.
 func (api *ChatSettingsModifyCall) NonModeratorChatDelayDuration(nonModeratorChatDelayDuration int) *ChatSettingsModifyCall {
-	api.body["non_moderator_chat_delay_duration"] = nonModeratorChatDelayDuration
+	api.body["nonModeratorChatDelayDuration"] = nonModeratorChatDelayDuration
 	return api
 }
 
 // SlowMode sets the SlowMode body parameter.
 func (api *ChatSettingsModifyCall) SlowMode(slowMode bool) *ChatSettingsModifyCall {
-	api.body["slow_mode"] = slowMode
+	api.body["slowMode"] = slowMode
 	return api
 }
 
 // SlowModeWaitTime sets the SlowModeWaitTime body parameter.
 func (api *ChatSettingsModifyCall) SlowModeWaitTime(slowModeWaitTime int) *ChatSettingsModifyCall {
-	api.body["slow_mode_wait_time"] = slowModeWaitTime
+	api.body["slowModeWaitTime"] = slowModeWaitTime
 	return api
 }
 
 // SubscriberMode sets the SubscriberMode body parameter.
 func (api *ChatSettingsModifyCall) SubscriberMode(subscriberMode bool) *ChatSettingsModifyCall {
-	api.body["subscriber_mode"] = subscriberMode
+	api.body["subscriberMode"] = subscriberMode
 	return api
 }
 
 // UniqueChatMode sets the UniqueChatMode body parameter.
 func (api *ChatSettingsModifyCall) UniqueChatMode(uniqueChatMode bool) *ChatSettingsModifyCall {
-	api.body["unique_chat_mode"] = uniqueChatMode
+	api.body["uniqueChatMode"] = uniqueChatMode
 	return api
 }
 
@@ -1029,8 +1051,10 @@ type SharedChatSessionListResponse struct {
 // Check the [Official Twitch Documentation] for more information.
 //
 // [Official Twitch Documentation]: https://dev.twitch.tv/docs/api/reference/#get-shared-chat-session
-func (r *ChatSharedResource) List() *SharedChatSessionListCall {
-	return &SharedChatSessionListCall{resource: r}
+func (r *ChatSharedResource) List(broadcasterID string) *SharedChatSessionListCall {
+	c := &SharedChatSessionListCall{resource: r}
+	return c.
+		BroadcasterID(broadcasterID)
 }
 
 // BroadcasterID sets the BroadcasterID query parameter.
@@ -1105,8 +1129,12 @@ type ChatAnnouncementInsertResponse struct {
 // Check the [Official Twitch Documentation] for more information.
 //
 // [Official Twitch Documentation]: https://dev.twitch.tv/docs/api/reference/#send-chat-announcement
-func (r *ChatAnnouncementResource) Insert() *ChatAnnouncementInsertCall {
-	return &ChatAnnouncementInsertCall{resource: r, body: make(map[string]any)}
+func (r *ChatAnnouncementResource) Insert(broadcasterID string, moderatorID string, message string) *ChatAnnouncementInsertCall {
+	c := &ChatAnnouncementInsertCall{resource: r, body: make(map[string]any)}
+	return c.
+		BroadcasterID(broadcasterID).
+		ModeratorID(moderatorID).
+		Message(message)
 }
 
 // BroadcasterID sets the BroadcasterID query parameter.
@@ -1204,8 +1232,12 @@ type ChatShoutoutInsertResponse struct {
 // Check the [Official Twitch Documentation] for more information.
 //
 // [Official Twitch Documentation]: https://dev.twitch.tv/docs/api/reference/#send-a-shoutout
-func (r *ChatShoutoutResource) Insert() *ChatShoutoutInsertCall {
-	return &ChatShoutoutInsertCall{resource: r}
+func (r *ChatShoutoutResource) Insert(fromBroadcasterID string, toBroadcasterID string, moderatorID string) *ChatShoutoutInsertCall {
+	c := &ChatShoutoutInsertCall{resource: r}
+	return c.
+		FromBroadcasterID(fromBroadcasterID).
+		ToBroadcasterID(toBroadcasterID).
+		ModeratorID(moderatorID)
 }
 
 // FromBroadcasterID sets the FromBroadcasterID query parameter.
@@ -1284,8 +1316,12 @@ type SendMessageInsertResponse struct {
 // Check the [Official Twitch Documentation] for more information.
 //
 // [Official Twitch Documentation]: https://dev.twitch.tv/docs/api/reference/#send-chat-message
-func (r *ChatResource) Insert() *SendMessageInsertCall {
-	return &SendMessageInsertCall{resource: r, body: make(map[string]any)}
+func (r *ChatResource) Insert(broadcasterID string, senderID string, message string) *SendMessageInsertCall {
+	c := &SendMessageInsertCall{resource: r, body: make(map[string]any)}
+	return c.
+		BroadcasterID(broadcasterID).
+		SenderID(senderID).
+		Message(message)
 }
 
 // BroadcasterID sets the BroadcasterID body parameter.
@@ -1308,13 +1344,13 @@ func (api *SendMessageInsertCall) Message(message string) *SendMessageInsertCall
 
 // ReplayParentMessageID sets the ReplayParentMessageID body parameter.
 func (api *SendMessageInsertCall) ReplayParentMessageID(replayParentMessageID string) *SendMessageInsertCall {
-	api.body["replay_parent_message_id"] = replayParentMessageID
+	api.body["replayParentMessageID"] = replayParentMessageID
 	return api
 }
 
 // ForSourceOnly sets the ForSourceOnly body parameter.
 func (api *SendMessageInsertCall) ForSourceOnly(forSourceOnly bool) *SendMessageInsertCall {
-	api.body["for_source_only"] = forSourceOnly
+	api.body["forSourceOnly"] = forSourceOnly
 	return api
 }
 

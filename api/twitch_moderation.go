@@ -70,8 +70,12 @@ type BanUserInsertResponse struct {
 // Check the [Official Twitch Documentation] for more information.
 //
 // [Official Twitch Documentation]: https://dev.twitch.tv/docs/api/reference/#ban-user
-func (r *ModerationBansResource) Insert() *BanUserInsertCall {
-	return &BanUserInsertCall{resource: r, body: make(map[string]any)}
+func (r *ModerationBansResource) Insert(broadcasterID string, moderatorID string, bans OutboundBan) *BanUserInsertCall {
+	c := &BanUserInsertCall{resource: r, body: make(map[string]any)}
+	return c.
+		BroadcasterID(broadcasterID).
+		ModeratorID(moderatorID).
+		Bans(bans)
 }
 
 // BroadcasterID sets the BroadcasterID query parameter.
@@ -86,9 +90,9 @@ func (api *BanUserInsertCall) ModeratorID(moderatorID string) *BanUserInsertCall
 	return api
 }
 
-// Data sets the Data body parameter.
-func (api *BanUserInsertCall) Data(datas OutboundBan) *BanUserInsertCall {
-	api.body["data"] = datas
+// Bans sets the Bans body parameter.
+func (api *BanUserInsertCall) Bans(banss ...OutboundBan) *BanUserInsertCall {
+	api.body["data"] = banss
 	return api
 }
 
@@ -148,8 +152,12 @@ type UnbanUserDeleteResponse struct {
 // Check the [Official Twitch Documentation] for more information.
 //
 // [Official Twitch Documentation]: https://dev.twitch.tv/docs/api/reference/#unban-user
-func (r *ModerationBansResource) Delete() *UnbanUserDeleteCall {
-	return &UnbanUserDeleteCall{resource: r}
+func (r *ModerationBansResource) Delete(broadcasterID string, moderatorID string, userID string) *UnbanUserDeleteCall {
+	c := &UnbanUserDeleteCall{resource: r}
+	return c.
+		BroadcasterID(broadcasterID).
+		ModeratorID(moderatorID).
+		UserID(userID)
 }
 
 // BroadcasterID sets the BroadcasterID query parameter.
@@ -230,8 +238,11 @@ type ChatMessagesDeleteResponse struct {
 // Check the [Official Twitch Documentation] for more information.
 //
 // [Official Twitch Documentation]: https://dev.twitch.tv/docs/api/reference/#delete-chat-messages
-func (r *ModerationClearChatResource) Delete() *ChatMessagesDeleteCall {
-	return &ChatMessagesDeleteCall{resource: r}
+func (r *ModerationClearChatResource) Delete(broadcasterID string, moderatorID string) *ChatMessagesDeleteCall {
+	c := &ChatMessagesDeleteCall{resource: r}
+	return c.
+		BroadcasterID(broadcasterID).
+		ModeratorID(moderatorID)
 }
 
 // BroadcasterID sets the BroadcasterID query parameter.

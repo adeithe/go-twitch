@@ -54,9 +54,9 @@ func (r *VideosResource) List() *VideosListCall {
 }
 
 // ID adds to the ID query parameter.
-func (api *VideosListCall) ID(iDs ...string) *VideosListCall {
-	for _, iD := range iDs {
-		api.opts = append(api.opts, AddQueryParameter("id", iD))
+func (api *VideosListCall) ID(ids ...string) *VideosListCall {
+	for _, id := range ids {
+		api.opts = append(api.opts, AddQueryParameter("id", id))
 	}
 	return api
 }
@@ -166,13 +166,15 @@ type VideosDeleteResponse struct {
 // Check the [Official Twitch Documentation] for more information.
 //
 // [Official Twitch Documentation]: https://dev.twitch.tv/docs/api/reference/#delete-videos
-func (r *VideosResource) Delete() *VideosDeleteCall {
-	return &VideosDeleteCall{resource: r}
+func (r *VideosResource) Delete(id string) *VideosDeleteCall {
+	c := &VideosDeleteCall{resource: r}
+	return c.
+		ID(id)
 }
 
 // ID sets the ID query parameter.
-func (api *VideosDeleteCall) ID(iD string) *VideosDeleteCall {
-	api.opts = append(api.opts, SetQueryParameter("id", iD))
+func (api *VideosDeleteCall) ID(id string) *VideosDeleteCall {
+	api.opts = append(api.opts, SetQueryParameter("id", id))
 	return api
 }
 

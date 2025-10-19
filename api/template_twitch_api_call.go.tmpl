@@ -1,10 +1,10 @@
-{{ $EndpointName := EndpointName . }}
-{{ $QueryParams := GetQueryParams . -}}
-{{ $BodyParams := GetBodyParams . -}}
-{{ $ResponseFields := GetResponseFields . -}}
+{{ $EndpointName := .EndpointName }}
+{{ $QueryParams := .GetQueryParams -}}
+{{ $BodyParams := .GetBodyParams -}}
+{{ $ResponseFields := .GetResponseFields -}}
 // {{ $EndpointName }} represents a {{ .Method }} call to a Twitch {{ .Resource.Name }} API endpoint.
 type {{ $EndpointName }} struct {
-	resource *{{ ResourceName .Resource }}
+	resource *{{ .Resource.ResourceName }}
 {{- if gt (len $BodyParams) 0 }}
 	body     map[string]any
 {{- end }}
@@ -42,12 +42,27 @@ type {{ .Name }}{{ MethodName .Method }}Response struct {
 //
 // [Official Twitch Documentation]: {{ .DocsURL }}
 {{- end }}
-func (r *{{ ResourceName .Resource }}) {{ MethodName .Method }}() *{{ $EndpointName }} {
+func (r *{{ .Resource.ResourceName }}) {{ MethodName .Method }}({{ .InitializationParameters }}) *{{ $EndpointName }} {
+{{- if gt (len .InitializationParameters) 0 }}
+	c := &{{ $EndpointName }}{resource: r{{ if .HasBody }}, body: make(map[string]any){{ end }}}
+	return c
+{{- range $QueryParams -}}
+{{- if .Required }}.
+		{{ .Name }}({{ .ParameterName }})
+{{- end -}}
+{{- end -}}
+{{- range $BodyParams -}}
+{{- if .Required }}.
+		{{ .Name }}({{ .ParameterName }})
+{{- end -}}
+{{- end -}}
+{{- else }}
 	return &{{ $EndpointName }}{resource: r{{ if .HasBody }}, body: make(map[string]any){{ end }}}
+{{- end }}
 }
 
 {{- range $QueryParams -}}
-{{ $varName := ToCamelCase .Name }}
+{{ $varName := .ParameterName }}
 {{ $paramName := ToSnakeCase .Name }}
 {{- if eq $varName "type" }}{{ $varName = "t" }}{{ end }}
 // {{ .Name }} {{ if .Slice }}adds to{{else}}sets{{ end }} the {{ .Name }} query parameter.
@@ -63,12 +78,11 @@ func (api *{{ $EndpointName }}) {{ .Name }}({{ $varName }}{{ if .Slice }}s{{ end
 }
 {{- end }}
 
-{{- range $BodyParams -}}
-{{ $varName := ToCamelCase .Name }}
-{{ $paramName := ToSnakeCase .Name }}
+{{- range $BodyParams }}
+{{ $varName := .ParameterName }}
 // {{ .Name }} sets the {{ .Name }} body parameter.
 func (api *{{ $EndpointName }}) {{ .Name }}({{ $varName }}{{ if .Slice }}s{{ end }} {{ .AsVariadicParam }}) *{{ $EndpointName }} {
-	api.body["{{ $paramName }}"] = {{ $varName }}{{ if .Slice }}s{{ end }}
+	api.body["{{ .FieldName }}"] = {{ $varName }}{{ if .Slice }}s{{ end }}
 	return api
 }
 {{- end }}
@@ -87,9 +101,9 @@ func (api *{{ $EndpointName }}) Do(ctx context.Context, opts ...RequestOption) (
 	}
 	defer func() { _ = res.Body.Close() }()
 {{ if (.HasResponseField "Data") }}
-	data, err := decodeResponse[{{ ResponseType . }}](res)
+	data, err := decodeResponse[{{ .ResponseType }}](res)
 {{- else }}
-	_, err = decodeResponse[{{ ResponseType . }}](res)
+	_, err = decodeResponse[{{ .ResponseType }}](res)
 {{- end }}
 	if err != nil {
 		return nil, err
