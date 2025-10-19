@@ -90,8 +90,8 @@ const (
 	EndpointConduits = TwitchAPIVersionHelix + "/eventsub/conduits"
 	// EndpointContentLabels is the endpoint for getting information about content classification labels.
 	EndpointContentLabels = TwitchAPIVersionHelix + "/content_classification_labels"
-	// EndpointEntitlements is the endpoint for the Twitch Entitlements API.
-	EndpointEntitlements = TwitchAPIVersionHelix + "/entitlements/drops"
+	// EndpointEntitlementsDrops is the endpoint for the Twitch Entitlements Drops API.
+	EndpointEntitlementsDrops = TwitchAPIVersionHelix + "/entitlements/drops"
 	// EndpointEventSubSubscriptions is the endpoint for managing EventSub subscriptions.
 	EndpointEventSubSubscriptions = TwitchAPIVersionHelix + "/eventsub/subscriptions"
 	// EndpointExtensionsConfiguration is the endpoint for managing extension configurations.

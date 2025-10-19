@@ -79,6 +79,10 @@ var (
 	ConduitsShardsResource = NewTwitchAPIResource("Shards")
 	// CCLResource is the resource for the Twitch Content Classification Labels API
 	CCLResource = NewTwitchAPIResource("ContentLabels")
+	// EntitlementsResource is the resource for the Twitch Entitlements API
+	EntitlementsResource = NewTwitchAPIResource("Entitlements", EntitlementsDropsResource)
+	// EntitlementsDropsResource is the resource for the Twitch Entitlements Drops API
+	EntitlementsDropsResource = NewTwitchAPIResource("Drops")
 	// GamesResource is the resource for the Twitch Games API
 	GamesResource = NewTwitchAPIResource("Games", GamesTopResource)
 	// GamesTopResource is the resource for the Twitch Games Top API
@@ -104,8 +108,8 @@ var (
 
 	// Resources is the list of top-level API resources to generate. Subresources are included automatically.
 	Resources = []*TwitchAPIResource{
-		AdsResource, AnalyticsResource, BitsResource, ChannelsResource, ChannelPointsResource,
-		CharityResource, ChatResource, ClipsResource, ConduitsResource, CCLResource, GamesResource,
+		AdsResource, AnalyticsResource, BitsResource, ChannelsResource, ChannelPointsResource, CharityResource,
+		ChatResource, ClipsResource, ConduitsResource, CCLResource, EntitlementsResource, GamesResource,
 		ModerationResource, StreamsResource, TeamsResource, UsersResource, VideosResource, WhispersResource,
 	}
 )

@@ -70,12 +70,12 @@ type BanUserInsertResponse struct {
 // Check the [Official Twitch Documentation] for more information.
 //
 // [Official Twitch Documentation]: https://dev.twitch.tv/docs/api/reference/#ban-user
-func (r *ModerationBansResource) Insert(broadcasterID string, moderatorID string, bans OutboundBan) *BanUserInsertCall {
+func (r *ModerationBansResource) Insert(broadcasterID string, moderatorID string, ban OutboundBan) *BanUserInsertCall {
 	c := &BanUserInsertCall{resource: r, body: make(map[string]any)}
 	return c.
 		BroadcasterID(broadcasterID).
 		ModeratorID(moderatorID).
-		Bans(bans)
+		Ban(ban)
 }
 
 // BroadcasterID sets the BroadcasterID query parameter.
@@ -90,9 +90,9 @@ func (api *BanUserInsertCall) ModeratorID(moderatorID string) *BanUserInsertCall
 	return api
 }
 
-// Bans sets the Bans body parameter.
-func (api *BanUserInsertCall) Bans(banss ...OutboundBan) *BanUserInsertCall {
-	api.body["data"] = banss
+// Ban sets the Ban body parameter.
+func (api *BanUserInsertCall) Ban(bans ...OutboundBan) *BanUserInsertCall {
+	api.body["data"] = bans
 	return api
 }
 

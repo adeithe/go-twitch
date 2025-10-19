@@ -920,6 +920,49 @@ var Endpoints = []*TwitchAPIEndpoint{
 		Response: BasicResponse[api.ContentClassificationLabel]{},
 	},
 	// Entitlements
+	{
+		// https://dev.twitch.tv/docs/api/reference/#get-drops-entitlements
+		Resource: EntitlementsDropsResource,
+		Name:     "DropsEntitlements",
+		Method:   http.MethodGet,
+		Path:     api.EndpointEntitlementsDrops,
+		DocsURL:  "#get-drops-entitlements",
+		Comments: []string{
+			"Gets an organization's list of entitlements that have been granted to a game, a user, or both.", "",
+			"Entitlements returned in the response body data are not guaranteed to be sorted by any field returned by the API.",
+			"To retrieve CLAIMED or FULFILLED entitlements, use the FulfillmentStatus method to filter results.",
+			"To retrieve entitlements for a specific game, use the GameID method to filter results.", "",
+			"# Authorization", "", "Requires an app access token or user access token.", "",
+			"The associated Client ID for the access token must be owned by a user who is a member of the organization that holds ownership of the game.",
+		},
+		Params: struct {
+			ID                []string `query:"-"`
+			UserID            string   `query:"-"`
+			GameID            string   `query:"-"`
+			FulfillmentStatus string   `query:"-"`
+			After             string   `query:"-"`
+			First             int      `query:"-"`
+		}{},
+		Response: BasicResponse[api.DropEntitlement]{},
+	},
+	{
+		// https://dev.twitch.tv/docs/api/reference/#update-drops-entitlements
+		Resource: EntitlementsDropsResource,
+		Name:     "DropsEntitlements",
+		Method:   http.MethodPatch,
+		Path:     api.EndpointEntitlementsDrops,
+		DocsURL:  "#update-drops-entitlements",
+		Comments: []string{
+			"Updates the Drop entitlement's fulfillment status.", "",
+			"# Authorization", "", "Requires an app access token or user access token.", "",
+			"The associated Client ID for the access token must be owned by a user who is a member of the organization that holds ownership of the game.",
+		},
+		Params: struct {
+			EntitlementID     []string `body:"entitlement_ids"`
+			FulfillmentStatus string   `body:"fulfillment_status"`
+		}{},
+		Response: BasicResponse[api.UpdatedDropEntitlement]{},
+	},
 	// EventSub
 	// Games
 	{
@@ -977,7 +1020,7 @@ var Endpoints = []*TwitchAPIEndpoint{
 		Params: struct {
 			BroadcasterID string            `query:"-,required"`
 			ModeratorID   string            `query:"-,required"`
-			Bans          []api.OutboundBan `body:"data,required"`
+			Ban           []api.OutboundBan `body:"data,required"`
 		}{},
 		Response: BasicResponse[api.IssuedBan]{},
 	},
