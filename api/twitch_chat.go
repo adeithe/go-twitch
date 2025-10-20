@@ -167,7 +167,7 @@ func (api *ChannelChatBadgesListCall) BroadcasterID(broadcasterID string) *Chann
 
 // Do executes the request.
 func (api *ChannelChatBadgesListCall) Do(ctx context.Context, opts ...RequestOption) (*ChannelChatBadgesListResponse, error) {
-	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/chat/badges", nil, opts...)
+	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/chat/badges", nil, append(api.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}
@@ -274,7 +274,7 @@ func (api *UserChatColorListCall) UserID(userIDs ...string) *UserChatColorListCa
 
 // Do executes the request.
 func (api *UserChatColorListCall) Do(ctx context.Context, opts ...RequestOption) (*UserChatColorListResponse, error) {
-	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/chat/color", nil, opts...)
+	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/chat/color", nil, append(api.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}
@@ -344,7 +344,7 @@ func (api *UserChatColorUpdateCall) Color(color string) *UserChatColorUpdateCall
 
 // Do executes the request.
 func (api *UserChatColorUpdateCall) Do(ctx context.Context, opts ...RequestOption) (*UserChatColorUpdateResponse, error) {
-	res, err := api.resource.client.DoRequest(ctx, "PUT", "/helix/chat/color", nil, opts...)
+	res, err := api.resource.client.DoRequest(ctx, "PUT", "/helix/chat/color", nil, append(api.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}
@@ -434,7 +434,7 @@ func (api *ChatChattersListCall) First(first int) *ChatChattersListCall {
 
 // Do executes the request.
 func (api *ChatChattersListCall) Do(ctx context.Context, opts ...RequestOption) (*ChatChattersListResponse, error) {
-	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/chat/chatters", nil, opts...)
+	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/chat/chatters", nil, append(api.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}
@@ -535,7 +535,7 @@ func (api *ChannelEmotesListCall) BroadcasterID(broadcasterID string) *ChannelEm
 
 // Do executes the request.
 func (api *ChannelEmotesListCall) Do(ctx context.Context, opts ...RequestOption) (*ChannelEmotesListResponse, error) {
-	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/chat/emotes", nil, opts...)
+	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/chat/emotes", nil, append(api.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}
@@ -695,7 +695,7 @@ func (api *UserEmotesListCall) After(after string) *UserEmotesListCall {
 
 // Do executes the request.
 func (api *UserEmotesListCall) Do(ctx context.Context, opts ...RequestOption) (*UserEmotesListResponse, error) {
-	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/chat/emotes/user", nil, opts...)
+	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/chat/emotes/user", nil, append(api.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}
@@ -776,7 +776,7 @@ func (api *EmoteSetsListCall) EmoteSetID(emoteSetIDs ...string) *EmoteSetsListCa
 
 // Do executes the request.
 func (api *EmoteSetsListCall) Do(ctx context.Context, opts ...RequestOption) (*EmoteSetsListResponse, error) {
-	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/chat/emotes/set", nil, opts...)
+	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/chat/emotes/set", nil, append(api.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}
@@ -858,7 +858,7 @@ func (api *ChatSettingsListCall) ModeratorID(moderatorID string) *ChatSettingsLi
 
 // Do executes the request.
 func (api *ChatSettingsListCall) Do(ctx context.Context, opts ...RequestOption) (*ChatSettingsListResponse, error) {
-	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/chat/settings", nil, opts...)
+	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/chat/settings", nil, append(api.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}
@@ -990,7 +990,7 @@ func (api *ChatSettingsModifyCall) Do(ctx context.Context, opts ...RequestOption
 		return nil, err
 	}
 
-	res, err := api.resource.client.DoRequest(ctx, "PATCH", "/helix/chat/settings", bytes.NewReader(bs), opts...)
+	res, err := api.resource.client.DoRequest(ctx, "PATCH", "/helix/chat/settings", bytes.NewReader(bs), append(api.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}
@@ -1065,7 +1065,7 @@ func (api *SharedChatSessionListCall) BroadcasterID(broadcasterID string) *Share
 
 // Do executes the request.
 func (api *SharedChatSessionListCall) Do(ctx context.Context, opts ...RequestOption) (*SharedChatSessionListResponse, error) {
-	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/shared_chat/session", nil, opts...)
+	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/shared_chat/session", nil, append(api.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}
@@ -1168,7 +1168,7 @@ func (api *ChatAnnouncementInsertCall) Do(ctx context.Context, opts ...RequestOp
 		return nil, err
 	}
 
-	res, err := api.resource.client.DoRequest(ctx, "POST", "/helix/chat/announcements", bytes.NewReader(bs), opts...)
+	res, err := api.resource.client.DoRequest(ctx, "POST", "/helix/chat/announcements", bytes.NewReader(bs), append(api.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}
@@ -1260,7 +1260,7 @@ func (api *ChatShoutoutInsertCall) ModeratorID(moderatorID string) *ChatShoutout
 
 // Do executes the request.
 func (api *ChatShoutoutInsertCall) Do(ctx context.Context, opts ...RequestOption) (*ChatShoutoutInsertResponse, error) {
-	res, err := api.resource.client.DoRequest(ctx, "POST", "/helix/chat/shoutouts", nil, opts...)
+	res, err := api.resource.client.DoRequest(ctx, "POST", "/helix/chat/shoutouts", nil, append(api.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}

@@ -150,7 +150,7 @@ func (api *RaidDeleteCall) BroadcasterID(broadcasterID string) *RaidDeleteCall {
 
 // Do executes the request.
 func (api *RaidDeleteCall) Do(ctx context.Context, opts ...RequestOption) (*RaidDeleteResponse, error) {
-	res, err := api.resource.client.DoRequest(ctx, "DELETE", "/helix/raids", nil, opts...)
+	res, err := api.resource.client.DoRequest(ctx, "DELETE", "/helix/raids", nil, append(api.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}

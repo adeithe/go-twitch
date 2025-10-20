@@ -76,7 +76,7 @@ func (api *UsersListCall) Login(logins ...string) *UsersListCall {
 
 // Do executes the request.
 func (api *UsersListCall) Do(ctx context.Context, opts ...RequestOption) (*UsersListResponse, error) {
-	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/users", nil, opts...)
+	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/users", nil, append(api.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}

@@ -87,7 +87,7 @@ func (api *SendWhisperInsertCall) Do(ctx context.Context, opts ...RequestOption)
 		return nil, err
 	}
 
-	res, err := api.resource.client.DoRequest(ctx, "POST", "/helix/whispers", bytes.NewReader(bs), opts...)
+	res, err := api.resource.client.DoRequest(ctx, "POST", "/helix/whispers", bytes.NewReader(bs), append(api.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}

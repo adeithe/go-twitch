@@ -67,7 +67,7 @@ func (api *ExtensionsListCall) ExtensionVersion(extensionVersion string) *Extens
 
 // Do executes the request.
 func (api *ExtensionsListCall) Do(ctx context.Context, opts ...RequestOption) (*ExtensionsListResponse, error) {
-	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/extensions", nil, opts...)
+	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/extensions", nil, append(api.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}

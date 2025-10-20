@@ -91,7 +91,7 @@ func (api *ConduitsShardListCall) After(after string) *ConduitsShardListCall {
 
 // Do executes the request.
 func (api *ConduitsShardListCall) Do(ctx context.Context, opts ...RequestOption) (*ConduitsShardListResponse, error) {
-	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/eventsub/conduits/shards", nil, opts...)
+	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/eventsub/conduits/shards", nil, append(api.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}
@@ -440,7 +440,7 @@ func (api *ConduitsDeleteCall) ID(id string) *ConduitsDeleteCall {
 
 // Do executes the request.
 func (api *ConduitsDeleteCall) Do(ctx context.Context, opts ...RequestOption) (*ConduitsDeleteResponse, error) {
-	res, err := api.resource.client.DoRequest(ctx, "DELETE", "/helix/eventsub/conduits", nil, opts...)
+	res, err := api.resource.client.DoRequest(ctx, "DELETE", "/helix/eventsub/conduits", nil, append(api.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}

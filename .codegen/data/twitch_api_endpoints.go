@@ -1324,7 +1324,7 @@ var Endpoints = []*TwitchAPIEndpoint{
 		Resource: ScheduleResource,
 		Name:     "ChannelStreamSchedule",
 		Method:   http.MethodGet,
-		Path:     api.EndpointScheduleGetChannelCalendar,
+		Path:     api.EndpointScheduleGetChannelStreamSchedule,
 		DocsURL:  "#get-channel-stream-schedule",
 		Comments: []string{
 			"Gets the broadcaster's streaming schedule. You can get the entire schedule or specific segments of the schedule.", "",
@@ -1386,7 +1386,7 @@ var Endpoints = []*TwitchAPIEndpoint{
 			LiveOnly bool   `query:"-"`
 		}{},
 		Response: struct {
-			Data       api.CategorySearchResult
+			Data       api.ChannelSearchResult
 			Pagination api.Pagination
 		}{},
 	},
@@ -1492,7 +1492,7 @@ var Endpoints = []*TwitchAPIEndpoint{
 			After         string `query:"-"`
 			First         int    `query:"-"`
 		}{},
-		Response: BasicResponse[api.StreamMarkerData]{},
+		Response: BasicResponse[api.StreamMarker]{},
 	},
 	// Subscriptions
 	{

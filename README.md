@@ -8,16 +8,18 @@ The library provides access to the Twitch API in order to manage and retrieve in
 
 ### Documentation
 
-The documentation for each API call includes a link to the related Twitch Developer Documentation, making it easy to find related information.
+The documentation for each API call includes a link to the related [Twitch Developer Documentation](https://dev.twitch.tv/docs/api/reference/), making it easy to find related information.
 
 Where possible, required fields are enforced by the call initializers, making it easier to use the API correctly.
 
 > [!IMPORTANT]
-> In some cases, such as where at least one of multiple fields is required, enforcement may not be possible. For this reason, it is recommended to refer to the documentation to ensure correct usage.
+> In some cases, such as where at only one of multiple fields is required, enforcement may not be available. For this reason, it is recommended to refer to the documentation to ensure correct usage.
 
-### Go Version Support
+### Writing Tests
 
-In accordance with the [Go Project's Supported Versions Policy](https://go.dev/doc/devel/release#policy), each Go release is supported until there are two newer major releases. After this period, support for older versions may be dropped in future releases.
+When writing tests for code that uses the Twitch API, it is often useful to mock the API responses. For this reason, the `apitest` package is included to facilitate easy mocking of Twitch API responses.
+
+To use, provide the mocks HTTP client using the `api.WithHTTPClient` option. Failing to set the HTTP client will result in th API request being sent to Twitch.
 
 ### Examples
 
@@ -67,6 +69,10 @@ func main() {
 }
 ```
 </details>
+
+## Go Version Support
+
+In accordance with the [Go Project's Supported Versions Policy](https://go.dev/doc/devel/release#policy), each Go release is supported until there are two newer major releases. After this period, support for older versions may be dropped in future releases.
 
 ## Need Help?
 

@@ -84,7 +84,7 @@ func (api *GuestStarSessionListCall) ModeratorID(moderatorID string) *GuestStarS
 
 // Do executes the request.
 func (api *GuestStarSessionListCall) Do(ctx context.Context, opts ...RequestOption) (*GuestStarSessionListResponse, error) {
-	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/guest_star/session", nil, opts...)
+	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/guest_star/session", nil, append(api.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}

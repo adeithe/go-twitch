@@ -84,7 +84,7 @@ func (api *PollsListCall) First(first int) *PollsListCall {
 
 // Do executes the request.
 func (api *PollsListCall) Do(ctx context.Context, opts ...RequestOption) (*PollsListResponse, error) {
-	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/polls", nil, opts...)
+	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/polls", nil, append(api.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}

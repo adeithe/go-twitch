@@ -1,8 +1,9 @@
 package api
 
 import (
-	"encoding/json"
+	"fmt"
 	"math"
+	"strings"
 	"time"
 )
 
@@ -86,7 +87,7 @@ type GameAnalyticsReport struct {
 	// Type is the type of analytics report.
 	Type string `json:"type"`
 	// DateRange is the date range for which the analytics report was generated.
-	DateRate DateRange `json:"date_range"`
+	DateRange DateRange `json:"date_range"`
 }
 
 // BitsLeaderboardEntry represents a leaderboard of users who have spent the most bits in a channel.
@@ -624,11 +625,11 @@ type Transport struct {
 	// Method is the transport method. Possible values are "webhook" and "websocket".
 	Method string `json:"method"`
 	// Callback is the callback URL for webhook transports.
-	Callback *string `json:"callback,omitempty"`
+	Callback string `json:"callback,omitempty"`
 	// Secret is the secret for webhook transports.
-	Secret *string `json:"secret,omitempty"`
+	Secret string `json:"secret,omitempty"`
 	// SessionID is the session ID for websocket transports.
-	SessionID *string `json:"session_id,omitempty"`
+	SessionID string `json:"session_id,omitempty"`
 	// ConnectedAt is the UTC timestamp of when the websocket transport connected.
 	ConnectedAt *time.Time `json:"connected_at,omitempty"`
 	// DisconnectedAt is the UTC timestamp of when the websocket transport disconnected.
@@ -1472,11 +1473,11 @@ type StreamScheduleCategory struct {
 // CategorySearchResult represents a search result for a Twitch category.
 type CategorySearchResult struct {
 	// ID is the ID that uniquely identifies the category.
-	ID string
+	ID string `json:"id"`
 	// Name is the name of the category.
-	Name string
+	Name string `json:"name"`
 	// BoxArtURL is the URL to the box art of the category.
-	BoxArtURL string
+	BoxArtURL string `json:"box_art_url"`
 }
 
 // ChannelSearchResult represents a search result for a Twitch channel.
@@ -1819,13 +1820,15 @@ func (a CharityCampaignAmount) Amount() float64 {
 	return float64(a.Value) / float64(math.Pow10(a.Decimal))
 }
 
+// MarshalJSON implements the json.Marshaler interface.
+func (d VideoDuration) MarshalJSON() ([]byte, error) {
+	str := time.Duration(d).String()
+	return []byte("\"" + str + "\""), nil
+}
+
 // UnmarshalJSON implements the json.Unmarshaler interface.
 func (d *VideoDuration) UnmarshalJSON(data []byte) error {
-	var str string
-	if err := json.Unmarshal(data, &str); err != nil {
-		return err
-	}
-
+	str := strings.Trim(string(data), "\"")
 	parsed, err := time.ParseDuration(str)
 	if err != nil {
 		return err
@@ -1839,12 +1842,16 @@ func (d VideoDuration) AsDuration() time.Duration {
 	return time.Duration(d)
 }
 
+func (e ConduitError) Error() string {
+	return fmt.Sprintf("conduits: shard %s %s - %s", e.ShardID, e.Code, e.Message)
+}
+
 // WithWebhookTransport creates a new webhook transport for a Twitch Eventsub Conduit Shard.
 func WithWebhookTransport(callback, secret string) Transport {
 	return Transport{
 		Method:   "webhook",
-		Callback: &callback,
-		Secret:   &secret,
+		Callback: callback,
+		Secret:   secret,
 	}
 }
 
@@ -1852,7 +1859,7 @@ func WithWebhookTransport(callback, secret string) Transport {
 func WithWebSocketTransport(sessionID string) Transport {
 	return Transport{
 		Method:    "websocket",
-		SessionID: &sessionID,
+		SessionID: sessionID,
 	}
 }
 

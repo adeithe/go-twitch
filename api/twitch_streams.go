@@ -83,7 +83,7 @@ func (api *StreamKeyListCall) BroadcasterID(broadcasterID string) *StreamKeyList
 
 // Do executes the request.
 func (api *StreamKeyListCall) Do(ctx context.Context, opts ...RequestOption) (*StreamKeyListResponse, error) {
-	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/streams/key", nil, opts...)
+	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/streams/key", nil, append(api.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}
@@ -172,7 +172,7 @@ func (api *StreamsFollowedListCall) First(first int) *StreamsFollowedListCall {
 
 // Do executes the request.
 func (api *StreamsFollowedListCall) Do(ctx context.Context, opts ...RequestOption) (*StreamsFollowedListResponse, error) {
-	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/streams/followed", nil, opts...)
+	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/streams/followed", nil, append(api.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}
@@ -293,8 +293,8 @@ type StreamMarkerListResponse struct {
 	StatusCode int
 	// Header contains the HTTP headers from the Twitch API response.
 	Header http.Header
-	// Data is the StreamMarkerData data returned by the Twitch API.
-	Data []StreamMarkerData
+	// Data is the StreamMarker data returned by the Twitch API.
+	Data []StreamMarker
 	// Request is the HTTP request that was sent to the Twitch API.
 	Request *http.Request
 }
@@ -351,13 +351,13 @@ func (api *StreamMarkerListCall) First(first int) *StreamMarkerListCall {
 
 // Do executes the request.
 func (api *StreamMarkerListCall) Do(ctx context.Context, opts ...RequestOption) (*StreamMarkerListResponse, error) {
-	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/streams/markers", nil, opts...)
+	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/streams/markers", nil, append(api.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}
 	defer func() { _ = res.Body.Close() }()
 
-	data, err := decodeResponse[StreamMarkerData](res)
+	data, err := decodeResponse[StreamMarker](res)
 	if err != nil {
 		return nil, err
 	}
@@ -472,7 +472,7 @@ func (api *StreamsListCall) First(first int) *StreamsListCall {
 
 // Do executes the request.
 func (api *StreamsListCall) Do(ctx context.Context, opts ...RequestOption) (*StreamsListResponse, error) {
-	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/streams", nil, opts...)
+	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/streams", nil, append(api.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}

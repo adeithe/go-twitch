@@ -115,7 +115,7 @@ func (api *VideosListCall) First(first int) *VideosListCall {
 
 // Do executes the request.
 func (api *VideosListCall) Do(ctx context.Context, opts ...RequestOption) (*VideosListResponse, error) {
-	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/videos", nil, opts...)
+	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/videos", nil, append(api.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}
@@ -180,7 +180,7 @@ func (api *VideosDeleteCall) ID(id string) *VideosDeleteCall {
 
 // Do executes the request.
 func (api *VideosDeleteCall) Do(ctx context.Context, opts ...RequestOption) (*VideosDeleteResponse, error) {
-	res, err := api.resource.client.DoRequest(ctx, "DELETE", "/helix/videos", nil, opts...)
+	res, err := api.resource.client.DoRequest(ctx, "DELETE", "/helix/videos", nil, append(api.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}

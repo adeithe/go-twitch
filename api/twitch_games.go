@@ -87,7 +87,7 @@ func (api *TopGamesListCall) First(first int) *TopGamesListCall {
 
 // Do executes the request.
 func (api *TopGamesListCall) Do(ctx context.Context, opts ...RequestOption) (*TopGamesListResponse, error) {
-	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/games/top", nil, opts...)
+	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/games/top", nil, append(api.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}
@@ -160,7 +160,7 @@ func (api *GamesListCall) Name(names ...string) *GamesListCall {
 
 // Do executes the request.
 func (api *GamesListCall) Do(ctx context.Context, opts ...RequestOption) (*GamesListResponse, error) {
-	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/games", nil, opts...)
+	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/games", nil, append(api.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}

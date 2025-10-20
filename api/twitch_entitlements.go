@@ -113,7 +113,7 @@ func (api *DropsEntitlementsListCall) First(first int) *DropsEntitlementsListCal
 
 // Do executes the request.
 func (api *DropsEntitlementsListCall) Do(ctx context.Context, opts ...RequestOption) (*DropsEntitlementsListResponse, error) {
-	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/entitlements/drops", nil, opts...)
+	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/entitlements/drops", nil, append(api.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}

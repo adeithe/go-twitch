@@ -84,7 +84,7 @@ func (api *PredictionsListCall) First(first int) *PredictionsListCall {
 
 // Do executes the request.
 func (api *PredictionsListCall) Do(ctx context.Context, opts ...RequestOption) (*PredictionsListResponse, error) {
-	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/predictions", nil, opts...)
+	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/predictions", nil, append(api.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}

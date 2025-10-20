@@ -88,7 +88,7 @@ func (api *EventSubSubscriptionsListCall) After(after string) *EventSubSubscript
 
 // Do executes the request.
 func (api *EventSubSubscriptionsListCall) Do(ctx context.Context, opts ...RequestOption) (*EventSubSubscriptionsListResponse, error) {
-	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/eventsub/subscriptions", nil, opts...)
+	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/eventsub/subscriptions", nil, append(api.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}

@@ -97,7 +97,7 @@ func (api *SearchCategoriesListCall) First(first int) *SearchCategoriesListCall 
 
 // Do executes the request.
 func (api *SearchCategoriesListCall) Do(ctx context.Context, opts ...RequestOption) (*SearchCategoriesListResponse, error) {
-	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/search/categories", nil, opts...)
+	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/search/categories", nil, append(api.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}
@@ -142,8 +142,8 @@ type SearchChannelsListResponse struct {
 	StatusCode int
 	// Header contains the HTTP headers from the Twitch API response.
 	Header http.Header
-	// Data is the CategorySearchResult data returned by the Twitch API.
-	Data []CategorySearchResult
+	// Data is the ChannelSearchResult data returned by the Twitch API.
+	Data []ChannelSearchResult
 	// Pagination is the Pagination data returned by the Twitch API.
 	Pagination Pagination
 	// Request is the HTTP request that was sent to the Twitch API.
@@ -193,13 +193,13 @@ func (api *SearchChannelsListCall) LiveOnly(liveOnly bool) *SearchChannelsListCa
 
 // Do executes the request.
 func (api *SearchChannelsListCall) Do(ctx context.Context, opts ...RequestOption) (*SearchChannelsListResponse, error) {
-	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/search/channels", nil, opts...)
+	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/search/channels", nil, append(api.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}
 	defer func() { _ = res.Body.Close() }()
 
-	data, err := decodeResponse[CategorySearchResult](res)
+	data, err := decodeResponse[ChannelSearchResult](res)
 	if err != nil {
 		return nil, err
 	}

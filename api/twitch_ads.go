@@ -77,7 +77,7 @@ func (api *SnoozeNextAdInsertCall) BroadcasterID(broadcasterID string) *SnoozeNe
 
 // Do executes the request.
 func (api *SnoozeNextAdInsertCall) Do(ctx context.Context, opts ...RequestOption) (*SnoozeNextAdInsertResponse, error) {
-	res, err := api.resource.client.DoRequest(ctx, "POST", "/helix/channels/ads/schedule/snooze", nil, opts...)
+	res, err := api.resource.client.DoRequest(ctx, "POST", "/helix/channels/ads/schedule/snooze", nil, append(api.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}
@@ -221,7 +221,7 @@ func (api *AdScheduleListCall) BroadcasterID(broadcasterID string) *AdScheduleLi
 
 // Do executes the request.
 func (api *AdScheduleListCall) Do(ctx context.Context, opts ...RequestOption) (*AdScheduleListResponse, error) {
-	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/channels/ads", nil, opts...)
+	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/channels/ads", nil, append(api.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}

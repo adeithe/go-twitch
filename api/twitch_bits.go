@@ -80,7 +80,7 @@ func (api *BitsCheermotesListCall) BroadcasterID(broadcasterID string) *BitsChee
 
 // Do executes the request.
 func (api *BitsCheermotesListCall) Do(ctx context.Context, opts ...RequestOption) (*BitsCheermotesListResponse, error) {
-	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/bits/cheermotes", nil, opts...)
+	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/bits/cheermotes", nil, append(api.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}
@@ -175,7 +175,7 @@ func (api *BitsExtensionTransactionsListCall) First(first int) *BitsExtensionTra
 
 // Do executes the request.
 func (api *BitsExtensionTransactionsListCall) Do(ctx context.Context, opts ...RequestOption) (*BitsExtensionTransactionsListResponse, error) {
-	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/extensions/transactions", nil, opts...)
+	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/extensions/transactions", nil, append(api.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}
@@ -270,7 +270,7 @@ func (api *BitsLeaderboardListCall) StartedAt(startedAt time.Time) *BitsLeaderbo
 
 // Do executes the request.
 func (api *BitsLeaderboardListCall) Do(ctx context.Context, opts ...RequestOption) (*BitsLeaderboardListResponse, error) {
-	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/bits/leaderboard", nil, opts...)
+	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/bits/leaderboard", nil, append(api.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}

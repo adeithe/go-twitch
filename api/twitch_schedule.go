@@ -22,7 +22,7 @@ type ChannelStreamScheduleListCall struct {
 	opts     []RequestOption
 }
 
-// ChannelStreamScheduleListResponse represents the response from a GET request to /helix/schedule/icalendar.
+// ChannelStreamScheduleListResponse represents the response from a GET request to /helix/schedule.
 type ChannelStreamScheduleListResponse struct {
 	// Status is the HTTP status text returned by the Twitch API. For example, "200 OK".
 	Status string
@@ -38,7 +38,7 @@ type ChannelStreamScheduleListResponse struct {
 	Request *http.Request
 }
 
-// List creates a new GET request to /helix/schedule/icalendar.
+// List creates a new GET request to /helix/schedule.
 //
 // Gets the broadcaster's streaming schedule. You can get the entire schedule or specific segments of the schedule.
 //
@@ -87,7 +87,7 @@ func (api *ChannelStreamScheduleListCall) StartTime(startTime time.Time) *Channe
 
 // Do executes the request.
 func (api *ChannelStreamScheduleListCall) Do(ctx context.Context, opts ...RequestOption) (*ChannelStreamScheduleListResponse, error) {
-	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/schedule/icalendar", nil, opts...)
+	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/schedule", nil, append(api.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}

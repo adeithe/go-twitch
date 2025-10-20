@@ -60,7 +60,7 @@ func (api *ContentLabelsListCall) Locale(locale string) *ContentLabelsListCall {
 
 // Do executes the request.
 func (api *ContentLabelsListCall) Do(ctx context.Context, opts ...RequestOption) (*ContentLabelsListResponse, error) {
-	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/content_classification_labels", nil, opts...)
+	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/content_classification_labels", nil, append(api.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}

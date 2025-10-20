@@ -103,7 +103,7 @@ func (api *BanUserInsertCall) Do(ctx context.Context, opts ...RequestOption) (*B
 		return nil, err
 	}
 
-	res, err := api.resource.client.DoRequest(ctx, "POST", "/helix/moderation/bans", bytes.NewReader(bs), opts...)
+	res, err := api.resource.client.DoRequest(ctx, "POST", "/helix/moderation/bans", bytes.NewReader(bs), append(api.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}
@@ -180,7 +180,7 @@ func (api *UnbanUserDeleteCall) UserID(userID string) *UnbanUserDeleteCall {
 
 // Do executes the request.
 func (api *UnbanUserDeleteCall) Do(ctx context.Context, opts ...RequestOption) (*UnbanUserDeleteResponse, error) {
-	res, err := api.resource.client.DoRequest(ctx, "DELETE", "/helix/moderation/bans", nil, opts...)
+	res, err := api.resource.client.DoRequest(ctx, "DELETE", "/helix/moderation/bans", nil, append(api.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}
@@ -265,7 +265,7 @@ func (api *ChatMessagesDeleteCall) MessageID(messageID string) *ChatMessagesDele
 
 // Do executes the request.
 func (api *ChatMessagesDeleteCall) Do(ctx context.Context, opts ...RequestOption) (*ChatMessagesDeleteResponse, error) {
-	res, err := api.resource.client.DoRequest(ctx, "DELETE", "/helix/moderation/chat", nil, opts...)
+	res, err := api.resource.client.DoRequest(ctx, "DELETE", "/helix/moderation/chat", nil, append(api.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}

@@ -94,7 +94,7 @@ func (api *{{ $EndpointName }}) Do(ctx context.Context, opts ...RequestOption) (
 		return nil, err
 	}
 {{ end }}
-	res, err := api.resource.client.DoRequest(ctx, "{{ .Method }}", "{{ .Path }}", {{ if .HasBody }}bytes.NewReader(bs){{ else }}nil{{ end }}, opts...)
+	res, err := api.resource.client.DoRequest(ctx, "{{ .Method }}", "{{ .Path }}", {{ if .HasBody }}bytes.NewReader(bs){{ else }}nil{{ end }}, {{ if gt (len $QueryParams) 0 }}append(api.opts, opts...){{ else }}opts{{ end }}...)
 	if err != nil {
 		return nil, err
 	}

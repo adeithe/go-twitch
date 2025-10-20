@@ -92,7 +92,7 @@ func (api *ClipsDownloadListCall) BroadcasterID(broadcasterID string) *ClipsDown
 
 // Do executes the request.
 func (api *ClipsDownloadListCall) Do(ctx context.Context, opts ...RequestOption) (*ClipsDownloadListResponse, error) {
-	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/clips/downloads", nil, opts...)
+	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/clips/downloads", nil, append(api.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}
@@ -163,7 +163,7 @@ func (api *CreateClipInsertCall) HasDelay(hasDelay bool) *CreateClipInsertCall {
 
 // Do executes the request.
 func (api *CreateClipInsertCall) Do(ctx context.Context, opts ...RequestOption) (*CreateClipInsertResponse, error) {
-	res, err := api.resource.client.DoRequest(ctx, "POST", "/helix/clips", nil, opts...)
+	res, err := api.resource.client.DoRequest(ctx, "POST", "/helix/clips", nil, append(api.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}
@@ -280,7 +280,7 @@ func (api *ClipsListCall) EndedAt(endedAt time.Time) *ClipsListCall {
 
 // Do executes the request.
 func (api *ClipsListCall) Do(ctx context.Context, opts ...RequestOption) (*ClipsListResponse, error) {
-	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/clips", nil, opts...)
+	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/clips", nil, append(api.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}

@@ -109,7 +109,7 @@ func (api *ExtensionAnalyticsListCall) EndedAt(endedAt time.Time) *ExtensionAnal
 
 // Do executes the request.
 func (api *ExtensionAnalyticsListCall) Do(ctx context.Context, opts ...RequestOption) (*ExtensionAnalyticsListResponse, error) {
-	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/analytics/extensions", nil, opts...)
+	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/analytics/extensions", nil, append(api.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}
@@ -215,7 +215,7 @@ func (api *GameAnalyticsListCall) EndedAt(endedAt time.Time) *GameAnalyticsListC
 
 // Do executes the request.
 func (api *GameAnalyticsListCall) Do(ctx context.Context, opts ...RequestOption) (*GameAnalyticsListResponse, error) {
-	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/analytics/games", nil, opts...)
+	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/analytics/games", nil, append(api.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}

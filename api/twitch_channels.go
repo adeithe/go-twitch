@@ -83,7 +83,7 @@ func (api *ChannelEditorsListCall) BroadcasterID(broadcasterID string) *ChannelE
 
 // Do executes the request.
 func (api *ChannelEditorsListCall) Do(ctx context.Context, opts ...RequestOption) (*ChannelEditorsListResponse, error) {
-	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/channels/editors", nil, opts...)
+	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/channels/editors", nil, append(api.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}
@@ -181,7 +181,7 @@ func (api *ChannelsFollowedListCall) First(first int) *ChannelsFollowedListCall 
 
 // Do executes the request.
 func (api *ChannelsFollowedListCall) Do(ctx context.Context, opts ...RequestOption) (*ChannelsFollowedListResponse, error) {
-	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/channels/followed", nil, opts...)
+	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/channels/followed", nil, append(api.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}
@@ -283,7 +283,7 @@ func (api *ChannelFollowersListCall) First(first int) *ChannelFollowersListCall 
 
 // Do executes the request.
 func (api *ChannelFollowersListCall) Do(ctx context.Context, opts ...RequestOption) (*ChannelFollowersListResponse, error) {
-	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/channels/followers", nil, opts...)
+	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/channels/followers", nil, append(api.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}
@@ -352,7 +352,7 @@ func (api *ChannelInformationListCall) BroadcasterID(broadcasterIDs ...string) *
 
 // Do executes the request.
 func (api *ChannelInformationListCall) Do(ctx context.Context, opts ...RequestOption) (*ChannelInformationListResponse, error) {
-	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/channels", nil, opts...)
+	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/channels", nil, append(api.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}
@@ -463,7 +463,7 @@ func (api *ChannelInformationModifyCall) Do(ctx context.Context, opts ...Request
 		return nil, err
 	}
 
-	res, err := api.resource.client.DoRequest(ctx, "PATCH", "/helix/channels", bytes.NewReader(bs), opts...)
+	res, err := api.resource.client.DoRequest(ctx, "PATCH", "/helix/channels", bytes.NewReader(bs), append(api.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}

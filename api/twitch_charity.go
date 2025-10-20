@@ -81,7 +81,7 @@ func (api *CharityCampaignListCall) BroadcasterID(broadcasterID string) *Charity
 
 // Do executes the request.
 func (api *CharityCampaignListCall) Do(ctx context.Context, opts ...RequestOption) (*CharityCampaignListResponse, error) {
-	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/charity/campaigns", nil, opts...)
+	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/charity/campaigns", nil, append(api.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}
@@ -172,7 +172,7 @@ func (api *CharityDonationsListCall) First(first int) *CharityDonationsListCall 
 
 // Do executes the request.
 func (api *CharityDonationsListCall) Do(ctx context.Context, opts ...RequestOption) (*CharityDonationsListResponse, error) {
-	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/charity/campaigns", nil, opts...)
+	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/charity/campaigns", nil, append(api.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}

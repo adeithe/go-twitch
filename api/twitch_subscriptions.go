@@ -84,7 +84,7 @@ func (api *UserSubscriptionListCall) UserID(userID string) *UserSubscriptionList
 
 // Do executes the request.
 func (api *UserSubscriptionListCall) Do(ctx context.Context, opts ...RequestOption) (*UserSubscriptionListResponse, error) {
-	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/subscriptions/user", nil, opts...)
+	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/subscriptions/user", nil, append(api.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}
@@ -183,7 +183,7 @@ func (api *BroadcasterSubscriptionsListCall) First(first int) *BroadcasterSubscr
 
 // Do executes the request.
 func (api *BroadcasterSubscriptionsListCall) Do(ctx context.Context, opts ...RequestOption) (*BroadcasterSubscriptionsListResponse, error) {
-	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/subscriptions", nil, opts...)
+	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/subscriptions", nil, append(api.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}

@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestAPITest(t *testing.T) {
+func TestMockAPI(t *testing.T) {
 	chatters := []api.UserInfo{
 		{UserID: "3456", UserLogin: "testuser", UserName: "TestUser"},
 	}
@@ -115,4 +115,112 @@ func TestAPITest(t *testing.T) {
 			check(t)
 		})
 	}
+}
+
+func TestMockAPI_HasCertificate(t *testing.T) {
+	mock := apitest.NewMockAPI(t, apitest.WithTLS())
+	require.NotNil(t, mock.Certificate())
+}
+
+func TestMockAPI_NoMockResponse(t *testing.T) {
+	mock := apitest.NewMockAPI(t)
+	clientID, _, err := mock.RegisterApplication()
+	require.NoError(t, err)
+
+	token, err := mock.NewBearerToken(clientID)
+	require.NoError(t, err)
+
+	client := api.New(clientID, api.WithHTTPClient(mock.Client()), api.WithDefaultBearerToken(token))
+	_, err = client.Chat.Chatters.List("1234", "5678").Do(context.Background())
+	require.Error(t, err)
+}
+
+func TestMockAPI_MissingClientID(t *testing.T) {
+	mock := apitest.NewMockAPI(t)
+	endpoint := apitest.SetMockValidator(mock, http.MethodGet, api.EndpointChatGetChatters)
+
+	client := api.New("", api.WithHTTPClient(mock.Client()), api.WithDefaultBearerToken("invalidtoken"))
+	_, err := client.Chat.Chatters.List("1234", "5678").Do(context.Background())
+	require.Error(t, err)
+	require.Exactly(t, 1, endpoint.TimesCalled)
+	require.Exactly(t, 0, endpoint.Successes)
+	require.Exactly(t, 1, endpoint.Failures)
+}
+
+func TestMockAPI_InvalidClientID(t *testing.T) {
+	mock := apitest.NewMockAPI(t)
+	endpoint := apitest.SetMockValidator(mock, http.MethodGet, api.EndpointChatGetChatters)
+
+	client := api.New("testclient", api.WithHTTPClient(mock.Client()), api.WithDefaultBearerToken("invalidtoken"))
+	_, err := client.Chat.Chatters.List("1234", "5678").Do(context.Background())
+	require.Error(t, err)
+	require.Exactly(t, 1, endpoint.TimesCalled)
+	require.Exactly(t, 0, endpoint.Successes)
+	require.Exactly(t, 1, endpoint.Failures)
+}
+
+func TestMockAPI_MissingToken(t *testing.T) {
+	mock := apitest.NewMockAPI(t)
+	endpoint := apitest.SetMockValidator(mock, http.MethodGet, api.EndpointChatGetChatters)
+
+	clientID, _, err := mock.RegisterApplication()
+	require.NoError(t, err)
+
+	client := api.New(clientID, api.WithHTTPClient(mock.Client()))
+	_, err = client.Chat.Chatters.List("1234", "5678").Do(context.Background())
+	require.Error(t, err)
+	require.Exactly(t, 1, endpoint.TimesCalled)
+	require.Exactly(t, 0, endpoint.Successes)
+	require.Exactly(t, 1, endpoint.Failures)
+}
+
+func TestMockAPI_InvalidToken(t *testing.T) {
+	mock := apitest.NewMockAPI(t)
+	endpoint := apitest.SetMockValidator(mock, http.MethodGet, api.EndpointChatGetChatters)
+
+	clientID, _, err := mock.RegisterApplication()
+	require.NoError(t, err)
+
+	client := api.New(clientID, api.WithHTTPClient(mock.Client()), api.WithDefaultBearerToken("invalidtoken"))
+	_, err = client.Chat.Chatters.List("1234", "5678").Do(context.Background())
+	require.Error(t, err)
+	require.Exactly(t, 1, endpoint.TimesCalled)
+	require.Exactly(t, 0, endpoint.Successes)
+	require.Exactly(t, 1, endpoint.Failures)
+}
+
+func TestMockAPI_MalformedToken(t *testing.T) {
+	mock := apitest.NewMockAPI(t)
+	endpoint := apitest.SetMockValidator(mock, http.MethodGet, api.EndpointChatGetChatters)
+
+	clientID, _, err := mock.RegisterApplication()
+	require.NoError(t, err)
+
+	client := api.New(clientID, api.WithHTTPClient(mock.Client()))
+	_, err = client.Chat.Chatters.List("1234", "5678").Do(context.Background(), api.SetHeader("Authorization", "Bearer"))
+	require.Error(t, err)
+	require.Exactly(t, 1, endpoint.TimesCalled)
+	require.Exactly(t, 0, endpoint.Successes)
+	require.Exactly(t, 1, endpoint.Failures)
+}
+
+func TestMockAPI_TokenMismatch(t *testing.T) {
+	mock := apitest.NewMockAPI(t)
+	endpoint := apitest.SetMockValidator(mock, http.MethodGet, api.EndpointChatGetChatters)
+
+	clientID1, _, err := mock.RegisterApplication()
+	require.NoError(t, err)
+
+	clientID2, _, err := mock.RegisterApplication()
+	require.NoError(t, err)
+
+	token, err := mock.NewBearerToken(clientID2)
+	require.NoError(t, err)
+
+	client := api.New(clientID1, api.WithHTTPClient(mock.Client()), api.WithDefaultBearerToken(token))
+	_, err = client.Chat.Chatters.List("1234", "5678").Do(context.Background())
+	require.Error(t, err)
+	require.Exactly(t, 1, endpoint.TimesCalled)
+	require.Exactly(t, 0, endpoint.Successes)
+	require.Exactly(t, 1, endpoint.Failures)
 }

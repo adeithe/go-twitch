@@ -55,7 +55,7 @@ func decodeResponse[T any](res *http.Response) (*ResponseData[T], error) {
 }
 
 func (data ResponseData[T]) asError() error {
-	if data.Status <= 400 {
+	if data.Status < http.StatusBadRequest {
 		return nil
 	}
 	return &TwitchAPIError{data.Status, data.Code, data.Message}
@@ -68,8 +68,8 @@ func (err TwitchAPIError) Error() string {
 // CodeOf returns the HTTP status code of the given error.
 // If the error is not an API error, it returns http.StatusInternalServerError.
 func CodeOf(err error) int {
-	apiErr := &TwitchAPIError{}
-	if errors.As(err, apiErr) {
+	var apiErr *TwitchAPIError
+	if errors.As(err, &apiErr) {
 		return apiErr.Status
 	}
 	return http.StatusInternalServerError

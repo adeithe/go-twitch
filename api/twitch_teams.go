@@ -75,7 +75,7 @@ func (api *ChannelTeamsListCall) BroadcasterID(broadcasterID string) *ChannelTea
 
 // Do executes the request.
 func (api *ChannelTeamsListCall) Do(ctx context.Context, opts ...RequestOption) (*ChannelTeamsListResponse, error) {
-	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/teams/channel", nil, opts...)
+	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/teams/channel", nil, append(api.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}
@@ -146,7 +146,7 @@ func (api *TeamsListCall) ID(id string) *TeamsListCall {
 
 // Do executes the request.
 func (api *TeamsListCall) Do(ctx context.Context, opts ...RequestOption) (*TeamsListResponse, error) {
-	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/teams", nil, opts...)
+	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/teams", nil, append(api.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}

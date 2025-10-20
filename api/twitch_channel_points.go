@@ -119,7 +119,7 @@ func (api *ChannelPointRedemptionsListCall) First(first int) *ChannelPointRedemp
 
 // Do executes the request.
 func (api *ChannelPointRedemptionsListCall) Do(ctx context.Context, opts ...RequestOption) (*ChannelPointRedemptionsListResponse, error) {
-	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/channel_points/custom_rewards/redemptions", nil, opts...)
+	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/channel_points/custom_rewards/redemptions", nil, append(api.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}
@@ -201,7 +201,7 @@ func (api *ChannelPointRedemptionsModifyCall) RewardID(rewardID string) *Channel
 
 // Do executes the request.
 func (api *ChannelPointRedemptionsModifyCall) Do(ctx context.Context, opts ...RequestOption) (*ChannelPointRedemptionsModifyResponse, error) {
-	res, err := api.resource.client.DoRequest(ctx, "PATCH", "/helix/channel_points/custom_rewards/redemptions", nil, opts...)
+	res, err := api.resource.client.DoRequest(ctx, "PATCH", "/helix/channel_points/custom_rewards/redemptions", nil, append(api.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}
@@ -364,7 +364,7 @@ func (api *ChannelPointRewardsInsertCall) Do(ctx context.Context, opts ...Reques
 		return nil, err
 	}
 
-	res, err := api.resource.client.DoRequest(ctx, "POST", "/helix/channel_points/custom_rewards", bytes.NewReader(bs), opts...)
+	res, err := api.resource.client.DoRequest(ctx, "POST", "/helix/channel_points/custom_rewards", bytes.NewReader(bs), append(api.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}
@@ -437,7 +437,7 @@ func (api *ChannelPointRewardsDeleteCall) BroadcasterID(broadcasterID string) *C
 
 // Do executes the request.
 func (api *ChannelPointRewardsDeleteCall) Do(ctx context.Context, opts ...RequestOption) (*ChannelPointRewardsDeleteResponse, error) {
-	res, err := api.resource.client.DoRequest(ctx, "DELETE", "/helix/channel_points/custom_rewards", nil, opts...)
+	res, err := api.resource.client.DoRequest(ctx, "DELETE", "/helix/channel_points/custom_rewards", nil, append(api.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}
@@ -517,7 +517,7 @@ func (api *ChannelPointRewardsListCall) OnlyManageableRewards(onlyManageableRewa
 
 // Do executes the request.
 func (api *ChannelPointRewardsListCall) Do(ctx context.Context, opts ...RequestOption) (*ChannelPointRewardsListResponse, error) {
-	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/channel_points/custom_rewards", nil, opts...)
+	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/channel_points/custom_rewards", nil, append(api.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}
@@ -679,7 +679,7 @@ func (api *ChannelPointRewardsModifyCall) Do(ctx context.Context, opts ...Reques
 		return nil, err
 	}
 
-	res, err := api.resource.client.DoRequest(ctx, "PATCH", "/helix/channel_points/custom_rewards", bytes.NewReader(bs), opts...)
+	res, err := api.resource.client.DoRequest(ctx, "PATCH", "/helix/channel_points/custom_rewards", bytes.NewReader(bs), append(api.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}

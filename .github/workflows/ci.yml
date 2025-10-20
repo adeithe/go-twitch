@@ -32,7 +32,12 @@ jobs:
       - name: Install dependencies
         run: go mod download
       - name: Run tests
-        run: go test -timeout 300s -v ./...
+        run: go test -coverprofile=coverage.txt -timeout 300s -v ./...
+      - name: Upload coverage report to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          flags: go
   benchmark:
     name: Benchmark
     needs: [test]

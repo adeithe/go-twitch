@@ -64,7 +64,7 @@ func (api *HypeTrainStatusListCall) BroadcasterID(broadcasterID string) *HypeTra
 
 // Do executes the request.
 func (api *HypeTrainStatusListCall) Do(ctx context.Context, opts ...RequestOption) (*HypeTrainStatusListResponse, error) {
-	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/hypetrain/status", nil, opts...)
+	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/hypetrain/status", nil, append(api.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}
