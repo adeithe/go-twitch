@@ -1,13 +1,10 @@
 package api_test
 
 import (
-	"bytes"
 	"context"
 	"crypto/rand"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"io"
 	"net/http"
 	"testing"
 	"time"
@@ -24,7 +21,7 @@ func TestAPI_Client(t *testing.T) {
 		Data: []api.UserInfo{
 			{UserID: "3456", UserLogin: "testuser", UserName: "TestUser"},
 		},
-	}, RequireQueryParam(t, "broadcaster_id"), RequireQueryParam(t, "moderator_id"))
+	}, apitest.RequireQueryParam("broadcaster_id"), apitest.RequireQueryParam("moderator_id"))
 
 	clientID, _, err := mock.RegisterApplication()
 	require.NoError(t, err)
@@ -39,6 +36,17 @@ func TestAPI_Client(t *testing.T) {
 	require.Exactly(t, 1, endpoint.TimesCalled)
 	require.Exactly(t, 0, endpoint.Failures)
 	require.Exactly(t, 1, endpoint.Successes)
+}
+
+func BenchmarkAPI_Client(b *testing.B) {
+	mock := apitest.NewMockAPI(b, apitest.WithTLS())
+	clientID, _, err := mock.RegisterApplication()
+	require.NoError(b, err)
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = api.New(clientID)
+	}
 }
 
 func TestAPI_Client_APIError(t *testing.T) {
@@ -65,7 +73,7 @@ func TestAPI_Client_APIError(t *testing.T) {
 
 func TestAPI_Client_MissingQueryParam(t *testing.T) {
 	mock := apitest.NewMockAPI(t, apitest.WithTLS())
-	endpoint := apitest.SetMockValidator(mock, http.MethodGet, api.EndpointChatGetChatters, RequireQueryParam(t, "first"))
+	endpoint := apitest.SetMockValidator(mock, http.MethodGet, api.EndpointChatGetChatters, apitest.RequireQueryParam("first"))
 
 	clientID, _, err := mock.RegisterApplication()
 	require.NoError(t, err)
@@ -95,6 +103,15 @@ func TestAPI_Options_AddHeader(t *testing.T) {
 	require.ElementsMatch(t, []string{"MyCustomValue"}, r.Header.Values("X-Custom-Header"))
 	api.AddHeader("X-Custom-Header", "MyOtherCustomValue")(r)
 	require.ElementsMatch(t, []string{"MyCustomValue", "MyOtherCustomValue"}, r.Header.Values("X-Custom-Header"))
+}
+
+func TestAPI_ConduitError(t *testing.T) {
+	err := api.ConduitError{
+		ShardID: "1",
+		Message: "The shard id is outside the conduit's range",
+		Code:    "invalid_parameter",
+	}
+	require.Equal(t, "conduits: shard 1 invalid_parameter - The shard id is outside the conduit's range", err.Error())
 }
 
 func TestAPI_CharityCampaignAmount(t *testing.T) {
@@ -146,66 +163,6 @@ func TestAPI_WithChoice(t *testing.T) {
 	require.Equal(t, "option1", choice.Title)
 }
 
-func RequireQueryParam(t *testing.T, key string) apitest.ValidatorFunc {
-	return func(req *http.Request) error {
-		if req.URL.Query().Get(key) == "" {
-			return errors.New("missing query parameter: " + key)
-		}
-		return nil
-	}
-}
-
-func RequireBodyParam(t *testing.T, key string) apitest.ValidatorFunc {
-	return func(req *http.Request) error {
-		bs, err := io.ReadAll(req.Body)
-		require.NoError(t, err)
-
-		m := make(map[string]any)
-		req.Body = io.NopCloser(bytes.NewReader(bs))
-		if err := json.Unmarshal(bs, &m); err != nil {
-			return err
-		}
-
-		if _, ok := m[key]; !ok {
-			return errors.New("missing body parameter: " + key)
-		}
-		return nil
-	}
-}
-
-func QueryParamEquals(t *testing.T, key, value string) apitest.ValidatorFunc {
-	return func(req *http.Request) error {
-		actual := req.URL.Query().Get(key)
-		if actual == "" {
-			return errors.New("missing query parameter: " + key)
-		}
-
-		if actual != value {
-			return errors.New("expected query parameter " + key + " to be " + value + ", got " + actual)
-		}
-		return nil
-	}
-}
-
-func BodyParamEquals(t *testing.T, key, value string) apitest.ValidatorFunc {
-	return func(req *http.Request) error {
-		bs, err := io.ReadAll(req.Body)
-		require.NoError(t, err)
-
-		m := make(map[string]any)
-		req.Body = io.NopCloser(bytes.NewReader(bs))
-		if err := json.Unmarshal(bs, &m); err != nil {
-			return err
-		}
-
-		val, ok := m[key]
-		if !ok {
-			return errors.New("missing body parameter: " + key)
-		}
-
-		if val != value {
-			return errors.New("expected body parameter " + key + " to be " + value + ", got " + fmt.Sprintf("%v", val))
-		}
-		return nil
-	}
+func TestAPI_CodeOf_Invalid(t *testing.T) {
+	require.Equal(t, 500, api.CodeOf(&time.ParseError{}))
 }

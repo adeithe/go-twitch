@@ -26,7 +26,7 @@ func TestAPI_Ads(t *testing.T) {
 			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
 				return apitest.SetMockResponse(mock, http.MethodPost, "/helix/channels/commercial", &api.ResponseData[api.Commercial]{
 					Data: []api.Commercial{{Length: 60, RetryAfter: 480}},
-				}, RequireBodyParam(t, "broadcaster_id"), RequireBodyParam(t, "length"))
+				}, apitest.RequireBodyParam("broadcaster_id"), apitest.RequireBodyParam("length"))
 			},
 			func(api *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
 				res, err := api.Ads.Insert("1234", 60).Do(context.Background(), opts...)
@@ -51,7 +51,7 @@ func TestAPI_Ads(t *testing.T) {
 						NextAdAt:        timestamp,
 						LastAdAt:        timestamp,
 					}},
-				}, RequireQueryParam(t, "broadcaster_id"))
+				}, apitest.RequireQueryParam("broadcaster_id"))
 			},
 			func(api *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
 				timestamp := Must[time.Time](t)(time.Parse(time.RFC3339, "2023-08-01T23:08:18+00:00"))
@@ -78,7 +78,7 @@ func TestAPI_Ads(t *testing.T) {
 						SnoozeRefreshAt: timestamp,
 						NextAdAt:        timestamp,
 					}},
-				}, RequireQueryParam(t, "broadcaster_id"))
+				}, apitest.RequireQueryParam("broadcaster_id"))
 			},
 			func(api *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
 				timestamp := Must[time.Time](t)(time.Parse(time.RFC3339, "2023-08-01T23:08:18+00:00"))
@@ -112,12 +112,12 @@ func TestAPI_Analytics(t *testing.T) {
 					Pagination: api.Pagination{
 						Cursor: "eyJiIjpudWxsLCJhIjp7Ik9mZnNldCI6NX19",
 					},
-				})
+				}, apitest.QueryParamEquals("extension_id", "ext123"), apitest.QueryParamEquals("type", "overview_v2"), apitest.QueryParamEquals("started_at", "2018-03-01T00:00:00Z"), apitest.QueryParamEquals("ended_at", "2018-06-01T00:00:00Z"), apitest.QueryParamEquals("after", "abc123"), apitest.QueryParamEquals("first", "1"))
 			},
 			func(api *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
 				start := Must[time.Time](t)(time.Parse(time.RFC3339, "2018-03-01T00:00:00Z"))
 				end := Must[time.Time](t)(time.Parse(time.RFC3339, "2018-06-01T00:00:00Z"))
-				res, err := api.Analytics.Extensions.List().Do(context.Background(), opts...)
+				res, err := api.Analytics.Extensions.List().ExtensionID("ext123").Type("overview_v2").StartedAt(start).EndedAt(end).After("abc123").First(1).Do(context.Background(), opts...)
 				return func(t *testing.T) {
 					require.Len(t, res.Data, 1)
 					require.Equal(t, "ext123", res.Data[0].ExtensionID)
@@ -142,12 +142,12 @@ func TestAPI_Analytics(t *testing.T) {
 						URL:       "https://twitch-piper-reports.s3-us-west-2.amazonaws.com/games/66170/overview/15183...",
 						DateRange: api.DateRange{start, end},
 					}},
-				})
+				}, apitest.QueryParamEquals("game_id", "game123"), apitest.QueryParamEquals("type", "overview_v2"), apitest.QueryParamEquals("started_at", "2018-03-01T00:00:00Z"), apitest.QueryParamEquals("ended_at", "2018-06-01T00:00:00Z"), apitest.QueryParamEquals("after", "abc123"), apitest.QueryParamEquals("first", "1"))
 			},
 			func(api *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
 				start := Must[time.Time](t)(time.Parse(time.RFC3339, "2018-03-01T00:00:00Z"))
 				end := Must[time.Time](t)(time.Parse(time.RFC3339, "2018-06-01T00:00:00Z"))
-				res, err := api.Analytics.Games.List().Do(context.Background(), opts...)
+				res, err := api.Analytics.Games.List().GameID("game123").Type("overview_v2").StartedAt(start).EndedAt(end).After("abc123").First(1).Do(context.Background(), opts...)
 				return func(t *testing.T) {
 					require.Len(t, res.Data, 1)
 					require.Equal(t, "game123", res.Data[0].GameID)
@@ -161,7 +161,142 @@ func TestAPI_Analytics(t *testing.T) {
 	})
 }
 
-func TestAPI_Bits(t *testing.T) {}
+func TestAPI_Bits(t *testing.T) {
+	RunEndpointTestCases(t, []EndpointTestCase{
+		{
+			"Get Bits Leaderboard",
+			[]apitest.MockTwitchAPIOption{},
+			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
+				start := Must[time.Time](t)(time.Parse(time.RFC3339, "2023-08-01T00:00:00Z"))
+				end := Must[time.Time](t)(time.Parse(time.RFC3339, "2023-08-31T23:59:59Z"))
+				return apitest.SetMockResponse(mock, http.MethodGet, "/helix/bits/leaderboard", &api.ResponseData[api.BitsLeaderboardEntry]{
+					Total: 1,
+					Data: []api.BitsLeaderboardEntry{{
+						UserID:   "user123",
+						UserName: "CoolViewer",
+						Rank:     1,
+						Score:    5000,
+					}},
+					DateRange: api.DateRange{start, end},
+				}, apitest.QueryParamEquals("user_id", "1234"), apitest.QueryParamEquals("count", "1"), apitest.QueryParamEquals("period", "month"), apitest.QueryParamEquals("started_at", "2023-08-01T00:00:00Z"))
+			},
+			func(api *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
+				start := Must[time.Time](t)(time.Parse(time.RFC3339, "2023-08-01T00:00:00Z"))
+				end := Must[time.Time](t)(time.Parse(time.RFC3339, "2023-08-31T23:59:59Z"))
+				res, err := api.Bits.Leaderboard.List().UserID("1234").Count(1).Period("month").StartedAt(start).Do(context.Background(), opts...)
+				return func(t *testing.T) {
+					require.Len(t, res.Data, res.Total)
+					require.Equal(t, "user123", res.Data[0].UserID)
+					require.Equal(t, "CoolViewer", res.Data[0].UserName)
+					require.Equal(t, 1, res.Data[0].Rank)
+					require.Equal(t, 5000, res.Data[0].Score)
+					require.Equal(t, start.Unix(), res.DateRange.StartedAt.Unix())
+					require.Equal(t, end.Unix(), res.DateRange.EndedAt.Unix())
+				}, err
+			},
+		},
+		{
+			"Get Bits Cheermotes",
+			[]apitest.MockTwitchAPIOption{},
+			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
+				updated := Must[time.Time](t)(time.Parse(time.RFC3339, "2023-08-01T00:00:00Z"))
+				return apitest.SetMockResponse(mock, http.MethodGet, "/helix/bits/cheermotes", &api.ResponseData[api.Cheermote]{
+					Data: []api.Cheermote{{
+						Prefix: "xd",
+						Type:   "global_first_party",
+						Order:  3,
+						Tiers: []api.CheermoteTier{{
+							ID:             "1",
+							MinBits:        1,
+							Color:          "Blue",
+							CanCheer:       true,
+							ShowInBitsCard: true,
+						}},
+						IsCharitable: true,
+						LastUpdated:  updated,
+					}},
+				}, apitest.QueryParamEquals("broadcaster_id", "1234"))
+			},
+			func(api *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
+				updated := Must[time.Time](t)(time.Parse(time.RFC3339, "2023-08-01T00:00:00Z"))
+				res, err := api.Bits.Cheermotes.List().BroadcasterID("1234").Do(context.Background(), opts...)
+				return func(t *testing.T) {
+					require.Len(t, res.Data, 1)
+					require.Equal(t, "xd", res.Data[0].Prefix)
+					require.Equal(t, "global_first_party", res.Data[0].Type)
+					require.Equal(t, 3, res.Data[0].Order)
+					require.Len(t, res.Data[0].Tiers, 1)
+					require.Equal(t, "1", res.Data[0].Tiers[0].ID)
+					require.Equal(t, 1, res.Data[0].Tiers[0].MinBits)
+					require.Equal(t, "Blue", res.Data[0].Tiers[0].Color)
+					require.True(t, res.Data[0].Tiers[0].CanCheer)
+					require.True(t, res.Data[0].Tiers[0].ShowInBitsCard)
+					require.True(t, res.Data[0].IsCharitable)
+					require.Equal(t, updated.Unix(), res.Data[0].LastUpdated.Unix())
+				}, err
+			},
+		},
+		{
+			"Get Extension Transactions",
+			[]apitest.MockTwitchAPIOption{},
+			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
+				start := Must[time.Time](t)(time.Parse(time.RFC3339, "2023-08-01T00:00:00Z"))
+				end := Must[time.Time](t)(time.Parse(time.RFC3339, "2023-08-31T23:59:59Z"))
+				return apitest.SetMockResponse(mock, http.MethodGet, "/helix/extensions/transactions", &api.ResponseData[api.ExtensionTransaction]{
+					Total: 1,
+					Data: []api.ExtensionTransaction{{
+						ID:               "1234",
+						BroadcasterID:    "broad123",
+						BroadcasterLogin: "twitchdev",
+						BroadcasterName:  "TwitchDev",
+						UserID:           "user123",
+						UserLogin:        "coolviewer",
+						UserName:         "CoolViewer",
+						ProductType:      "bits_in_extension",
+						Product: api.ExtensionProduct{
+							SKU:    "sku123",
+							Domain: "extensions.twitch.tv",
+							Cost: api.ExtensionProductCost{
+								Amount: 100,
+								Type:   "bits",
+							},
+							DisplayName:   "100 Bits Pack",
+							InDevelopment: true,
+							Broadcast:     false,
+							Expiration:    end,
+						},
+						Timestamp: start,
+					}},
+					DateRange: api.DateRange{start, end},
+				}, apitest.QueryParamEquals("extension_id", "ext123"), apitest.QueryParamEquals("id", "1234"), apitest.QueryParamEquals("after", "abc123"), apitest.QueryParamEquals("first", "1"))
+			},
+			func(api *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
+				start := Must[time.Time](t)(time.Parse(time.RFC3339, "2023-08-01T00:00:00Z"))
+				end := Must[time.Time](t)(time.Parse(time.RFC3339, "2023-08-31T23:59:59Z"))
+				res, err := api.Bits.Extensions.List("ext123").ID("1234").After("abc123").First(1).Do(context.Background(), opts...)
+				return func(t *testing.T) {
+					require.Equal(t, "1234", res.Data[0].ID)
+					require.Equal(t, "broad123", res.Data[0].BroadcasterID)
+					require.Equal(t, "twitchdev", res.Data[0].BroadcasterLogin)
+					require.Equal(t, "TwitchDev", res.Data[0].BroadcasterName)
+					require.Equal(t, "user123", res.Data[0].UserID)
+					require.Equal(t, "coolviewer", res.Data[0].UserLogin)
+					require.Equal(t, "CoolViewer", res.Data[0].UserName)
+					require.Equal(t, "bits_in_extension", res.Data[0].ProductType)
+					require.Equal(t, "sku123", res.Data[0].Product.SKU)
+					require.Equal(t, "extensions.twitch.tv", res.Data[0].Product.Domain)
+					require.Equal(t, 100, res.Data[0].Product.Cost.Amount)
+					require.Equal(t, "bits", res.Data[0].Product.Cost.Type)
+					require.Equal(t, "100 Bits Pack", res.Data[0].Product.DisplayName)
+					require.True(t, res.Data[0].Product.InDevelopment)
+					require.False(t, res.Data[0].Product.Broadcast)
+					require.Equal(t, end.Unix(), res.Data[0].Product.Expiration.Unix())
+					require.Equal(t, start.Unix(), res.Data[0].Timestamp.Unix())
+				}, err
+			},
+		},
+	})
+}
 
 func TestAPI_Channels(t *testing.T) {}
 
@@ -198,7 +333,7 @@ func TestAPI_Predictions(t *testing.T) {}
 func TestAPI_Raids(t *testing.T) {
 	RunEndpointTestCases(t, []EndpointTestCase{
 		{
-			"Start a raid",
+			"Start A Raid",
 			[]apitest.MockTwitchAPIOption{},
 			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
 				return apitest.SetMockResponse(mock, http.MethodPost, "/helix/raids", &api.ResponseData[api.InitializedRaid]{
@@ -206,7 +341,7 @@ func TestAPI_Raids(t *testing.T) {
 						Mature:    true,
 						CreatedAt: Must[time.Time](t)(time.Parse(time.RFC3339, "2023-08-01T12:00:00Z")),
 					}},
-				}, RequireBodyParam(t, "from_broadcaster_id"), RequireBodyParam(t, "to_broadcaster_id"))
+				}, apitest.RequireBodyParam("from_broadcaster_id"), apitest.RequireBodyParam("to_broadcaster_id"))
 			},
 			func(api *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
 				createdAt := Must[time.Time](t)(time.Parse(time.RFC3339, "2023-08-01T12:00:00Z"))
@@ -219,10 +354,10 @@ func TestAPI_Raids(t *testing.T) {
 			},
 		},
 		{
-			"Cancel a raid",
+			"Cancel A Raid",
 			[]apitest.MockTwitchAPIOption{},
 			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
-				return apitest.SetMockValidator(mock, http.MethodDelete, "/helix/raids", RequireQueryParam(t, "broadcaster_id"))
+				return apitest.SetMockValidator(mock, http.MethodDelete, "/helix/raids", apitest.RequireQueryParam("broadcaster_id"))
 			},
 			func(api *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
 				res, err := api.Raids.Delete("1234").Do(context.Background(), opts...)
@@ -251,12 +386,12 @@ func TestAPI_Schedule(t *testing.T) {
 							EndsAt:   Must[time.Time](t)(time.Parse(time.RFC3339, "2023-08-01T12:00:00Z")),
 						}},
 					}},
-				}, RequireQueryParam(t, "broadcaster_id"))
+				}, apitest.RequireQueryParam("broadcaster_id"), apitest.QueryParamEquals("id", "4567"), apitest.QueryParamEquals("start_time", "2023-08-01T10:00:00Z"), apitest.QueryParamEquals("after", "abc123"), apitest.QueryParamEquals("first", "1"))
 			},
 			func(api *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
-				startTime := Must[time.Time](t)(time.Parse(time.RFC3339, "2023-08-01T10:00:00Z"))
-				endTime := Must[time.Time](t)(time.Parse(time.RFC3339, "2023-08-01T12:00:00Z"))
-				res, err := api.Schedule.List("1234").Do(context.Background(), opts...)
+				start := Must[time.Time](t)(time.Parse(time.RFC3339, "2023-08-01T10:00:00Z"))
+				end := Must[time.Time](t)(time.Parse(time.RFC3339, "2023-08-01T12:00:00Z"))
+				res, err := api.Schedule.List("1234").ID("4567").StartTime(start).After("abc123").First(1).Do(context.Background(), opts...)
 				return func(t *testing.T) {
 					require.Len(t, res.Data, 1)
 					require.Equal(t, "1234", res.Data[0].BroadcasterID)
@@ -264,8 +399,8 @@ func TestAPI_Schedule(t *testing.T) {
 					require.Len(t, res.Data[0].Segments, 1)
 					require.Equal(t, "segment123", res.Data[0].Segments[0].ID)
 					require.Equal(t, "Morning Stream", res.Data[0].Segments[0].Title)
-					require.Equal(t, startTime.Unix(), res.Data[0].Segments[0].StartsAt.Unix())
-					require.Equal(t, endTime.Unix(), res.Data[0].Segments[0].EndsAt.Unix())
+					require.Equal(t, start.Unix(), res.Data[0].Segments[0].StartsAt.Unix())
+					require.Equal(t, end.Unix(), res.Data[0].Segments[0].EndsAt.Unix())
 				}, err
 			},
 		},
@@ -284,10 +419,10 @@ func TestAPI_Search(t *testing.T) {
 						Name:      "League of Legends",
 						BoxArtURL: "https://static-cdn.jtvnw.net/ttv-boxart/League%20of%20Legends-{width}x{height}.jpg",
 					}},
-				}, RequireQueryParam(t, "query"))
+				}, apitest.RequireQueryParam("query"), apitest.QueryParamEquals("after", "abc123"), apitest.QueryParamEquals("first", "1"))
 			},
 			func(api *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
-				res, err := api.Search.Categories.List("League").Do(context.Background(), opts...)
+				res, err := api.Search.Categories.List("League").After("abc123").First(1).Do(context.Background(), opts...)
 				return func(t *testing.T) {
 					require.Len(t, res.Data, 1)
 					require.Equal(t, "21779", res.Data[0].ID)
@@ -312,10 +447,10 @@ func TestAPI_Search(t *testing.T) {
 						Live:                true,
 						ThumbnailURL:        "https://static-cdn.jtvnw.net/jtv_user_pictures/twitchdev-profile_image-...",
 					}},
-				}, RequireQueryParam(t, "query"))
+				}, apitest.RequireQueryParam("query"), apitest.QueryParamEquals("live_only", "true"), apitest.QueryParamEquals("after", "abc123"), apitest.QueryParamEquals("first", "1"))
 			},
 			func(api *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
-				res, err := api.Search.Channels.List("TwitchDev").Do(context.Background(), opts...)
+				res, err := api.Search.Channels.List("TwitchDev").LiveOnly(true).After("abc123").First(1).Do(context.Background(), opts...)
 				return func(t *testing.T) {
 					require.Len(t, res.Data, 1)
 					require.Equal(t, "141981764", res.Data[0].BroadcasterID)
@@ -343,7 +478,7 @@ func TestAPI_Streams(t *testing.T) {
 					Data: []api.StreamKey{{
 						Key: "abcd-efgh-ijkl-mnop",
 					}},
-				}, RequireQueryParam(t, "broadcaster_id"))
+				}, apitest.RequireQueryParam("broadcaster_id"))
 			},
 			func(api *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
 				res, err := api.Streams.StreamKey.List("1234").Do(context.Background(), opts...)
@@ -370,10 +505,10 @@ func TestAPI_Streams(t *testing.T) {
 						ViewerCount: 1500,
 						StartedAt:   Must[time.Time](t)(time.Parse(time.RFC3339, "2023-08-01T20:00:00Z")),
 					}},
-				}, RequireQueryParam(t, "user_id"))
+				}, apitest.RequireQueryParam("user_id"), apitest.RequireQueryParam("game_id"), apitest.QueryParamEquals("language", "en"), apitest.QueryParamEquals("period", "all"), apitest.QueryParamEquals("type", "live"), apitest.QueryParamEquals("before", "cba321"), apitest.QueryParamEquals("after", "abc123"), apitest.QueryParamEquals("first", "1"))
 			},
 			func(api *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
-				res, err := api.Streams.List().UserID("987654321").Do(context.Background(), opts...)
+				res, err := api.Streams.List().UserID("987654321").GameID("1234").Language("en").Period("all").Type("live").Before("cba321").After("abc123").First(1).Do(context.Background(), opts...)
 				return func(t *testing.T) {
 					require.Len(t, res.Data, 1)
 					require.Equal(t, "123456789", res.Data[0].ID)
@@ -407,10 +542,10 @@ func TestAPI_Streams(t *testing.T) {
 						ViewerCount: 1500,
 						StartedAt:   Must[time.Time](t)(time.Parse(time.RFC3339, "2023-08-01T20:00:00Z")),
 					}},
-				}, RequireQueryParam(t, "user_id"))
+				}, apitest.RequireQueryParam("user_id"), apitest.QueryParamEquals("after", "abc123"), apitest.QueryParamEquals("first", "1"))
 			},
 			func(api *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
-				res, err := api.Streams.Followed.List("1234").Do(context.Background(), opts...)
+				res, err := api.Streams.Followed.List("1234").After("abc123").First(1).Do(context.Background(), opts...)
 				return func(t *testing.T) {
 					require.Len(t, res.Data, 1)
 					require.Equal(t, "123456789", res.Data[0].ID)
@@ -438,10 +573,10 @@ func TestAPI_Streams(t *testing.T) {
 						Description:     "My first marker",
 						PositionSeconds: 3600,
 					}},
-				}, RequireBodyParam(t, "user_id"))
+				}, apitest.RequireBodyParam("user_id"), apitest.RequireBodyParam("description"))
 			},
 			func(api *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
-				res, err := api.Streams.Markers.Insert("1234").Do(context.Background(), opts...)
+				res, err := api.Streams.Markers.Insert("1234").Description("test").Do(context.Background(), opts...)
 				return func(t *testing.T) {
 					require.Len(t, res.Data, 1)
 					require.Equal(t, "marker123", res.Data[0].ID)
@@ -477,10 +612,10 @@ func TestAPI_Streams(t *testing.T) {
 							},
 						},
 					},
-				}, RequireQueryParam(t, "user_id"), RequireQueryParam(t, "video_id"))
+				}, apitest.RequireQueryParam("user_id"), apitest.RequireQueryParam("video_id"), apitest.QueryParamEquals("before", "123cba"), apitest.QueryParamEquals("after", "abc123"), apitest.QueryParamEquals("first", "1"))
 			},
 			func(api *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
-				res, err := api.Streams.Markers.List("1234", "video123").Do(context.Background(), opts...)
+				res, err := api.Streams.Markers.List("1234", "video123").Before("123cba").After("abc123").First(1).Do(context.Background(), opts...)
 				return func(t *testing.T) {
 					require.Len(t, res.Data, 1)
 					require.Equal(t, "1234", res.Data[0].UserID)
@@ -516,10 +651,10 @@ func TestAPI_Subscriptions(t *testing.T) {
 						UserID:          "5678",
 						UserName:        "CoolViewer",
 					}},
-				}, RequireQueryParam(t, "broadcaster_id"))
+				}, apitest.RequireQueryParam("broadcaster_id"), apitest.QueryParamEquals("user_id", "4567"), apitest.QueryParamEquals("before", "cba321"), apitest.QueryParamEquals("after", "abc123"), apitest.QueryParamEquals("first", "1"))
 			},
 			func(api *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
-				res, err := api.Subscriptions.List("1234").Do(context.Background(), opts...)
+				res, err := api.Subscriptions.List("1234").UserID("4567").Before("cba321").After("abc123").First(1).Do(context.Background(), opts...)
 				return func(t *testing.T) {
 					require.Len(t, res.Data, 1)
 					require.Equal(t, "1234", res.Data[0].BroadcasterID)
@@ -543,7 +678,7 @@ func TestAPI_Subscriptions(t *testing.T) {
 						IsGift:          false,
 						Tier:            "1000",
 					}},
-				}, RequireQueryParam(t, "broadcaster_id"), RequireQueryParam(t, "user_id"))
+				}, apitest.RequireQueryParam("broadcaster_id"), apitest.RequireQueryParam("user_id"))
 			},
 			func(api *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
 				res, err := api.Subscriptions.Subscribed.List("1234", "5678").Do(context.Background(), opts...)
@@ -573,7 +708,7 @@ func TestAPI_Teams(t *testing.T) {
 						CreatedAt: Must[time.Time](t)(time.Parse(time.RFC3339, "2015-09-15T17:16:03Z")),
 						UpdatedAt: Must[time.Time](t)(time.Parse(time.RFC3339, "2016-09-15T17:16:03Z")),
 					}},
-				}, RequireQueryParam(t, "broadcaster_id"))
+				}, apitest.RequireQueryParam("broadcaster_id"))
 			},
 			func(api *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
 				res, err := api.Teams.Channels.List("1234").Do(context.Background(), opts...)
@@ -594,10 +729,10 @@ func TestAPI_Teams(t *testing.T) {
 						CreatedAt: Must[time.Time](t)(time.Parse(time.RFC3339, "2015-09-15T17:16:03Z")),
 						UpdatedAt: Must[time.Time](t)(time.Parse(time.RFC3339, "2016-09-15T17:16:03Z")),
 					}},
-				}, RequireQueryParam(t, "name"))
+				}, apitest.RequireQueryParam("name"), apitest.QueryParamEquals("id", "1234"))
 			},
 			func(api *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
-				res, err := api.Teams.List().Name("AwesomeTeam").Do(context.Background(), opts...)
+				res, err := api.Teams.List().Name("AwesomeTeam").ID("1234").Do(context.Background(), opts...)
 				return func(t *testing.T) {
 					require.Equal(t, 200, res.StatusCode)
 				}, err
@@ -624,10 +759,10 @@ func TestAPI_Users(t *testing.T) {
 						OfflineImageURL: "https://static-cdn.jtvnw.net/jtv_user_pictures/twitchdev-channel_offline_image-...",
 						CreatedAt:       Must[time.Time](t)(time.Parse(time.RFC3339, "2016-04-21T22:48:16Z")),
 					}},
-				}, RequireQueryParam(t, "id"))
+				}, apitest.QueryParamEquals("id", "141981764"), apitest.QueryParamEquals("login", "twitchdev"))
 			},
 			func(api *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
-				res, err := api.Users.List().ID("141981764").Do(context.Background(), opts...)
+				res, err := api.Users.List().ID("141981764").Login("twitchdev").Do(context.Background(), opts...)
 				return func(t *testing.T) {
 					require.Equal(t, 200, res.StatusCode)
 				}, err
@@ -664,10 +799,10 @@ func TestAPI_Videos(t *testing.T) {
 						CreatedAt:   Must[time.Time](t)(time.Parse(time.RFC3339, "2018-10-02T17:21:19Z")),
 						PublishedAt: Must[time.Time](t)(time.Parse(time.RFC3339, "2018-10-02T17:21:19Z")),
 					}},
-				})
+				}, apitest.RequireQueryParam("user_id"), apitest.QueryParamEquals("id", "9876"), apitest.QueryParamEquals("game_id", "4567"), apitest.QueryParamEquals("language", "en-US"), apitest.QueryParamEquals("period", "all"), apitest.QueryParamEquals("type", "upload"), apitest.QueryParamEquals("sort", "descending"), apitest.QueryParamEquals("after", "abc123"), apitest.QueryParamEquals("first", "1"))
 			},
 			func(api *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
-				res, err := api.Videos.List().UserID("1234").Do(context.Background(), opts...)
+				res, err := api.Videos.List().UserID("1234").ID("9876").GameID("4567").Language("en-US").Type("upload").Sort("descending").Period("all").After("abc123").First(1).Do(context.Background(), opts...)
 				return func(t *testing.T) {
 					require.Equal(t, 200, res.StatusCode)
 				}, err
@@ -679,7 +814,7 @@ func TestAPI_Videos(t *testing.T) {
 			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
 				return apitest.SetMockResponse(mock, http.MethodDelete, "/helix/videos", &api.ResponseData[string]{
 					Data: []string{"1234", "9876"},
-				}, RequireQueryParam(t, "id"))
+				}, apitest.RequireQueryParam("id"))
 			},
 			func(api *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
 				res, err := api.Videos.Delete("1234").ID("9876").Do(context.Background(), opts...)
@@ -698,7 +833,7 @@ func TestAPI_Whispers(t *testing.T) {
 			[]apitest.MockTwitchAPIOption{},
 			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
 				return apitest.SetMockResponse(mock, http.MethodPost, "/helix/whispers", &api.ResponseData[any]{},
-					RequireQueryParam(t, "from_user_id"), RequireQueryParam(t, "to_user_id"), BodyParamEquals(t, "message", "Hello!"),
+					apitest.RequireQueryParam("from_user_id"), apitest.RequireQueryParam("to_user_id"), apitest.BodyParamEquals("message", "Hello!"),
 				)
 			},
 			func(api *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {

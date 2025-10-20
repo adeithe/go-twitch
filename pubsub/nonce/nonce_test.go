@@ -25,3 +25,9 @@ func TestNonce_WichmannHill(t *testing.T) {
 		require.Equal(t, expected[i], nonce.WichmannHill())
 	}
 }
+
+func BenchmarkNonce_WichmannHill(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		nonce.WichmannHill()
+	}
+}

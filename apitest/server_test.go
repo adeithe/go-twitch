@@ -29,7 +29,7 @@ func TestMockAPI(t *testing.T) {
 				return apitest.SetMockResponse(mock, http.MethodGet, api.EndpointChatGetChatters, &api.ResponseData[api.UserInfo]{
 					Total: len(chatters),
 					Data:  chatters,
-				})
+				}, apitest.RequireQueryParam("broadcaster_id"), apitest.RequireQueryParam("moderator_id"))
 			},
 			func(api *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
 				res, err := api.Chat.Chatters.List("1234", "5678").Do(context.Background(), opts...)
@@ -46,7 +46,7 @@ func TestMockAPI(t *testing.T) {
 				return apitest.SetMockResponse(mock, http.MethodGet, api.EndpointChatGetChatters, &api.ResponseData[api.UserInfo]{
 					Total: len(chatters),
 					Data:  chatters,
-				})
+				}, apitest.RequireQueryParam("broadcaster_id"), apitest.RequireQueryParam("moderator_id"))
 			},
 			func(api *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
 				res, err := api.Chat.Chatters.List("1234", "5678").Do(context.Background(), opts...)
@@ -63,7 +63,7 @@ func TestMockAPI(t *testing.T) {
 				return apitest.SetMockResponse(mock, http.MethodGet, api.EndpointChatGetChatters, &api.ResponseData[api.UserInfo]{
 					Total: len(chatters),
 					Data:  chatters,
-				})
+				}, apitest.RequireQueryParam("broadcaster_id"), apitest.RequireQueryParam("moderator_id"))
 			},
 			func(api *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
 				res, err := api.Chat.Chatters.List("1234", "5678").Do(context.Background(), opts...)
@@ -80,7 +80,7 @@ func TestMockAPI(t *testing.T) {
 				return apitest.SetMockResponse(mock, http.MethodGet, api.EndpointChatGetChatters, &api.ResponseData[api.UserInfo]{
 					Total: len(chatters),
 					Data:  chatters,
-				})
+				}, apitest.RequireQueryParam("broadcaster_id"), apitest.RequireQueryParam("moderator_id"))
 			},
 			func(api *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
 				res, err := api.Chat.Chatters.List("1234", "5678").Do(context.Background(), opts...)
@@ -115,6 +115,24 @@ func TestMockAPI(t *testing.T) {
 			check(t)
 		})
 	}
+}
+
+func TestMockAPI_ValidationFailure(t *testing.T) {
+	mock := apitest.NewMockAPI(t, apitest.WithTLS())
+	endpoint := apitest.SetMockValidator(mock, http.MethodGet, api.EndpointChatGetChatters, apitest.RequireQueryParam("first"))
+
+	clientID, _, err := mock.RegisterApplication()
+	require.NoError(t, err)
+
+	token, err := mock.NewBearerToken(clientID)
+	require.NoError(t, err)
+
+	client := api.New(clientID, api.WithHTTPClient(mock.Client()))
+	_, err = client.Chat.Chatters.List("1234", "5678").Do(context.Background(), api.WithBearerToken(token))
+	require.Error(t, err)
+	require.Exactly(t, 1, endpoint.TimesCalled)
+	require.Exactly(t, 0, endpoint.Successes)
+	require.Exactly(t, 1, endpoint.Failures)
 }
 
 func TestMockAPI_HasCertificate(t *testing.T) {
