@@ -1039,8 +1039,9 @@ var Endpoints = []*TwitchAPIEndpoint{
 		DocsURL:  "#get-games",
 		Comments: []string{"Gets information about one or more specified games."},
 		Params: struct {
-			ID   []string `query:"-,required"`
-			Name []string `query:"-,required"`
+			ID   []string `query:"-"`
+			Name []string `query:"-"`
+			IGDB []string `query:"igdb_id"`
 		}{},
 		Response: BasicResponse[api.Game]{},
 	},
@@ -1193,7 +1194,7 @@ var Endpoints = []*TwitchAPIEndpoint{
 		Params: struct {
 			BroadcasterID              string               `body:"broadcaster_id,required"`
 			Title                      string               `body:"title,required"`
-			Choices                    []api.OutboundChoice `body:"choices,required"`
+			Choices                    []api.OutboundChoice `body:"choices"`
 			Duration                   int                  `body:"duration,required"`
 			ChannelPointsPerVote       int                  `body:"channel_points_per_vote"`
 			ChannelPointsVotingEnabled bool                 `body:"channel_points_voting_enabled"`

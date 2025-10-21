@@ -298,37 +298,1052 @@ func TestAPI_Bits(t *testing.T) {
 	})
 }
 
-func TestAPI_Channels(t *testing.T) {}
+func TestAPI_Channels(t *testing.T) {
+	RunEndpointTestCases(t, []EndpointTestCase{
+		{
+			"Get Channel Editors",
+			[]apitest.MockTwitchAPIOption{},
+			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
+				start := Must[time.Time](t)(time.Parse(time.RFC3339, "2023-08-01T00:00:00Z"))
+				return apitest.SetMockResponse(mock, http.MethodGet, "/helix/channels/editors", &api.ResponseData[api.ChannelEditor]{
+					Data: []api.ChannelEditor{{
+						UserID:   "1234",
+						UserName: "Cool_Editor",
+						AddedAt:  start,
+					}},
+				}, apitest.RequireQueryParam("broadcaster_id"))
+			},
+			func(api *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
+				start := Must[time.Time](t)(time.Parse(time.RFC3339, "2023-08-01T00:00:00Z"))
+				res, err := api.Channels.Editors.List("5678").Do(context.Background(), opts...)
+				return func(t *testing.T) {
+					require.Len(t, res.Data, 1)
+					require.Equal(t, "1234", res.Data[0].UserID)
+					require.Equal(t, "Cool_Editor", res.Data[0].UserName)
+					require.Equal(t, start.Unix(), res.Data[0].AddedAt.Unix())
+				}, err
+			},
+		},
+	})
+}
 
 func TestAPI_ChannelPoints(t *testing.T) {}
 
 func TestAPI_Charity(t *testing.T) {}
 
-func TestAPI_Chat(t *testing.T) {}
+func TestAPI_Chat(t *testing.T) {
+	RunEndpointTestCases(t, []EndpointTestCase{
+		{
+			"Get Global Chat Badges",
+			[]apitest.MockTwitchAPIOption{},
+			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
+				return apitest.SetMockResponse(mock, http.MethodGet, "/helix/chat/badges/global", &api.ResponseData[api.ChatBadge]{
+					Data: []api.ChatBadge{{
+						SetID: "1",
+						Versions: []api.ChatBadgeVersion{{
+							ID:          "1",
+							ImageSize1X: "https://static-cdn.jtvnw.net/badges/v1/1/1",
+							ImageSize2X: "https://static-cdn.jtvnw.net/badges/v1/1/2",
+							ImageSize4X: "https://static-cdn.jtvnw.net/badges/v1/1/4",
+						}},
+					}},
+				})
+			},
+			func(api *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
+				res, err := api.Chat.Badges.Global.List().Do(context.Background(), opts...)
+				return func(t *testing.T) {
+					require.Len(t, res.Data, 1)
+					require.Equal(t, "1", res.Data[0].SetID)
+					require.Len(t, res.Data[0].Versions, 1)
+					require.Equal(t, "1", res.Data[0].Versions[0].ID)
+					require.Equal(t, "https://static-cdn.jtvnw.net/badges/v1/1/1", res.Data[0].Versions[0].ImageSize1X)
+					require.Equal(t, "https://static-cdn.jtvnw.net/badges/v1/1/2", res.Data[0].Versions[0].ImageSize2X)
+					require.Equal(t, "https://static-cdn.jtvnw.net/badges/v1/1/4", res.Data[0].Versions[0].ImageSize4X)
+				}, err
+			},
+		},
+		{
+			"Get Chat Badges",
+			[]apitest.MockTwitchAPIOption{},
+			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
+				return apitest.SetMockResponse(mock, http.MethodGet, "/helix/chat/badges", &api.ResponseData[api.ChatBadge]{
+					Data: []api.ChatBadge{{
+						SetID: "1",
+						Versions: []api.ChatBadgeVersion{{
+							ID:          "1",
+							ImageSize1X: "https://static-cdn.jtvnw.net/badges/v1/1/1",
+							ImageSize2X: "https://static-cdn.jtvnw.net/badges/v1/1/2",
+							ImageSize4X: "https://static-cdn.jtvnw.net/badges/v1/1/4",
+						}},
+					}},
+				})
+			},
+			func(api *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
+				res, err := api.Chat.Badges.List("1234").Do(context.Background(), opts...)
+				return func(t *testing.T) {
+					require.Len(t, res.Data, 1)
+					require.Equal(t, "1", res.Data[0].SetID)
+					require.Len(t, res.Data[0].Versions, 1)
+					require.Equal(t, "1", res.Data[0].Versions[0].ID)
+					require.Equal(t, "https://static-cdn.jtvnw.net/badges/v1/1/1", res.Data[0].Versions[0].ImageSize1X)
+					require.Equal(t, "https://static-cdn.jtvnw.net/badges/v1/1/2", res.Data[0].Versions[0].ImageSize2X)
+					require.Equal(t, "https://static-cdn.jtvnw.net/badges/v1/1/4", res.Data[0].Versions[0].ImageSize4X)
+				}, err
+			},
+		},
+		{
+			"Get Chat User Color",
+			[]apitest.MockTwitchAPIOption{},
+			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
+				return apitest.SetMockResponse(mock, http.MethodGet, "/helix/chat/color", &api.ResponseData[api.UserChatColor]{
+					Data: []api.UserChatColor{{
+						UserID: "1234",
+						Color:  "#FF0000",
+					}},
+				})
+			},
+			func(api *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
+				res, err := api.Chat.Chatters.User.Color.List("1234").Do(context.Background(), opts...)
+				return func(t *testing.T) {
+					require.Len(t, res.Data, 1)
+					require.Equal(t, "1234", res.Data[0].UserID)
+					require.Equal(t, "#FF0000", res.Data[0].Color)
+				}, err
+			},
+		},
+		{
+			"Update User Chat Color",
+			[]apitest.MockTwitchAPIOption{},
+			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
+				return apitest.SetMockValidator(mock, http.MethodPut, "/helix/chat/color", apitest.QueryParamEquals("user_id", "1234"), apitest.QueryParamEquals("color", "#FF0000"))
+			},
+			func(api *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
+				res, err := api.Chat.Chatters.User.Color.Update("1234", "#FF0000").Do(context.Background(), opts...)
+				return func(t *testing.T) {
+					require.Equal(t, http.StatusOK, res.StatusCode)
+				}, err
+			},
+		},
+		{
+			"Get Global Emotes",
+			[]apitest.MockTwitchAPIOption{},
+			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
+				return apitest.SetMockResponse(mock, http.MethodGet, "/helix/chat/emotes/global", &api.ResponseData[api.Emote]{
+					Data: []api.Emote{{
+						ID:   "emote123",
+						Name: "CoolEmote",
+						Images: api.SizedImage{
+							Size1x: "https://static-cdn.jtvnw.net/emoticons/v1/emote123/1.0",
+							Size2x: "https://static-cdn.jtvnw.net/emoticons/v1/emote123/2.0",
+							Size4x: "https://static-cdn.jtvnw.net/emoticons/v1/emote123/3.0",
+						},
+						Format:     []string{"static", "animated"},
+						Scale:      []string{"1.0", "2.0", "3.0"},
+						ThemeMode:  []string{"light", "dark"},
+						EmoteType:  "subscriptions",
+						EmoteSetID: "set123",
+					}},
+				})
+			},
+			func(api *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
+				res, err := api.Chat.Emotes.Global.List().Do(context.Background(), opts...)
+				return func(t *testing.T) {
+					require.Len(t, res.Data, 1)
+					require.Equal(t, "emote123", res.Data[0].ID)
+					require.Equal(t, "CoolEmote", res.Data[0].Name)
+					require.Equal(t, "https://static-cdn.jtvnw.net/emoticons/v1/emote123/1.0", res.Data[0].Images.Size1x)
+					require.Equal(t, "https://static-cdn.jtvnw.net/emoticons/v1/emote123/2.0", res.Data[0].Images.Size2x)
+					require.Equal(t, "https://static-cdn.jtvnw.net/emoticons/v1/emote123/3.0", res.Data[0].Images.Size4x)
+					require.Equal(t, []string{"static", "animated"}, res.Data[0].Format)
+					require.Equal(t, []string{"1.0", "2.0", "3.0"}, res.Data[0].Scale)
+					require.Equal(t, []string{"light", "dark"}, res.Data[0].ThemeMode)
+					require.Equal(t, "subscriptions", res.Data[0].EmoteType)
+					require.Equal(t, "set123", res.Data[0].EmoteSetID)
+				}, err
+			},
+		},
+		{
+			"Get Channel Emotes",
+			[]apitest.MockTwitchAPIOption{},
+			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
+				return apitest.SetMockResponse(mock, http.MethodGet, "/helix/chat/emotes", &api.ResponseData[api.Emote]{
+					Data: []api.Emote{{
+						ID:   "emote123",
+						Name: "CoolEmote",
+						Images: api.SizedImage{
+							Size1x: "https://static-cdn.jtvnw.net/emoticons/v1/emote123/1.0",
+							Size2x: "https://static-cdn.jtvnw.net/emoticons/v1/emote123/2.0",
+							Size4x: "https://static-cdn.jtvnw.net/emoticons/v1/emote123/3.0",
+						},
+						Format:     []string{"static", "animated"},
+						Scale:      []string{"1.0", "2.0", "3.0"},
+						ThemeMode:  []string{"light", "dark"},
+						EmoteType:  "subscriptions",
+						EmoteSetID: "set123",
+					}},
+				})
+			},
+			func(api *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
+				res, err := api.Chat.Emotes.Channel.List("1234").Do(context.Background(), opts...)
+				return func(t *testing.T) {
+					require.Len(t, res.Data, 1)
+					require.Equal(t, "emote123", res.Data[0].ID)
+					require.Equal(t, "CoolEmote", res.Data[0].Name)
+					require.Equal(t, "https://static-cdn.jtvnw.net/emoticons/v1/emote123/1.0", res.Data[0].Images.Size1x)
+					require.Equal(t, "https://static-cdn.jtvnw.net/emoticons/v1/emote123/2.0", res.Data[0].Images.Size2x)
+					require.Equal(t, "https://static-cdn.jtvnw.net/emoticons/v1/emote123/3.0", res.Data[0].Images.Size4x)
+					require.Equal(t, []string{"static", "animated"}, res.Data[0].Format)
+					require.Equal(t, []string{"1.0", "2.0", "3.0"}, res.Data[0].Scale)
+					require.Equal(t, []string{"light", "dark"}, res.Data[0].ThemeMode)
+					require.Equal(t, "subscriptions", res.Data[0].EmoteType)
+					require.Equal(t, "set123", res.Data[0].EmoteSetID)
+				}, err
+			},
+		},
+		{
+			"Get User Emotes",
+			[]apitest.MockTwitchAPIOption{},
+			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
+				return apitest.SetMockResponse(mock, http.MethodGet, "/helix/chat/emotes/user", &api.ResponseData[api.Emote]{
+					Data: []api.Emote{{
+						ID:   "emote123",
+						Name: "CoolEmote",
+						Images: api.SizedImage{
+							Size1x: "https://static-cdn.jtvnw.net/emoticons/v1/emote123/1.0",
+							Size2x: "https://static-cdn.jtvnw.net/emoticons/v1/emote123/2.0",
+							Size4x: "https://static-cdn.jtvnw.net/emoticons/v1/emote123/3.0",
+						},
+						Format:     []string{"static", "animated"},
+						Scale:      []string{"1.0", "2.0", "3.0"},
+						ThemeMode:  []string{"light", "dark"},
+						EmoteType:  "subscriptions",
+						EmoteSetID: "set123",
+					}},
+				}, apitest.RequireQueryParam("user_id"), apitest.QueryParamEquals("broadcaster_id", "4567"), apitest.QueryParamEquals("after", "abc123"))
+			},
+			func(api *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
+				res, err := api.Chat.Emotes.User.List("1234").BroadcasterID("4567").After("abc123").Do(context.Background(), opts...)
+				return func(t *testing.T) {
+					require.Len(t, res.Data, 1)
+					require.Equal(t, "emote123", res.Data[0].ID)
+					require.Equal(t, "CoolEmote", res.Data[0].Name)
+					require.Equal(t, "https://static-cdn.jtvnw.net/emoticons/v1/emote123/1.0", res.Data[0].Images.Size1x)
+					require.Equal(t, "https://static-cdn.jtvnw.net/emoticons/v1/emote123/2.0", res.Data[0].Images.Size2x)
+					require.Equal(t, "https://static-cdn.jtvnw.net/emoticons/v1/emote123/3.0", res.Data[0].Images.Size4x)
+					require.Equal(t, []string{"static", "animated"}, res.Data[0].Format)
+					require.Equal(t, []string{"1.0", "2.0", "3.0"}, res.Data[0].Scale)
+					require.Equal(t, []string{"light", "dark"}, res.Data[0].ThemeMode)
+					require.Equal(t, "subscriptions", res.Data[0].EmoteType)
+					require.Equal(t, "set123", res.Data[0].EmoteSetID)
+				}, err
+			},
+		},
+		{
+			"Get Emote Sets",
+			[]apitest.MockTwitchAPIOption{},
+			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
+				return apitest.SetMockResponse(mock, http.MethodGet, "/helix/chat/emotes/set", &api.ResponseData[api.Emote]{
+					Data: []api.Emote{{
+						ID:   "emote123",
+						Name: "CoolEmote",
+						Images: api.SizedImage{
+							Size1x: "https://static-cdn.jtvnw.net/emoticons/v1/emote123/1.0",
+							Size2x: "https://static-cdn.jtvnw.net/emoticons/v1/emote123/2.0",
+							Size4x: "https://static-cdn.jtvnw.net/emoticons/v1/emote123/3.0",
+						},
+						Format:     []string{"static", "animated"},
+						Scale:      []string{"1.0", "2.0", "3.0"},
+						ThemeMode:  []string{"light", "dark"},
+						EmoteType:  "subscriptions",
+						EmoteSetID: "set123",
+					}},
+				}, apitest.QueryParamEquals("emote_set_id", "1234"))
+			},
+			func(api *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
+				res, err := api.Chat.EmoteSets.List("1234").Do(context.Background(), opts...)
+				return func(t *testing.T) {
+					require.Len(t, res.Data, 1)
+					require.Equal(t, "emote123", res.Data[0].ID)
+					require.Equal(t, "CoolEmote", res.Data[0].Name)
+					require.Equal(t, "https://static-cdn.jtvnw.net/emoticons/v1/emote123/1.0", res.Data[0].Images.Size1x)
+					require.Equal(t, "https://static-cdn.jtvnw.net/emoticons/v1/emote123/2.0", res.Data[0].Images.Size2x)
+					require.Equal(t, "https://static-cdn.jtvnw.net/emoticons/v1/emote123/3.0", res.Data[0].Images.Size4x)
+					require.Equal(t, []string{"static", "animated"}, res.Data[0].Format)
+					require.Equal(t, []string{"1.0", "2.0", "3.0"}, res.Data[0].Scale)
+					require.Equal(t, []string{"light", "dark"}, res.Data[0].ThemeMode)
+					require.Equal(t, "subscriptions", res.Data[0].EmoteType)
+					require.Equal(t, "set123", res.Data[0].EmoteSetID)
+				}, err
+			},
+		},
+		{
+			"Get Chatters",
+			[]apitest.MockTwitchAPIOption{},
+			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
+				return apitest.SetMockResponse(mock, http.MethodGet, "/helix/chat/chatters", &api.ResponseData[api.UserInfo]{
+					Data: []api.UserInfo{{
+						UserID:    "1234",
+						UserLogin: "coolviewer",
+						UserName:  "CoolViewer",
+					}},
+				}, apitest.RequireQueryParam("broadcaster_id"), apitest.RequireQueryParam("moderator_id"), apitest.QueryParamEquals("after", "abc123"), apitest.QueryParamEquals("first", "1"))
+			},
+			func(api *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
+				res, err := api.Chat.Chatters.List("1234", "5678").After("abc123").First(1).Do(context.Background(), opts...)
+				return func(t *testing.T) {
+					require.Len(t, res.Data, 1)
+					require.Equal(t, "1234", res.Data[0].UserID)
+					require.Equal(t, "coolviewer", res.Data[0].UserLogin)
+					require.Equal(t, "CoolViewer", res.Data[0].UserName)
+				}, err
+			},
+		},
+		{
+			"Get Chat Settings",
+			[]apitest.MockTwitchAPIOption{},
+			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
+				return apitest.SetMockResponse(mock, http.MethodGet, "/helix/chat/settings", &api.ResponseData[api.ChatSettings]{
+					Data: []api.ChatSettings{{
+						BroadcasterID:                "1234",
+						SlowMode:                     true,
+						SlowModeWaitTimeSeconds:      10,
+						FollowMode:                   true,
+						FollowModeDurationMinutes:    5,
+						EmoteMode:                    false,
+						NonModeratorChatDelay:        true,
+						NonModeratorChatDelaySeconds: 15,
+					}},
+				}, apitest.RequireQueryParam("broadcaster_id"), apitest.RequireQueryParam("moderator_id"))
+			},
+			func(api *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
+				res, err := api.Chat.Settings.List("1234", "5678").Do(context.Background(), opts...)
+				return func(t *testing.T) {
+					require.Len(t, res.Data, 1)
+					require.Equal(t, "1234", res.Data[0].BroadcasterID)
+					require.True(t, res.Data[0].SlowMode)
+					require.Equal(t, 10, res.Data[0].SlowModeWaitTimeSeconds)
+					require.True(t, res.Data[0].FollowMode)
+					require.Equal(t, 5, res.Data[0].FollowModeDurationMinutes)
+					require.False(t, res.Data[0].EmoteMode)
+					require.True(t, res.Data[0].NonModeratorChatDelay)
+					require.Equal(t, 15, res.Data[0].NonModeratorChatDelaySeconds)
+				}, err
+			},
+		},
+		{
+			"Update Chat Settings",
+			[]apitest.MockTwitchAPIOption{},
+			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
+				return apitest.SetMockValidator(mock, http.MethodPatch, "/helix/chat/settings",
+					apitest.RequireQueryParam("broadcaster_id"), apitest.RequireQueryParam("moderator_id"),
+					apitest.RequireBodyParam("slow_mode"), apitest.RequireBodyParam("slow_mode_wait_time"),
+					apitest.RequireBodyParam("non_moderator_chat_delay"), apitest.RequireBodyParam("non_moderator_chat_delay_duration"),
+					apitest.RequireBodyParam("follower_mode"), apitest.RequireBodyParam("follower_mode_duration"),
+					apitest.RequireBodyParam("emote_mode"), apitest.RequireBodyParam("unique_chat_mode"),
+				)
+			},
+			func(api *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
+				res, err := api.Chat.Settings.Modify("1234", "5678").
+					EmoteMode(true).UniqueChatMode(true).SubscriberMode(true).
+					NonModeratorChatDelay(true).NonModeratorChatDelayDuration(15).
+					FollowerMode(true).FollowerModeDuration(5).
+					SlowMode(true).SlowModeWaitTime(10).
+					Do(context.Background(), opts...)
+				return func(t *testing.T) {
+					require.Equal(t, http.StatusOK, res.StatusCode)
+				}, err
+			},
+		},
+		{
+			"Get Shared Chat Session",
+			[]apitest.MockTwitchAPIOption{},
+			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
+				return apitest.SetMockResponse(mock, http.MethodGet, "/helix/shared_chat/session", &api.ResponseData[api.SharedChatSession]{
+					Data: []api.SharedChatSession{{
+						SessionID:         "session123",
+						HostBroadcasterID: "1234",
+						Participants: []api.SharedChatSessionParticipant{{
+							BroadcasterID: "4567",
+						}},
+						CreatedAt: Must[time.Time](t)(time.Parse(time.RFC3339, "2023-08-01T12:00:00Z")),
+						UpdatedAt: Must[time.Time](t)(time.Parse(time.RFC3339, "2023-08-01T12:00:00Z")),
+					}},
+				}, apitest.RequireQueryParam("broadcaster_id"))
+			},
+			func(api *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
+				createdAt := Must[time.Time](t)(time.Parse(time.RFC3339, "2023-08-01T12:00:00Z"))
+				res, err := api.Chat.Shared.List("1234").Do(context.Background(), opts...)
+				return func(t *testing.T) {
+					require.Len(t, res.Data, 1)
+					require.Equal(t, "session123", res.Data[0].SessionID)
+					require.Equal(t, "1234", res.Data[0].HostBroadcasterID)
+					require.Len(t, res.Data[0].Participants, 1)
+					require.Equal(t, "4567", res.Data[0].Participants[0].BroadcasterID)
+					require.Equal(t, createdAt.Unix(), res.Data[0].CreatedAt.Unix())
+					require.Equal(t, createdAt.Unix(), res.Data[0].CreatedAt.Unix())
+				}, err
+			},
+		},
+		{
+			"Send Chat Announcement",
+			[]apitest.MockTwitchAPIOption{},
+			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
+				return apitest.SetMockValidator(mock, http.MethodPost, "/helix/chat/announcements", apitest.RequireQueryParam("broadcaster_id"), apitest.RequireQueryParam("moderator_id"), apitest.RequireBodyParam("message"), apitest.RequireBodyParam("color"))
+			},
+			func(api *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
+				res, err := api.Chat.Announcement.Insert("1234", "5678", "9876").Color("purple").Do(context.Background(), opts...)
+				return func(t *testing.T) {
+					require.Equal(t, http.StatusOK, res.StatusCode)
+				}, err
+			},
+		},
+		{
+			"Send A Shoutout",
+			[]apitest.MockTwitchAPIOption{},
+			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
+				return apitest.SetMockValidator(mock, http.MethodPost, "/helix/chat/shoutouts",
+					apitest.RequireQueryParam("from_broadcaster_id"), apitest.RequireQueryParam("to_broadcaster_id"),
+					apitest.RequireQueryParam("moderator_id"),
+				)
+			},
+			func(api *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
+				res, err := api.Chat.Shoutout.Insert("1234", "5678", "9876").Do(context.Background(), opts...)
+				return func(t *testing.T) {
+					require.Equal(t, http.StatusOK, res.StatusCode)
+				}, err
+			},
+		},
+		{
+			"Send Chat Message",
+			[]apitest.MockTwitchAPIOption{},
+			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
+				return apitest.SetMockValidator(mock, http.MethodPost, "/helix/chat/messages",
+					apitest.RequireBodyParam("broadcaster_id"), apitest.RequireBodyParam("sender_id"),
+					apitest.RequireBodyParam("message"), apitest.RequireBodyParam("replay_parent_message_id"),
+					apitest.RequireBodyParam("for_source_only"),
+				)
+			},
+			func(api *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
+				res, err := api.Chat.Insert("1234", "5678", "Hello, chat!").ReplayParentMessageID("abc123").ForSourceOnly(true).Do(context.Background(), opts...)
+				return func(t *testing.T) {
+					require.Equal(t, http.StatusOK, res.StatusCode)
+				}, err
+			},
+		},
+	})
+}
 
 func TestAPI_Clips(t *testing.T) {}
 
 func TestAPI_Conduits(t *testing.T) {}
 
-func TestAPI_ContentLabels(t *testing.T) {}
+func TestAPI_ContentLabels(t *testing.T) {
+	RunEndpointTestCases(t, []EndpointTestCase{
+		{
+			"Get Content Classification Labels",
+			[]apitest.MockTwitchAPIOption{},
+			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
+				return apitest.SetMockResponse(mock, http.MethodGet, "/helix/content_classification_labels", &api.ResponseData[api.ContentClassificationLabel]{
+					Data: []api.ContentClassificationLabel{{
+						ID:          "label123",
+						Name:        "Violence",
+						Description: "Content that depicts violence",
+					}},
+				}, apitest.QueryParamEquals("locale", "en-US"))
+			},
+			func(api *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
+				res, err := api.ContentLabels.List().Locale("en-US").Do(context.Background(), opts...)
+				return func(t *testing.T) {
+					require.Len(t, res.Data, 1)
+					require.Equal(t, "label123", res.Data[0].ID)
+					require.Equal(t, "Violence", res.Data[0].Name)
+					require.Equal(t, "Content that depicts violence", res.Data[0].Description)
+				}, err
+			},
+		},
+	})
+}
 
 func TestAPI_Entitlements(t *testing.T) {}
 
-func TestAPI_Extensions(t *testing.T) {}
+func TestAPI_Extensions(t *testing.T) {
+	RunEndpointTestCases(t, []EndpointTestCase{
+		{
+			"Get Extensions",
+			[]apitest.MockTwitchAPIOption{},
+			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
+				return apitest.SetMockResponse(mock, http.MethodGet, "/helix/extensions", &api.ResponseData[api.Extension]{
+					Data: []api.Extension{{
+						ID:            "ext123",
+						Name:          "Cool Extension",
+						Description:   "An awesome Twitch extension",
+						AuthorName:    "twitchdev",
+						State:         "Release",
+						Version:       "0.0.9",
+						ViewerSummary: "Test ALL the extensions features!",
+					}},
+				}, apitest.QueryParamEquals("extension_id", "ext123"), apitest.QueryParamEquals("extension_version", "0.0.9"))
+			},
+			func(api *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
+				res, err := api.Extensions.List("ext123").ExtensionVersion("0.0.9").Do(context.Background(), opts...)
+				return func(t *testing.T) {
+					require.Len(t, res.Data, 1)
+					require.Equal(t, "ext123", res.Data[0].ID)
+					require.Equal(t, "Cool Extension", res.Data[0].Name)
+					require.Equal(t, "An awesome Twitch extension", res.Data[0].Description)
+					require.Equal(t, "twitchdev", res.Data[0].AuthorName)
+					require.Equal(t, "Release", res.Data[0].State)
+					require.Equal(t, "0.0.9", res.Data[0].Version)
+					require.Equal(t, "Test ALL the extensions features!", res.Data[0].ViewerSummary)
+				}, err
+			},
+		},
+	})
+}
 
-func TestAPI_EventSub(t *testing.T) {}
+func TestAPI_EventSub(t *testing.T) {
+	RunEndpointTestCases(t, []EndpointTestCase{
+		{
+			"Get EventSub Subscriptions",
+			[]apitest.MockTwitchAPIOption{},
+			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
+				return apitest.SetMockResponse(mock, http.MethodGet, "/helix/eventsub/subscriptions", &api.ResponseData[api.EventSubSubscription]{
+					Data: []api.EventSubSubscription{{
+						ID:        "sub123",
+						Status:    "enabled",
+						Type:      "channel.follow",
+						Version:   "1",
+						Condition: map[string]any{"broadcaster_user_id": "1234"},
+						CreatedAt: Must[time.Time](t)(time.Parse(time.RFC3339, "2023-08-01T12:00:00Z")),
+					}},
+				}, apitest.QueryParamEquals("subscription_id", "sub123"), apitest.QueryParamEquals("status", "enabled"), apitest.QueryParamEquals("type", "channel.follow"), apitest.QueryParamEquals("user_id", "1234"), apitest.QueryParamEquals("after", "abc123"))
+			},
+			func(api *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
+				createdAt := Must[time.Time](t)(time.Parse(time.RFC3339, "2023-08-01T12:00:00Z"))
+				res, err := api.EventSub.List().SubscriptionID("sub123").Status("enabled").Type("channel.follow").UserID("1234").After("abc123").Do(context.Background(), opts...)
+				return func(t *testing.T) {
+					require.Len(t, res.Data, 1)
+					require.Equal(t, "sub123", res.Data[0].ID)
+					require.Equal(t, "enabled", res.Data[0].Status)
+					require.Equal(t, "channel.follow", res.Data[0].Type)
+					require.Equal(t, "1", res.Data[0].Version)
+					require.Equal(t, "1234", res.Data[0].Condition["broadcaster_user_id"])
+					require.Equal(t, createdAt.Unix(), res.Data[0].CreatedAt.Unix())
+				}, err
+			},
+		},
+	})
+}
 
-func TestAPI_Games(t *testing.T) {}
+func TestAPI_Games(t *testing.T) {
+	RunEndpointTestCases(t, []EndpointTestCase{
+		{
+			"Get Top Games",
+			[]apitest.MockTwitchAPIOption{},
+			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
+				return apitest.SetMockResponse(mock, http.MethodGet, "/helix/games/top", &api.ResponseData[api.Game]{
+					Data: []api.Game{{
+						ID:        "21779",
+						Name:      "Fortnite",
+						BoxArtURL: "https://static-cdn.jtvnw.net/ttv-boxart/Fortnite-{width}x{height}.jpg",
+						IGDB:      "124024",
+					}},
+				}, apitest.QueryParamEquals("after", "abc123"), apitest.QueryParamEquals("before", "def456"), apitest.QueryParamEquals("first", "1"))
+			},
+			func(api *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
+				res, err := api.Games.Top.List().After("abc123").Before("def456").First(1).Do(context.Background(), opts...)
+				return func(t *testing.T) {
+					require.Len(t, res.Data, 1)
+					require.Equal(t, "21779", res.Data[0].ID)
+					require.Equal(t, "Fortnite", res.Data[0].Name)
+					require.Equal(t, "https://static-cdn.jtvnw.net/ttv-boxart/Fortnite-{width}x{height}.jpg", res.Data[0].BoxArtURL)
+					require.Equal(t, "124024", res.Data[0].IGDB)
+				}, err
+			},
+		},
+		{
+			"Get Games",
+			[]apitest.MockTwitchAPIOption{},
+			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
+				return apitest.SetMockResponse(mock, http.MethodGet, "/helix/games", &api.ResponseData[api.Game]{
+					Data: []api.Game{{
+						ID:        "21779",
+						Name:      "Fortnite",
+						BoxArtURL: "https://static-cdn.jtvnw.net/ttv-boxart/Fortnite-{width}x{height}.jpg",
+						IGDB:      "124024",
+					}},
+				}, apitest.QueryParamEquals("id", "21779"), apitest.QueryParamEquals("name", "Fortnite"), apitest.QueryParamEquals("igdb_id", "124024"))
+			},
+			func(api *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
+				res, err := api.Games.List().ID("21779").Name("Fortnite").IGDB("124024").Do(context.Background(), opts...)
+				return func(t *testing.T) {
+					require.Len(t, res.Data, 1)
+					require.Equal(t, "21779", res.Data[0].ID)
+					require.Equal(t, "Fortnite", res.Data[0].Name)
+					require.Equal(t, "https://static-cdn.jtvnw.net/ttv-boxart/Fortnite-{width}x{height}.jpg", res.Data[0].BoxArtURL)
+					require.Equal(t, "124024", res.Data[0].IGDB)
+				}, err
+			},
+		},
+	})
+}
 
-func TestAPI_GuestStar(t *testing.T) {}
+func TestAPI_Goals(t *testing.T) {
+	RunEndpointTestCases(t, []EndpointTestCase{
+		{
+			"Get Creator Goals",
+			[]apitest.MockTwitchAPIOption{},
+			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
+				return apitest.SetMockResponse(mock, http.MethodGet, "/helix/goals", &api.ResponseData[api.CreatorGoal]{
+					Data: []api.CreatorGoal{{
+						Type:             "follower",
+						ID:               "goal123",
+						BroadcasterID:    "1234",
+						BroadcasterLogin: "twitchdev",
+						BroadcasterName:  "TwitchDev",
+						Description:      "Reach 100 followers!",
+						CurrentAmount:    75,
+						TargetAmount:     100,
+						CreatedAt:        Must[time.Time](t)(time.Parse(time.RFC3339, "2023-08-01T12:00:00Z")),
+					}},
+				}, apitest.RequireQueryParam("broadcaster_id"))
+			},
+			func(api *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
+				createdAt := Must[time.Time](t)(time.Parse(time.RFC3339, "2023-08-01T12:00:00Z"))
+				res, err := api.Goals.List("1234").Do(context.Background(), opts...)
+				return func(t *testing.T) {
+					require.Len(t, res.Data, 1)
+					require.Equal(t, "goal123", res.Data[0].ID)
+					require.Equal(t, "1234", res.Data[0].BroadcasterID)
+					require.Equal(t, "TwitchDev", res.Data[0].BroadcasterName)
+					require.Equal(t, "Reach 100 followers!", res.Data[0].Description)
+					require.Equal(t, 75, res.Data[0].CurrentAmount)
+					require.Equal(t, 100, res.Data[0].TargetAmount)
+					require.Equal(t, createdAt.Unix(), res.Data[0].CreatedAt.Unix())
+				}, err
+			},
+		},
+	})
+}
 
-func TestAPI_HypeTrain(t *testing.T) {}
+func TestAPI_GuestStar(t *testing.T) {
+	RunEndpointTestCases(t, []EndpointTestCase{
+		{
+			"Get Guest Star Sessions",
+			[]apitest.MockTwitchAPIOption{},
+			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
+				return apitest.SetMockResponse(mock, http.MethodGet, "/helix/guest_star/session", &api.ResponseData[api.GuestStarSession]{
+					Data: []api.GuestStarSession{{
+						ID: "session123",
+						Guests: []api.GuestStarGuest{{
+							SlotID:    "slot1",
+							IsLive:    false,
+							UserID:    "9876",
+							UserLogin: "coolviewer",
+							UserName:  "CoolViewer",
+							Volume:    100,
+							AudioSettings: api.MediaSettings{
+								IsHostEnabled:  true,
+								IsGuestEnabled: true,
+								IsAvailable:    true,
+							},
+							VideoSettings: api.MediaSettings{
+								IsHostEnabled:  false,
+								IsGuestEnabled: false,
+								IsAvailable:    false,
+							},
+							AssignedAt: Must[time.Time](t)(time.Parse(time.RFC3339, "2023-08-01T11:50:00Z")),
+							JoinedAt:   Must[time.Time](t)(time.Parse(time.RFC3339, "2023-08-01T12:00:00Z")),
+						}},
+					}},
+				}, apitest.QueryParamEquals("broadcaster_id", "1234"), apitest.QueryParamEquals("moderator_id", "4567"))
+			},
+			func(api *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
+				res, err := api.GuestStar.List("1234", "4567").Do(context.Background(), opts...)
+				return func(t *testing.T) {
+					require.Len(t, res.Data, 1)
+					require.Equal(t, "session123", res.Data[0].ID)
+					require.Len(t, res.Data[0].Guests, 1)
+					require.Equal(t, "slot1", res.Data[0].Guests[0].SlotID)
+					require.False(t, res.Data[0].Guests[0].IsLive)
+					require.Equal(t, "9876", res.Data[0].Guests[0].UserID)
+					require.Equal(t, "coolviewer", res.Data[0].Guests[0].UserLogin)
+					require.Equal(t, "CoolViewer", res.Data[0].Guests[0].UserName)
+					require.Equal(t, 100, res.Data[0].Guests[0].Volume)
+					require.True(t, res.Data[0].Guests[0].AudioSettings.IsHostEnabled)
+					require.True(t, res.Data[0].Guests[0].AudioSettings.IsGuestEnabled)
+					require.True(t, res.Data[0].Guests[0].AudioSettings.IsAvailable)
+					require.False(t, res.Data[0].Guests[0].VideoSettings.IsHostEnabled)
+					require.False(t, res.Data[0].Guests[0].VideoSettings.IsGuestEnabled)
+					require.False(t, res.Data[0].Guests[0].VideoSettings.IsAvailable)
+					assignedAt := Must[time.Time](t)(time.Parse(time.RFC3339, "2023-08-01T11:50:00Z"))
+					joinedAt := Must[time.Time](t)(time.Parse(time.RFC3339, "2023-08-01T12:00:00Z"))
+					require.Equal(t, assignedAt.Unix(), res.Data[0].Guests[0].AssignedAt.Unix())
+					require.Equal(t, joinedAt.Unix(), res.Data[0].Guests[0].JoinedAt.Unix())
+				}, err
+			},
+		},
+	})
+}
 
-func TestAPI_Moderation(t *testing.T) {}
+func TestAPI_HypeTrain(t *testing.T) {
+	RunEndpointTestCases(t, []EndpointTestCase{
+		{
+			"Get Hype Train Status",
+			[]apitest.MockTwitchAPIOption{},
+			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
+				return apitest.SetMockResponse(mock, http.MethodGet, "/helix/hypetrain/status", &api.ResponseData[api.HypeTrainStatusInfo]{
+					Data: []api.HypeTrainStatusInfo{{
+						Current: &api.HypeTrainStatus{
+							ID:               "train123",
+							BroadcasterID:    "1234",
+							BroadcasterLogin: "twitchdev",
+							BroadcasterName:  "TwitchDev",
+							Level:            3,
+							Total:            1500,
+							Progress:         4,
+							Goal:             1600,
+							StartedAt:        Must[time.Time](t)(time.Parse(time.RFC3339, "2023-08-01T12:00:00Z")),
+							ExpiresAt:        Must[time.Time](t)(time.Parse(time.RFC3339, "2023-08-01T12:10:00Z")),
+						},
+					}},
+				}, apitest.RequireQueryParam("broadcaster_id"))
+			},
+			func(api *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
+				res, err := api.HypeTrain.List("1234").Do(context.Background(), opts...)
+				return func(t *testing.T) {
+					require.Len(t, res.Data, 1)
+					require.NotNil(t, res.Data[0].Current)
+					require.Equal(t, "train123", res.Data[0].Current.ID)
+					require.Equal(t, "1234", res.Data[0].Current.BroadcasterID)
+					require.Equal(t, "twitchdev", res.Data[0].Current.BroadcasterLogin)
+					require.Equal(t, "TwitchDev", res.Data[0].Current.BroadcasterName)
+					require.Equal(t, 3, res.Data[0].Current.Level)
+					require.Equal(t, 1500, res.Data[0].Current.Total)
+					require.Equal(t, 4, res.Data[0].Current.Progress)
+					require.Equal(t, 1600, res.Data[0].Current.Goal)
+					startedAt := Must[time.Time](t)(time.Parse(time.RFC3339, "2023-08-01T12:00:00Z"))
+					expiresAt := Must[time.Time](t)(time.Parse(time.RFC3339, "2023-08-01T12:10:00Z"))
+					require.Equal(t, startedAt.Unix(), res.Data[0].Current.StartedAt.Unix())
+					require.Equal(t, expiresAt.Unix(), res.Data[0].Current.ExpiresAt.Unix())
+				}, err
+			},
+		},
+	})
+}
 
-func TestAPI_Polls(t *testing.T) {}
+func TestAPI_Moderation(t *testing.T) {
+	RunEndpointTestCases(t, []EndpointTestCase{
+		{
+			"Ban Users",
+			[]apitest.MockTwitchAPIOption{},
+			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
+				createdAt := Must[time.Time](t)(time.Parse(time.RFC3339, "2023-08-01T12:00:00Z"))
+				expiresAt := Must[time.Time](t)(time.Parse(time.RFC3339, "2023-08-01T12:00:01Z"))
+				return apitest.SetMockResponse(mock, http.MethodPost, "/helix/moderation/bans", &api.ResponseData[api.IssuedBan]{
+					Data: []api.IssuedBan{{
+						BroadcasterID: "9876",
+						ModeratorID:   "5678",
+						UserID:        "1234",
+						CreatedAt:     createdAt,
+						ExpiresAt:     &expiresAt,
+					}},
+				}, apitest.RequireQueryParam("broadcaster_id"), apitest.RequireQueryParam("moderator_id"), apitest.RequireBodyParam("data"))
+			},
+			func(client *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
+				createdAt := Must[time.Time](t)(time.Parse(time.RFC3339, "2023-08-01T12:00:00Z"))
+				expiresAt := Must[time.Time](t)(time.Parse(time.RFC3339, "2023-08-01T12:00:01Z"))
+				res, err := client.Moderation.Bans.Insert("1234", "5678", api.WithTimeout("1234", "", 1)).Do(context.Background(), opts...)
+				return func(t *testing.T) {
+					require.Len(t, res.Data, 1)
+					require.Equal(t, "9876", res.Data[0].BroadcasterID)
+					require.Equal(t, "5678", res.Data[0].ModeratorID)
+					require.Equal(t, "1234", res.Data[0].UserID)
+					require.Equal(t, createdAt.Unix(), res.Data[0].CreatedAt.Unix())
+					require.Equal(t, expiresAt.Unix(), res.Data[0].ExpiresAt.Unix())
+				}, err
+			},
+		},
+		{
+			"Unban User",
+			[]apitest.MockTwitchAPIOption{},
+			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
+				return apitest.SetMockValidator(mock, http.MethodDelete, "/helix/moderation/bans",
+					apitest.RequireQueryParam("broadcaster_id"), apitest.RequireQueryParam("moderator_id"),
+					apitest.QueryParamEquals("user_id", "9876"),
+				)
+			},
+			func(client *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
+				res, err := client.Moderation.Bans.Delete("1234", "5678", "9876").Do(context.Background(), opts...)
+				return func(t *testing.T) {
+					require.Equal(t, http.StatusOK, res.StatusCode)
+				}, err
+			},
+		},
+		{
+			"Delete Chat Messages",
+			[]apitest.MockTwitchAPIOption{},
+			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
+				return apitest.SetMockValidator(mock, http.MethodDelete, "/helix/moderation/chat",
+					apitest.RequireQueryParam("broadcaster_id"), apitest.RequireQueryParam("moderator_id"),
+					apitest.QueryParamEquals("message_id", "chat123"),
+				)
+			},
+			func(client *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
+				res, err := client.Moderation.ClearChat.Delete("1234", "5678").MessageID("chat123").Do(context.Background(), opts...)
+				return func(t *testing.T) {
+					require.Equal(t, http.StatusOK, res.StatusCode)
+				}, err
+			},
+		},
+	})
+}
 
-func TestAPI_Predictions(t *testing.T) {}
+func TestAPI_Polls(t *testing.T) {
+	RunEndpointTestCases(t, []EndpointTestCase{
+		{
+			"Get Polls",
+			[]apitest.MockTwitchAPIOption{},
+			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
+				return apitest.SetMockResponse(mock, http.MethodGet, "/helix/polls", &api.ResponseData[api.Poll]{
+					Data: []api.Poll{{
+						ID:            "poll123",
+						BroadcasterID: "1234",
+						Title:         "Which game should I play?",
+						Status:        "ACTIVE",
+						Choices: []api.PollChoice{{
+							ID:    "choice1",
+							Title: "Game A",
+							Votes: 10,
+						}, {
+							ID:    "choice2",
+							Title: "Game B",
+							Votes: 15,
+						}},
+						StartedAt: Must[time.Time](t)(time.Parse(time.RFC3339, "2023-08-01T12:00:00Z")),
+					}},
+				}, apitest.RequireQueryParam("broadcaster_id"), apitest.QueryParamEquals("id", "poll123"), apitest.QueryParamEquals("after", "abc123"), apitest.QueryParamEquals("first", "1"))
+			},
+			func(api *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
+				createdAt := Must[time.Time](t)(time.Parse(time.RFC3339, "2023-08-01T12:00:00Z"))
+				res, err := api.Polls.List("1234").ID("poll123").After("abc123").First(1).Do(context.Background(), opts...)
+				return func(t *testing.T) {
+					require.Len(t, res.Data, 1)
+					require.Equal(t, "poll123", res.Data[0].ID)
+					require.Equal(t, "1234", res.Data[0].BroadcasterID)
+					require.Equal(t, "Which game should I play?", res.Data[0].Title)
+					require.Equal(t, "ACTIVE", res.Data[0].Status)
+					require.Len(t, res.Data[0].Choices, 2)
+					require.Equal(t, "choice1", res.Data[0].Choices[0].ID)
+					require.Equal(t, "Game A", res.Data[0].Choices[0].Title)
+					require.Equal(t, 10, res.Data[0].Choices[0].Votes)
+					require.Equal(t, "choice2", res.Data[0].Choices[1].ID)
+					require.Equal(t, "Game B", res.Data[0].Choices[1].Title)
+					require.Equal(t, 15, res.Data[0].Choices[1].Votes)
+					require.Equal(t, createdAt.Unix(), res.Data[0].StartedAt.Unix())
+				}, err
+			},
+		},
+		{
+			"Create Poll",
+			[]apitest.MockTwitchAPIOption{},
+			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
+				return apitest.SetMockResponse(mock, http.MethodPost, "/helix/polls", &api.ResponseData[api.Poll]{
+					Data: []api.Poll{{
+						ID:            "poll123",
+						BroadcasterID: "1234",
+						Title:         "Which game should I play?",
+						Status:        "ACTIVE",
+						Choices: []api.PollChoice{
+							{ID: "choice1", Title: "Game A"},
+							{ID: "choice2", Title: "Game B"},
+						},
+						StartedAt: Must[time.Time](t)(time.Parse(time.RFC3339, "2023-08-01T12:00:00Z")),
+					}},
+				}, apitest.RequireBodyParam("broadcaster_id"), apitest.RequireBodyParam("title"), apitest.RequireBodyParam("choices"), apitest.RequireBodyParam("duration"), apitest.RequireBodyParam("channel_points_voting_enabled"), apitest.RequireBodyParam("channel_points_per_vote"))
+			},
+			func(client *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
+				createdAt := Must[time.Time](t)(time.Parse(time.RFC3339, "2023-08-01T12:00:00Z"))
+				res, err := client.Polls.Insert("1234", "Which game should I play?", 90).Choices(api.WithChoice("Game A"), api.WithChoice("Game B")).ChannelPointsVotingEnabled(true).ChannelPointsPerVote(500).Do(context.Background(), opts...)
+				return func(t *testing.T) {
+					require.Len(t, res.Data, 1)
+					require.Equal(t, "poll123", res.Data[0].ID)
+					require.Equal(t, "1234", res.Data[0].BroadcasterID)
+					require.Equal(t, "Which game should I play?", res.Data[0].Title)
+					require.Equal(t, "ACTIVE", res.Data[0].Status)
+					require.Len(t, res.Data[0].Choices, 2)
+					require.Equal(t, "choice1", res.Data[0].Choices[0].ID)
+					require.Equal(t, "Game A", res.Data[0].Choices[0].Title)
+					require.Equal(t, "choice2", res.Data[0].Choices[1].ID)
+					require.Equal(t, "Game B", res.Data[0].Choices[1].Title)
+					require.Equal(t, createdAt.Unix(), res.Data[0].StartedAt.Unix())
+				}, err
+			},
+		},
+		{
+			"End Poll",
+			[]apitest.MockTwitchAPIOption{},
+			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
+				return apitest.SetMockResponse(mock, http.MethodPatch, "/helix/polls", &api.ResponseData[api.Poll]{
+					Data: []api.Poll{{
+						ID:            "poll123",
+						BroadcasterID: "1234",
+						Title:         "Which game should I play?",
+						Status:        "COMPLETED",
+						Choices: []api.PollChoice{
+							{ID: "choice1", Title: "Game A", Votes: 10},
+							{ID: "choice2", Title: "Game B", Votes: 15},
+						},
+						StartedAt: Must[time.Time](t)(time.Parse(time.RFC3339, "2023-08-01T12:00:00Z")),
+					}},
+				}, apitest.RequireBodyParam("broadcaster_id"), apitest.RequireBodyParam("id"), apitest.RequireBodyParam("status"))
+			},
+			func(client *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
+				createdAt := Must[time.Time](t)(time.Parse(time.RFC3339, "2023-08-01T12:00:00Z"))
+				res, err := client.Polls.Modify("1234", "poll123", "TERMINATED").Do(context.Background(), opts...)
+				return func(t *testing.T) {
+					require.Len(t, res.Data, 1)
+					require.Equal(t, "poll123", res.Data[0].ID)
+					require.Equal(t, "1234", res.Data[0].BroadcasterID)
+					require.Equal(t, "Which game should I play?", res.Data[0].Title)
+					require.Equal(t, "COMPLETED", res.Data[0].Status)
+					require.Len(t, res.Data[0].Choices, 2)
+					require.Equal(t, "choice1", res.Data[0].Choices[0].ID)
+					require.Equal(t, "Game A", res.Data[0].Choices[0].Title)
+					require.Equal(t, 10, res.Data[0].Choices[0].Votes)
+					require.Equal(t, "choice2", res.Data[0].Choices[1].ID)
+					require.Equal(t, "Game B", res.Data[0].Choices[1].Title)
+					require.Equal(t, 15, res.Data[0].Choices[1].Votes)
+					require.Equal(t, createdAt.Unix(), res.Data[0].StartedAt.Unix())
+				}, err
+			},
+		},
+	})
+}
+
+func TestAPI_Predictions(t *testing.T) {
+	RunEndpointTestCases(t, []EndpointTestCase{
+		{
+			"Get Predictions",
+			[]apitest.MockTwitchAPIOption{},
+			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
+				return apitest.SetMockResponse(mock, http.MethodGet, "/helix/predictions", &api.ResponseData[api.Prediction]{
+					Data: []api.Prediction{{
+						ID:            "pred123",
+						BroadcasterID: "1234",
+						Title:         "Who will win?",
+						Status:        "ACTIVE",
+						Outcomes: []api.PredictionOutcome{{
+							ID:            "outcome1",
+							Title:         "Team A",
+							Users:         10,
+							ChannelPoints: 5000,
+						}, {
+							ID:            "outcome2",
+							Title:         "Team B",
+							Users:         15,
+							ChannelPoints: 7500,
+						}},
+						CreatedAt: Must[time.Time](t)(time.Parse(time.RFC3339, "2023-08-01T12:00:00Z")),
+					}},
+				}, apitest.RequireQueryParam("broadcaster_id"), apitest.QueryParamEquals("id", "pred123"), apitest.QueryParamEquals("after", "abc123"), apitest.QueryParamEquals("first", "1"))
+			},
+			func(api *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
+				createdAt := Must[time.Time](t)(time.Parse(time.RFC3339, "2023-08-01T12:00:00Z"))
+				res, err := api.Predictions.List("1234").ID("pred123").After("abc123").First(1).Do(context.Background(), opts...)
+				return func(t *testing.T) {
+					require.Len(t, res.Data, 1)
+					require.Equal(t, "pred123", res.Data[0].ID)
+					require.Equal(t, "1234", res.Data[0].BroadcasterID)
+					require.Equal(t, "Who will win?", res.Data[0].Title)
+					require.Equal(t, "ACTIVE", res.Data[0].Status)
+					require.Len(t, res.Data[0].Outcomes, 2)
+					require.Equal(t, "outcome1", res.Data[0].Outcomes[0].ID)
+					require.Equal(t, "Team A", res.Data[0].Outcomes[0].Title)
+					require.Equal(t, 10, res.Data[0].Outcomes[0].Users)
+					require.Equal(t, 5000, res.Data[0].Outcomes[0].ChannelPoints)
+					require.Equal(t, "outcome2", res.Data[0].Outcomes[1].ID)
+					require.Equal(t, "Team B", res.Data[0].Outcomes[1].Title)
+					require.Equal(t, 15, res.Data[0].Outcomes[1].Users)
+					require.Equal(t, 7500, res.Data[0].Outcomes[1].ChannelPoints)
+					require.Equal(t, createdAt.Unix(), res.Data[0].CreatedAt.Unix())
+				}, err
+			},
+		},
+		{
+			"Create Prediction",
+			[]apitest.MockTwitchAPIOption{},
+			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
+				return apitest.SetMockResponse(mock, http.MethodPost, "/helix/predictions", &api.ResponseData[api.Prediction]{
+					Data: []api.Prediction{{
+						ID:            "pred123",
+						BroadcasterID: "1234",
+						Title:         "Who will win?",
+						Status:        "ACTIVE",
+						Outcomes: []api.PredictionOutcome{
+							{ID: "outcome1", Title: "Team A"},
+							{ID: "outcome2", Title: "Team B"},
+						},
+						CreatedAt: Must[time.Time](t)(time.Parse(time.RFC3339, "2023-08-01T12:00:00Z")),
+					}},
+				}, apitest.RequireBodyParam("broadcaster_id"), apitest.RequireBodyParam("title"), apitest.RequireBodyParam("outcomes"), apitest.RequireBodyParam("prediction_window"))
+			},
+			func(client *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
+				createdAt := Must[time.Time](t)(time.Parse(time.RFC3339, "2023-08-01T12:00:00Z"))
+				res, err := client.Predictions.Insert("1234", "Who will win?", 60).Outcome(api.WithChoice("Team A"), api.WithChoice("Team B")).Do(context.Background(), opts...)
+				return func(t *testing.T) {
+					require.Len(t, res.Data, 1)
+					require.Equal(t, "pred123", res.Data[0].ID)
+					require.Equal(t, "1234", res.Data[0].BroadcasterID)
+					require.Equal(t, "Who will win?", res.Data[0].Title)
+					require.Equal(t, "ACTIVE", res.Data[0].Status)
+					require.Len(t, res.Data[0].Outcomes, 2)
+					require.Equal(t, "outcome1", res.Data[0].Outcomes[0].ID)
+					require.Equal(t, "Team A", res.Data[0].Outcomes[0].Title)
+					require.Equal(t, "outcome2", res.Data[0].Outcomes[1].ID)
+					require.Equal(t, "Team B", res.Data[0].Outcomes[1].Title)
+					require.Equal(t, createdAt.Unix(), res.Data[0].CreatedAt.Unix())
+				}, err
+			},
+		},
+		{
+			"End Prediction",
+			[]apitest.MockTwitchAPIOption{},
+			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
+				return apitest.SetMockResponse(mock, http.MethodPatch, "/helix/predictions", &api.ResponseData[api.Prediction]{
+					Data: []api.Prediction{{
+						ID:            "pred123",
+						BroadcasterID: "1234",
+						Title:         "Who will win?",
+						Status:        "RESOLVED",
+						Outcomes: []api.PredictionOutcome{
+							{ID: "outcome1", Title: "Team A"},
+							{ID: "outcome2", Title: "Team B"},
+						},
+						CreatedAt: Must[time.Time](t)(time.Parse(time.RFC3339, "2023-08-01T12:00:00Z")),
+					}},
+				}, apitest.RequireBodyParam("broadcaster_id"), apitest.RequireBodyParam("id"), apitest.RequireBodyParam("status"), apitest.RequireBodyParam("winning_outcome_id"))
+			},
+			func(client *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
+				createdAt := Must[time.Time](t)(time.Parse(time.RFC3339, "2023-08-01T12:00:00Z"))
+				res, err := client.Predictions.Modify("1234", "pred123", "LOCKED").WinningOutcomeID("outcome1").Do(context.Background(), opts...)
+				return func(t *testing.T) {
+					require.Len(t, res.Data, 1)
+					require.Equal(t, "pred123", res.Data[0].ID)
+					require.Equal(t, "1234", res.Data[0].BroadcasterID)
+					require.Equal(t, "Who will win?", res.Data[0].Title)
+					require.Equal(t, "RESOLVED", res.Data[0].Status)
+					require.Len(t, res.Data[0].Outcomes, 2)
+					require.Equal(t, "outcome1", res.Data[0].Outcomes[0].ID)
+					require.Equal(t, "Team A", res.Data[0].Outcomes[0].Title)
+					require.Equal(t, "outcome2", res.Data[0].Outcomes[1].ID)
+					require.Equal(t, "Team B", res.Data[0].Outcomes[1].Title)
+					require.Equal(t, createdAt.Unix(), res.Data[0].CreatedAt.Unix())
+				}, err
+			},
+		},
+	})
+}
 
 func TestAPI_Raids(t *testing.T) {
 	RunEndpointTestCases(t, []EndpointTestCase{

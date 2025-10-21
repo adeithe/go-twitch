@@ -1867,3 +1867,20 @@ func WithWebSocketTransport(sessionID string) Transport {
 func WithChoice(title string) OutboundChoice {
 	return OutboundChoice{Title: title}
 }
+
+// WithPermanentBan creates a new outbound prediction outcome with the given title.
+func WithPermanentBan(userID, reason string) OutboundBan {
+	return OutboundBan{
+		UserID: userID,
+		Reason: reason,
+	}
+}
+
+// WithTimeout creates a new outbound ban with a timeout duration in seconds.
+func WithTimeout(userID, reason string, durationSeconds int) OutboundBan {
+	return OutboundBan{
+		UserID:   userID,
+		Reason:   reason,
+		Duration: &durationSeconds,
+	}
+}

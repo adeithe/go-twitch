@@ -138,12 +138,11 @@ type PollsInsertResponse struct {
 // Check the [Official Twitch Documentation] for more information.
 //
 // [Official Twitch Documentation]: https://dev.twitch.tv/docs/api/reference/#create-poll
-func (r *PollsResource) Insert(broadcasterID string, title string, choices OutboundChoice, duration int) *PollsInsertCall {
+func (r *PollsResource) Insert(broadcasterID string, title string, duration int) *PollsInsertCall {
 	c := &PollsInsertCall{resource: r, body: make(map[string]any)}
 	return c.
 		BroadcasterID(broadcasterID).
 		Title(title).
-		Choices(choices).
 		Duration(duration)
 }
 

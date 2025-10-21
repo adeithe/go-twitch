@@ -1,3 +1,33 @@
+coverage:
+  status:
+    project:
+      default:
+        target: 80%
+      api:
+        target: 60%
+        flags:
+          - api
+      irc:
+        target: 60%
+        flags:
+          - irc
+      pubsub:
+        target: 60%
+        flags:
+          - pubsub
+
 ignore:
   - .codegen/*
   - .codegen/**/*
+
+flags:
+  api:
+    paths:
+      - api
+      - apitest
+  irc:
+    paths:
+      - irc
+  pubsub:
+    paths:
+      - pubsub
