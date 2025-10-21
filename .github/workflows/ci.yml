@@ -54,4 +54,5 @@ jobs:
       - name: Install dependencies
         run: go mod download
       - name: Run benchmarks
+        shell: bash
         run: go test -run=Benchmark -bench=. ./...
