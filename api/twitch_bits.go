@@ -2,105 +2,85 @@ package api
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"time"
 )
 
-// Cheermote represents a Twitch cheermote.
-type Cheermote struct {
-	Prefix       string          `json:"prefix"`
-	Tiers        []CheermoteTier `json:"tiers"`
-	Type         string          `json:"type"`
-	Order        int             `json:"order"`
-	IsCharitable bool            `json:"is_charitable"`
-	LastUpdated  time.Time       `json:"last_updated"`
-}
-
-// CheermoteTier represents a tier of a Twitch cheermote.
-type CheermoteTier struct {
-	ID             string            `json:"id"`
-	MinBits        int               `json:"min_bits"`
-	Color          string            `json:"color"`
-	Images         map[string]string `json:"images"`
-	CanCheer       bool              `json:"can_cheer"`
-	ShowInBitsCard bool              `json:"show_in_bits_card"`
-}
-
-// BitsLeaderboardEntry represents an entry in the Twitch Bits leaderboard.
-type BitsLeaderboardEntry struct {
-	ID          string `json:"user_id"`
-	Login       string `json:"user_login"`
-	DisplayName string `json:"user_name"`
-	Rank        int    `json:"rank"`
-	Score       int    `json:"score"`
-}
-
-// BitsResource provides access to the Twitch Bits API.
+// BitsResource represents the Twitch Bits API.
 type BitsResource struct {
 	client *Client
 
-	Cheermotes            *CheermotesResource
-	Leaderboard           *BitsLeaderboardResource
-	ExtensionTransactions *BitsExtensionTransactionsResource
+	// Cheermotes provides access to the Twitch Cheermotes API.
+	Cheermotes *BitsCheermotesResource
+	// Extensions provides access to the Twitch Extensions API.
+	Extensions *BitsExtensionsResource
+	// Leaderboard provides access to the Twitch Leaderboard API.
+	Leaderboard *BitsLeaderboardResource
 }
 
 // NewBitsResource creates a new BitsResource.
 func NewBitsResource(client *Client) *BitsResource {
 	r := &BitsResource{client: client}
-	r.Cheermotes = NewCheermotesResource(client)
+	r.Cheermotes = NewBitsCheermotesResource(client)
+	r.Extensions = NewBitsExtensionsResource(client)
 	r.Leaderboard = NewBitsLeaderboardResource(client)
-	r.ExtensionTransactions = NewBitsExtensionTransactionsResource(client)
 	return r
 }
 
-// CheermotesResource provides methods for the Twitch Cheermotes API.
-type CheermotesResource struct {
+// BitsCheermotesResource represents the Twitch BitsCheermotes API.
+type BitsCheermotesResource struct {
 	client *Client
 }
 
-const (
-	// EndpointBitsGetLeaderboard is the endpoint for getting the Bits leaderboard.
-	EndpointBitsGetLeaderboard = TwitchAPIVersionHelix + "/bits/leaderboard"
-	// EndpointBitsGetCheermotes is the endpoint for getting cheermotes.
-	EndpointBitsGetCheermotes = TwitchAPIVersionHelix + "/bits/cheermotes"
-	// EndpointBitsGetExtensionTransactions is the endpoint for getting extension transactions.
-	EndpointBitsGetExtensionTransactions = TwitchAPIVersionHelix + "/extensions/transactions"
-)
-
-// NewCheermotesResource creates a new CheermotesResource.
-func NewCheermotesResource(client *Client) *CheermotesResource {
-	return &CheermotesResource{client}
+// NewBitsCheermotesResource creates a new BitsCheermotesResource.
+func NewBitsCheermotesResource(client *Client) *BitsCheermotesResource {
+	return &BitsCheermotesResource{client}
 }
 
-// CheermotesListCall is a request to list cheermotes based on the specified criteria.
-type CheermotesListCall struct {
-	resource *CheermotesResource
+// BitsCheermotesListCall represents a GET call to a Twitch BitsCheermotes API endpoint.
+type BitsCheermotesListCall struct {
+	resource *BitsCheermotesResource
 	opts     []RequestOption
 }
 
-// CheermotesListResponse is the response from listing cheermotes.
-type CheermotesListResponse struct {
+// BitsCheermotesListResponse represents the response from a GET request to /helix/bits/cheermotes.
+type BitsCheermotesListResponse struct {
+	// Status is the HTTP status text returned by the Twitch API. For example, "200 OK".
+	Status string
+	// StatusCode is the HTTP status code returned by the Twitch API. For example, 200.
+	StatusCode int
+	// Header contains the HTTP headers from the Twitch API response.
 	Header http.Header
-	Data   []Cheermote
+	// Data is the Cheermote data returned by the Twitch API.
+	Data []Cheermote
+	// Request is the HTTP request that was sent to the Twitch API.
+	Request *http.Request
 }
 
-// List creates a request to list cheermotes based on the specified criteria.
+// List creates a new GET request to /helix/bits/cheermotes.
 //
-// Requires an app or user access token. No scope is required.
-func (r *CheermotesResource) List() *CheermotesListCall {
-	return &CheermotesListCall{resource: r}
+// Gets a list of Cheermotes that users can use to cheer Bits in any Bits-enabled chat room.
+//
+// # Authorization
+//
+// Requires an app access token or user access token.
+//
+// Check the [Official Twitch Documentation] for more information.
+//
+// [Official Twitch Documentation]: https://dev.twitch.tv/docs/api/reference/#get-cheermotes
+func (r *BitsCheermotesResource) List() *BitsCheermotesListCall {
+	return &BitsCheermotesListCall{resource: r}
 }
 
-// BroadcasterID filters the results to the specified broadcaster ID.
-func (c *CheermotesListCall) BroadcasterID(id string) *CheermotesListCall {
-	c.opts = append(c.opts, SetQueryParameter("broadcaster_id", id))
-	return c
+// BroadcasterID sets the BroadcasterID query parameter.
+func (api *BitsCheermotesListCall) BroadcasterID(broadcasterID string) *BitsCheermotesListCall {
+	api.opts = append(api.opts, SetQueryParameter("broadcaster_id", broadcasterID))
+	return api
 }
 
 // Do executes the request.
-func (c *CheermotesListCall) Do(ctx context.Context, opts ...RequestOption) (*CheermotesListResponse, error) {
-	res, err := c.resource.client.doRequest(ctx, http.MethodGet, EndpointBitsGetCheermotes, nil, append(opts, c.opts...)...)
+func (api *BitsCheermotesListCall) Do(ctx context.Context, opts ...RequestOption) (*BitsCheermotesListResponse, error) {
+	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/bits/cheermotes", nil, append(api.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}
@@ -111,13 +91,111 @@ func (c *CheermotesListCall) Do(ctx context.Context, opts ...RequestOption) (*Ch
 		return nil, err
 	}
 
-	return &CheermotesListResponse{
-		Header: res.Header,
-		Data:   data.Data,
+	return &BitsCheermotesListResponse{
+		Status:     res.Status,
+		StatusCode: res.StatusCode,
+		Header:     res.Header,
+		Data:       data.Data,
+		Request:    res.Request,
 	}, nil
 }
 
-// BitsLeaderboardResource provides methods for the Twitch Bits Leaderboard API.
+// BitsExtensionsResource represents the Twitch BitsExtensions API.
+type BitsExtensionsResource struct {
+	client *Client
+}
+
+// NewBitsExtensionsResource creates a new BitsExtensionsResource.
+func NewBitsExtensionsResource(client *Client) *BitsExtensionsResource {
+	return &BitsExtensionsResource{client}
+}
+
+// BitsExtensionTransactionsListCall represents a GET call to a Twitch BitsExtensions API endpoint.
+type BitsExtensionTransactionsListCall struct {
+	resource *BitsExtensionsResource
+	opts     []RequestOption
+}
+
+// BitsExtensionTransactionsListResponse represents the response from a GET request to /helix/extensions/transactions.
+type BitsExtensionTransactionsListResponse struct {
+	// Status is the HTTP status text returned by the Twitch API. For example, "200 OK".
+	Status string
+	// StatusCode is the HTTP status code returned by the Twitch API. For example, 200.
+	StatusCode int
+	// Header contains the HTTP headers from the Twitch API response.
+	Header http.Header
+	// Data is the ExtensionTransaction data returned by the Twitch API.
+	Data []ExtensionTransaction
+	// Request is the HTTP request that was sent to the Twitch API.
+	Request *http.Request
+}
+
+// List creates a new GET request to /helix/extensions/transactions.
+//
+// Gets a list of transactions for an extension. A transaction records the exchange of a currency (for example, Bits) for a digital product.
+//
+// # Authorization
+//
+// Requires an app access token.
+//
+// Check the [Official Twitch Documentation] for more information.
+//
+// [Official Twitch Documentation]: https://dev.twitch.tv/docs/api/reference/#get-extension-transactions
+func (r *BitsExtensionsResource) List(extensionID string) *BitsExtensionTransactionsListCall {
+	c := &BitsExtensionTransactionsListCall{resource: r}
+	return c.
+		ExtensionID(extensionID)
+}
+
+// ID adds to the ID query parameter.
+func (api *BitsExtensionTransactionsListCall) ID(ids ...string) *BitsExtensionTransactionsListCall {
+	for _, id := range ids {
+		api.opts = append(api.opts, AddQueryParameter("id", id))
+	}
+	return api
+}
+
+// ExtensionID sets the ExtensionID query parameter.
+func (api *BitsExtensionTransactionsListCall) ExtensionID(extensionID string) *BitsExtensionTransactionsListCall {
+	api.opts = append(api.opts, SetQueryParameter("extension_id", extensionID))
+	return api
+}
+
+// After sets the After query parameter.
+func (api *BitsExtensionTransactionsListCall) After(after string) *BitsExtensionTransactionsListCall {
+	api.opts = append(api.opts, SetQueryParameter("after", after))
+	return api
+}
+
+// First sets the First query parameter.
+func (api *BitsExtensionTransactionsListCall) First(first int) *BitsExtensionTransactionsListCall {
+	api.opts = append(api.opts, SetQueryParameter("first", first))
+	return api
+}
+
+// Do executes the request.
+func (api *BitsExtensionTransactionsListCall) Do(ctx context.Context, opts ...RequestOption) (*BitsExtensionTransactionsListResponse, error) {
+	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/extensions/transactions", nil, append(api.opts, opts...)...)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = res.Body.Close() }()
+
+	data, err := decodeResponse[ExtensionTransaction](res)
+	if err != nil {
+		return nil, err
+	}
+
+	return &BitsExtensionTransactionsListResponse{
+		Status:     res.Status,
+		StatusCode: res.StatusCode,
+		Header:     res.Header,
+		Data:       data.Data,
+		Request:    res.Request,
+	}, nil
+}
+
+// BitsLeaderboardResource represents the Twitch BitsLeaderboard API.
 type BitsLeaderboardResource struct {
 	client *Client
 }
@@ -127,58 +205,72 @@ func NewBitsLeaderboardResource(client *Client) *BitsLeaderboardResource {
 	return &BitsLeaderboardResource{client}
 }
 
-// BitsLeaderboardListCall is a request to list users from the authenticated users Bits leaderboard.
+// BitsLeaderboardListCall represents a GET call to a Twitch BitsLeaderboard API endpoint.
 type BitsLeaderboardListCall struct {
 	resource *BitsLeaderboardResource
 	opts     []RequestOption
 }
 
-// BitsLeaderboardListResponse is the response from listing users from the authenticated users Bits leaderboard.
+// BitsLeaderboardListResponse represents the response from a GET request to /helix/bits/leaderboard.
 type BitsLeaderboardListResponse struct {
+	// Status is the HTTP status text returned by the Twitch API. For example, "200 OK".
+	Status string
+	// StatusCode is the HTTP status code returned by the Twitch API. For example, 200.
+	StatusCode int
+	// Header contains the HTTP headers from the Twitch API response.
 	Header http.Header
-	Total  int
-	Data   []BitsLeaderboardEntry
+	// Total is the int data returned by the Twitch API.
+	Total int
+	// Data is the BitsLeaderboardEntry data returned by the Twitch API.
+	Data []BitsLeaderboardEntry
+	// DateRange is the DateRange data returned by the Twitch API.
+	DateRange DateRange
+	// Request is the HTTP request that was sent to the Twitch API.
+	Request *http.Request
 }
 
-// List creates a request to list users from the authenticated users Bits leaderboard.
+// List creates a new GET request to /helix/bits/leaderboard.
+//
+// Gets the Bits leaderboard for the authenticated broadcaster.
+//
+// # Authorization
+//
+// Requires a user access token that includes the bits:read scope.
+//
+// Check the [Official Twitch Documentation] for more information.
+//
+// [Official Twitch Documentation]: https://dev.twitch.tv/docs/api/reference/#get-bits-leaderboard
 func (r *BitsLeaderboardResource) List() *BitsLeaderboardListCall {
 	return &BitsLeaderboardListCall{resource: r}
 }
 
-// Count limits the number of results to return.
-//
-// Maximum: 100 (default: 10)
-func (c *BitsLeaderboardListCall) Count(n int) *BitsLeaderboardListCall {
-	c.opts = append(c.opts, SetQueryParameter("count", fmt.Sprint(n)))
-	return c
+// UserID sets the UserID query parameter.
+func (api *BitsLeaderboardListCall) UserID(userID string) *BitsLeaderboardListCall {
+	api.opts = append(api.opts, SetQueryParameter("user_id", userID))
+	return api
 }
 
-// Period sets the time period over which data is aggregated.
-//
-// Possible values: "day", "week", "month", "year", "all" (default: "all")
-func (c *BitsLeaderboardListCall) Period(period string) *BitsLeaderboardListCall {
-	c.opts = append(c.opts, SetQueryParameter("period", period))
-	return c
+// Period sets the Period query parameter.
+func (api *BitsLeaderboardListCall) Period(period string) *BitsLeaderboardListCall {
+	api.opts = append(api.opts, SetQueryParameter("period", period))
+	return api
 }
 
-// StartedAt the start date used for determining the aggregation period.
-func (c *BitsLeaderboardListCall) StartedAt(t time.Time) *BitsLeaderboardListCall {
-	c.opts = append(c.opts, SetQueryParameter("started_at", t.Format(time.RFC3339)))
-	return c
+// Count sets the Count query parameter.
+func (api *BitsLeaderboardListCall) Count(count int) *BitsLeaderboardListCall {
+	api.opts = append(api.opts, SetQueryParameter("count", count))
+	return api
 }
 
-// UserID limits the aggregated results to the specified user ID.
-// If count is greater than 1, the response may include users ranked above and below the specified user.
-//
-// To get the leaderboard's top leaders, don't specify this.
-func (c *BitsLeaderboardListCall) UserID(userID string) *BitsLeaderboardListCall {
-	c.opts = append(c.opts, SetQueryParameter("user_id", userID))
-	return c
+// StartedAt sets the StartedAt query parameter.
+func (api *BitsLeaderboardListCall) StartedAt(startedAt time.Time) *BitsLeaderboardListCall {
+	api.opts = append(api.opts, SetQueryParameter("started_at", startedAt.Format(time.RFC3339)))
+	return api
 }
 
 // Do executes the request.
-func (c *BitsLeaderboardListCall) Do(ctx context.Context, opts ...RequestOption) (*BitsLeaderboardListResponse, error) {
-	res, err := c.resource.client.doRequest(ctx, http.MethodGet, EndpointBitsGetLeaderboard, nil, append(opts, c.opts...)...)
+func (api *BitsLeaderboardListCall) Do(ctx context.Context, opts ...RequestOption) (*BitsLeaderboardListResponse, error) {
+	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/bits/leaderboard", nil, append(api.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}
@@ -190,111 +282,12 @@ func (c *BitsLeaderboardListCall) Do(ctx context.Context, opts ...RequestOption)
 	}
 
 	return &BitsLeaderboardListResponse{
-		Header: res.Header,
-		Total:  data.Total,
-		Data:   data.Data,
-	}, nil
-}
-
-// BitsExtensionTransactionsResource provides methods for the Twitch Bits Extension Transactions API.
-type BitsExtensionTransactionsResource struct {
-	client *Client
-}
-
-// NewBitsExtensionTransactionsResource creates a new BitsExtensionTransactionsResource.
-func NewBitsExtensionTransactionsResource(client *Client) *BitsExtensionTransactionsResource {
-	return &BitsExtensionTransactionsResource{client}
-}
-
-// BitsTransactionsListCall is a request to list extension transactions.
-type BitsTransactionsListCall struct {
-	client *Client
-	opts   []RequestOption
-}
-
-// BitsTransactionsListResponse is the response from listing extension transactions.
-type BitsTransactionsListResponse struct {
-	Header     http.Header
-	Data       []ExtensionTransaction
-	Pagination Pagination
-}
-
-// ExtensionTransaction contains information about a transaction for an extension.
-type ExtensionTransaction struct {
-	ID               string           `json:"id"`
-	BroadcasterID    string           `json:"broadcaster_id"`
-	BroadcasterLogin string           `json:"broadcaster_login"`
-	BroadcasterName  string           `json:"broadcaster_name"`
-	UserID           string           `json:"user_id"`
-	UserLogin        string           `json:"user_login"`
-	UserName         string           `json:"user_name"`
-	ProductType      string           `json:"product_type"`
-	Product          ExtensionProduct `json:"product_data"`
-	Timestamp        time.Time        `json:"timestamp"`
-}
-
-// ExtensionProduct contains information about a product for an extension.
-type ExtensionProduct struct {
-	Sku           string               `json:"sku"`
-	Domain        string               `json:"domain"`
-	Cost          ExtensionProductCost `json:"cost"`
-	InDevelopment bool                 `json:"inDevelopment"`
-	DisplayName   string               `json:"displayName"`
-	Broadcast     bool                 `json:"broadcast"`
-}
-
-// ExtensionProductCost contains information about the cost of a product for an extension.
-type ExtensionProductCost struct {
-	Amount int    `json:"amount"`
-	Type   string `json:"type"`
-}
-
-// List creates a request to list extension transactions for the specified extension ID.
-func (r *BitsExtensionTransactionsResource) List(extensionID string) *BitsTransactionsListCall {
-	return &BitsTransactionsListCall{
-		client: r.client,
-		opts: []RequestOption{
-			SetQueryParameter("extension_id", extensionID),
-		},
-	}
-}
-
-// TransactionID filters the results to the specified transaction IDs.
-func (c *BitsTransactionsListCall) TransactionID(ids ...string) *BitsTransactionsListCall {
-	for _, id := range ids {
-		c.opts = append(c.opts, AddQueryParameter("id", id))
-	}
-	return c
-}
-
-// First sets the maximum number of results to return.
-func (c *BitsTransactionsListCall) First(n int) *BitsTransactionsListCall {
-	c.opts = append(c.opts, SetQueryParameter("first", fmt.Sprint(n)))
-	return c
-}
-
-// After sets the cursor for pagination.
-func (c *BitsTransactionsListCall) After(cursor string) *BitsTransactionsListCall {
-	c.opts = append(c.opts, SetQueryParameter("after", cursor))
-	return c
-}
-
-// Do executes the request.
-func (c *BitsTransactionsListCall) Do(ctx context.Context, opts ...RequestOption) (*BitsTransactionsListResponse, error) {
-	res, err := c.client.doRequest(ctx, http.MethodGet, EndpointBitsGetExtensionTransactions, nil, append(opts, c.opts...)...)
-	if err != nil {
-		return nil, err
-	}
-	defer func() { _ = res.Body.Close() }()
-
-	data, err := decodeResponse[ExtensionTransaction](res)
-	if err != nil {
-		return nil, err
-	}
-
-	return &BitsTransactionsListResponse{
+		Status:     res.Status,
+		StatusCode: res.StatusCode,
 		Header:     res.Header,
+		Total:      data.Total,
 		Data:       data.Data,
-		Pagination: data.Pagination,
+		DateRange:  data.DateRange,
+		Request:    res.Request,
 	}, nil
 }

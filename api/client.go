@@ -11,23 +11,23 @@ import (
 
 // Client is a client for interacting with the Twitch API.
 type Client struct {
-	clientID     string
-	clientSecret string
-	bearerToken  string
-	httpClient   HTTPClient
+	clientID    string
+	bearerToken string
+	httpClient  HTTPClient
 
 	Ads           *AdsResource
 	Analytics     *AnalyticsResource
 	Bits          *BitsResource
-	Channels      *ChannelsResource
 	ChannelPoints *ChannelPointsResource
+	Channels      *ChannelsResource
 	Charity       *CharityResource
 	Chat          *ChatResource
 	Clips         *ClipsResource
 	Conduits      *ConduitsResource
+	ContentLabels *ContentLabelsResource
 	Entitlements  *EntitlementsResource
-	Extensions    *ExtensionsResource
 	EventSub      *EventSubResource
+	Extensions    *ExtensionsResource
 	Games         *GamesResource
 	Goals         *GoalsResource
 	GuestStar     *GuestStarResource
@@ -40,19 +40,11 @@ type Client struct {
 	Search        *SearchResource
 	Streams       *StreamsResource
 	Subscriptions *SubscriptionsResource
-	Tags          *TagsResource
 	Teams         *TeamsResource
 	Users         *UsersResource
 	Videos        *VideosResource
 	Whispers      *WhispersResource
 }
-
-const (
-	// BaseURL is the base URL for the Twitch API.
-	BaseURL string = "https://api.twitch.tv"
-	// TwitchAPIVersionHelix is the base path for the Helix API.
-	TwitchAPIVersionHelix = "/helix"
-)
 
 // New creates a new API client for Twitch.
 func New(clientID string, opts ...ClientOption) *Client {
@@ -68,15 +60,16 @@ func New(clientID string, opts ...ClientOption) *Client {
 	client.Ads = NewAdsResource(client)
 	client.Analytics = NewAnalyticsResource(client)
 	client.Bits = NewBitsResource(client)
-	client.Channels = NewChannelsResource(client)
 	client.ChannelPoints = NewChannelPointsResource(client)
+	client.Channels = NewChannelsResource(client)
 	client.Charity = NewCharityResource(client)
 	client.Chat = NewChatResource(client)
 	client.Clips = NewClipsResource(client)
 	client.Conduits = NewConduitsResource(client)
+	client.ContentLabels = NewContentLabelsResource(client)
 	client.Entitlements = NewEntitlementsResource(client)
-	client.Extensions = NewExtensionsResource(client)
 	client.EventSub = NewEventSubResource(client)
+	client.Extensions = NewExtensionsResource(client)
 	client.Games = NewGamesResource(client)
 	client.Goals = NewGoalsResource(client)
 	client.GuestStar = NewGuestStarResource(client)
@@ -89,7 +82,6 @@ func New(clientID string, opts ...ClientOption) *Client {
 	client.Search = NewSearchResource(client)
 	client.Streams = NewStreamsResource(client)
 	client.Subscriptions = NewSubscriptionsResource(client)
-	client.Tags = NewTagsResource(client)
 	client.Teams = NewTeamsResource(client)
 	client.Users = NewUsersResource(client)
 	client.Videos = NewVideosResource(client)
@@ -97,7 +89,8 @@ func New(clientID string, opts ...ClientOption) *Client {
 	return client
 }
 
-func (c *Client) doRequest(ctx context.Context, method, path string, body io.Reader, opts ...RequestOption) (*http.Response, error) {
+// DoRequest performs an HTTP request to the Twitch API.
+func (c *Client) DoRequest(ctx context.Context, method, path string, body io.Reader, opts ...RequestOption) (*http.Response, error) {
 	url := fmt.Sprintf("%s/%s", BaseURL, strings.TrimPrefix(path, "/"))
 	req, err := http.NewRequestWithContext(ctx, method, url, body)
 	if err != nil {
@@ -110,11 +103,11 @@ func (c *Client) doRequest(ctx context.Context, method, path string, body io.Rea
 		opt(req)
 	}
 
-	if c.bearerToken != "" {
-		if req.Header.Get("Authorization") == "" {
-			req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.bearerToken))
-		}
+	if c.bearerToken != "" && req.Header.Get("Authorization") == "" {
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.bearerToken))
 	}
 
 	return c.httpClient.Do(req)
 }
+
+//go:generate sh -c "cd ../.codegen && go build -o codegen && cd - && exec ../.codegen/codegen"

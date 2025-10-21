@@ -2,216 +2,236 @@ package api
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"time"
 )
 
-// AnalyticsResource provides access to Twitch Analytics API endpoints.
+// AnalyticsResource represents the Twitch Analytics API.
 type AnalyticsResource struct {
 	client *Client
 
-	Extensions *AnalyticsExtensionResource
-	Games      *AnalyticsGameResource
-}
-
-// AnalyticsDateRange represents a date range with start and end times.
-type AnalyticsDateRange struct {
-	StartedAt time.Time `json:"started_at"`
-	EndedAt   time.Time `json:"ended_at"`
+	// Extensions provides access to the Twitch Extensions API.
+	Extensions *AnalyticsExtensionsResource
+	// Games provides access to the Twitch Games API.
+	Games *AnalyticsGamesResource
 }
 
 // NewAnalyticsResource creates a new AnalyticsResource.
 func NewAnalyticsResource(client *Client) *AnalyticsResource {
 	r := &AnalyticsResource{client: client}
-	r.Extensions = NewAnalyticsExtensionResource(client)
-	r.Games = NewAnalyticsGameResource(client)
+	r.Extensions = NewAnalyticsExtensionsResource(client)
+	r.Games = NewAnalyticsGamesResource(client)
 	return r
 }
 
-// AnalyticsExtensionResource provides access to extension analytics endpoints.
-type AnalyticsExtensionResource struct {
+// AnalyticsExtensionsResource represents the Twitch AnalyticsExtensions API.
+type AnalyticsExtensionsResource struct {
 	client *Client
 }
 
-// NewAnalyticsExtensionResource creates a new AnalyticsExtensionResource.
-func NewAnalyticsExtensionResource(client *Client) *AnalyticsExtensionResource {
-	return &AnalyticsExtensionResource{client}
+// NewAnalyticsExtensionsResource creates a new AnalyticsExtensionsResource.
+func NewAnalyticsExtensionsResource(client *Client) *AnalyticsExtensionsResource {
+	return &AnalyticsExtensionsResource{client}
 }
 
-// AnalyticsExtensionListCall represends a request to get extension analytics.
-type AnalyticsExtensionListCall struct {
-	client *Client
-	opts   []RequestOption
+// ExtensionAnalyticsListCall represents a GET call to a Twitch AnalyticsExtensions API endpoint.
+type ExtensionAnalyticsListCall struct {
+	resource *AnalyticsExtensionsResource
+	opts     []RequestOption
 }
 
-// AnalyticsExtensionListResponse represents the response from the extension analytics endpoint.
-type AnalyticsExtensionListResponse struct {
-	Header     http.Header
-	Data       []ExtensionAnalytics
+// ExtensionAnalyticsListResponse represents the response from a GET request to /helix/analytics/extensions.
+type ExtensionAnalyticsListResponse struct {
+	// Status is the HTTP status text returned by the Twitch API. For example, "200 OK".
+	Status string
+	// StatusCode is the HTTP status code returned by the Twitch API. For example, 200.
+	StatusCode int
+	// Header contains the HTTP headers from the Twitch API response.
+	Header http.Header
+	// Data is the ExtensionAnalyticsReport data returned by the Twitch API.
+	Data []ExtensionAnalyticsReport
+	// Pagination is the Pagination data returned by the Twitch API.
 	Pagination Pagination
+	// Request is the HTTP request that was sent to the Twitch API.
+	Request *http.Request
 }
 
-// ExtensionAnalytics represents analytics data for a Twitch extension.
-type ExtensionAnalytics struct {
-	ExtensionID string             `json:"extension_id"`
-	URL         string             `json:"URL"`
-	Type        string             `json:"type"`
-	DateRate    AnalyticsDateRange `json:"date_range"`
+// List creates a new GET request to /helix/analytics/extensions.
+//
+// Gets an analytics report for one or more extensions. The response contains the URLs used to download the reports (CSV files).
+//
+// # Authorization
+//
+// Requires a user access token that includes the analytics:read:extensions scope.
+//
+// Check the [Official Twitch Documentation] for more information.
+//
+// [Official Twitch Documentation]: https://dev.twitch.tv/docs/api/reference/#get-extension-analytics
+func (r *AnalyticsExtensionsResource) List() *ExtensionAnalyticsListCall {
+	return &ExtensionAnalyticsListCall{resource: r}
 }
 
-const (
-	// EndpointAnalyticsGetExtensionAnalytics is the endpoint for getting extension analytics.
-	EndpointAnalyticsGetExtensionAnalytics = TwitchAPIVersionHelix + "/analytics/extensions"
-	// EndpointAnalyticsGetGameAnalytics is the endpoint for getting game analytics.
-	EndpointAnalyticsGetGameAnalytics = TwitchAPIVersionHelix + "/analytics/games"
-)
-
-// List creates a new call to get extension analytics.
-func (r *AnalyticsExtensionResource) List() *AnalyticsExtensionListCall {
-	return &AnalyticsExtensionListCall{client: r.client}
+// ExtensionID sets the ExtensionID query parameter.
+func (api *ExtensionAnalyticsListCall) ExtensionID(extensionID string) *ExtensionAnalyticsListCall {
+	api.opts = append(api.opts, SetQueryParameter("extension_id", extensionID))
+	return api
 }
 
-// ExtensionID If specified, the response contains a report for the specified extension.
-// If not specified, the response includes a report for each extension that the authenticated user owns.
-func (r *AnalyticsExtensionListCall) ExtensionID(id string) *AnalyticsExtensionListCall {
-	r.opts = append(r.opts, SetQueryParameter("extension_id", id))
-	return r
+// Type sets the Type query parameter.
+func (api *ExtensionAnalyticsListCall) Type(t string) *ExtensionAnalyticsListCall {
+	api.opts = append(api.opts, SetQueryParameter("type", t))
+	return api
 }
 
-// Type The type of analytics report to get. Possible values are:
-//   - overview_v2
-func (r *AnalyticsExtensionListCall) Type(t string) *AnalyticsExtensionListCall {
-	r.opts = append(r.opts, SetQueryParameter("type", t))
-	return r
+// After sets the After query parameter.
+func (api *ExtensionAnalyticsListCall) After(after string) *ExtensionAnalyticsListCall {
+	api.opts = append(api.opts, SetQueryParameter("after", after))
+	return api
 }
 
-// StartedAt The start of the date range for the report.
-func (r *AnalyticsExtensionListCall) StartedAt(t time.Time) *AnalyticsExtensionListCall {
-	r.opts = append(r.opts, SetQueryParameter("started_at", t.Format(time.RFC3339)))
-	return r
+// First sets the First query parameter.
+func (api *ExtensionAnalyticsListCall) First(first int) *ExtensionAnalyticsListCall {
+	api.opts = append(api.opts, SetQueryParameter("first", first))
+	return api
 }
 
-// EndedAt The end of the date range for the report.
-func (r *AnalyticsExtensionListCall) EndedAt(t time.Time) *AnalyticsExtensionListCall {
-	r.opts = append(r.opts, SetQueryParameter("ended_at", t.Format(time.RFC3339)))
-	return r
+// StartedAt sets the StartedAt query parameter.
+func (api *ExtensionAnalyticsListCall) StartedAt(startedAt time.Time) *ExtensionAnalyticsListCall {
+	api.opts = append(api.opts, SetQueryParameter("started_at", startedAt.Format(time.RFC3339)))
+	return api
 }
 
-// First The number of records to return. Maximum: 100. Default: 20.
-func (r *AnalyticsExtensionListCall) First(n int) *AnalyticsExtensionListCall {
-	r.opts = append(r.opts, SetQueryParameter("first", fmt.Sprint(n)))
-	return r
-}
-
-// After A cursor for forward pagination: the first set of results to return. Provide this value in the after query parameter.
-func (r *AnalyticsExtensionListCall) After(cursor string) *AnalyticsExtensionListCall {
-	r.opts = append(r.opts, SetQueryParameter("after", cursor))
-	return r
+// EndedAt sets the EndedAt query parameter.
+func (api *ExtensionAnalyticsListCall) EndedAt(endedAt time.Time) *ExtensionAnalyticsListCall {
+	api.opts = append(api.opts, SetQueryParameter("ended_at", endedAt.Format(time.RFC3339)))
+	return api
 }
 
 // Do executes the request.
-func (r *AnalyticsExtensionListCall) Do(ctx context.Context, opts ...RequestOption) (*AnalyticsExtensionListResponse, error) {
-	res, err := r.client.doRequest(ctx, http.MethodGet, EndpointAnalyticsGetExtensionAnalytics, nil, append(r.opts, opts...)...)
+func (api *ExtensionAnalyticsListCall) Do(ctx context.Context, opts ...RequestOption) (*ExtensionAnalyticsListResponse, error) {
+	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/analytics/extensions", nil, append(api.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}
 	defer func() { _ = res.Body.Close() }()
 
-	data, err := decodeResponse[ExtensionAnalytics](res)
+	data, err := decodeResponse[ExtensionAnalyticsReport](res)
 	if err != nil {
 		return nil, err
 	}
 
-	return &AnalyticsExtensionListResponse{
+	return &ExtensionAnalyticsListResponse{
+		Status:     res.Status,
+		StatusCode: res.StatusCode,
 		Header:     res.Header,
 		Data:       data.Data,
 		Pagination: data.Pagination,
+		Request:    res.Request,
 	}, nil
 }
 
-// AnalyticsGameResource provides access to game analytics endpoints.
-type AnalyticsGameResource struct {
+// AnalyticsGamesResource represents the Twitch AnalyticsGames API.
+type AnalyticsGamesResource struct {
 	client *Client
 }
 
-// NewAnalyticsGameResource creates a new AnalyticsGameResource.
-func NewAnalyticsGameResource(client *Client) *AnalyticsGameResource {
-	return &AnalyticsGameResource{client}
+// NewAnalyticsGamesResource creates a new AnalyticsGamesResource.
+func NewAnalyticsGamesResource(client *Client) *AnalyticsGamesResource {
+	return &AnalyticsGamesResource{client}
 }
 
-// AnalyticsGameListCall represents a request to get game analytics.
-type AnalyticsGameListCall struct {
-	client *Client
-	opts   []RequestOption
+// GameAnalyticsListCall represents a GET call to a Twitch AnalyticsGames API endpoint.
+type GameAnalyticsListCall struct {
+	resource *AnalyticsGamesResource
+	opts     []RequestOption
 }
 
-// AnalyticsGameListResponse represents the response from the game analytics endpoint.
-type AnalyticsGameListResponse struct {
-	Header     http.Header
-	Data       []GameAnalytics
+// GameAnalyticsListResponse represents the response from a GET request to /helix/analytics/games.
+type GameAnalyticsListResponse struct {
+	// Status is the HTTP status text returned by the Twitch API. For example, "200 OK".
+	Status string
+	// StatusCode is the HTTP status code returned by the Twitch API. For example, 200.
+	StatusCode int
+	// Header contains the HTTP headers from the Twitch API response.
+	Header http.Header
+	// Data is the GameAnalyticsReport data returned by the Twitch API.
+	Data []GameAnalyticsReport
+	// Pagination is the Pagination data returned by the Twitch API.
 	Pagination Pagination
+	// Request is the HTTP request that was sent to the Twitch API.
+	Request *http.Request
 }
 
-// GameAnalytics represents analytics data for a Twitch game.
-type GameAnalytics struct {
-	GameID   string             `json:"game_id"`
-	URL      string             `json:"URL"`
-	DateRate AnalyticsDateRange `json:"date_range"`
+// List creates a new GET request to /helix/analytics/games.
+//
+// Gets an analytics report for one or more games. The response contains the URLs used to download the reports (CSV files).
+//
+// # Authorization
+//
+// Requires a user access token that includes the analytics:read:games scope.
+//
+// Check the [Official Twitch Documentation] for more information.
+//
+// [Official Twitch Documentation]: https://dev.twitch.tv/docs/api/reference/#get-game-analytics
+func (r *AnalyticsGamesResource) List() *GameAnalyticsListCall {
+	return &GameAnalyticsListCall{resource: r}
 }
 
-// List creates a new call to get game analytics.
-func (r *AnalyticsGameResource) List() *AnalyticsGameListCall {
-	return &AnalyticsGameListCall{client: r.client}
+// GameID sets the GameID query parameter.
+func (api *GameAnalyticsListCall) GameID(gameID string) *GameAnalyticsListCall {
+	api.opts = append(api.opts, SetQueryParameter("game_id", gameID))
+	return api
 }
 
-// GameID If specified, the response contains a report for the specified game.
-// If not specified, the response includes a report for each game that the authenticated user has played.
-func (r *AnalyticsGameListCall) GameID(id string) *AnalyticsGameListCall {
-	r.opts = append(r.opts, SetQueryParameter("game_id", id))
-	return r
+// Type sets the Type query parameter.
+func (api *GameAnalyticsListCall) Type(t string) *GameAnalyticsListCall {
+	api.opts = append(api.opts, SetQueryParameter("type", t))
+	return api
 }
 
-// StartedAt The start of the date range for the report.
-func (r *AnalyticsGameListCall) StartedAt(t time.Time) *AnalyticsGameListCall {
-	r.opts = append(r.opts, SetQueryParameter("started_at", t.Format(time.RFC3339)))
-	return r
+// After sets the After query parameter.
+func (api *GameAnalyticsListCall) After(after string) *GameAnalyticsListCall {
+	api.opts = append(api.opts, SetQueryParameter("after", after))
+	return api
 }
 
-// EndedAt The end of the date range for the report.
-func (r *AnalyticsGameListCall) EndedAt(t time.Time) *AnalyticsGameListCall {
-	r.opts = append(r.opts, SetQueryParameter("ended_at", t.Format(time.RFC3339)))
-	return r
+// First sets the First query parameter.
+func (api *GameAnalyticsListCall) First(first int) *GameAnalyticsListCall {
+	api.opts = append(api.opts, SetQueryParameter("first", first))
+	return api
 }
 
-// First The number of records to return. Maximum: 100. Default: 20.
-func (r *AnalyticsGameListCall) First(f int) *AnalyticsGameListCall {
-	r.opts = append(r.opts, SetQueryParameter("first", fmt.Sprint(f)))
-	return r
+// StartedAt sets the StartedAt query parameter.
+func (api *GameAnalyticsListCall) StartedAt(startedAt time.Time) *GameAnalyticsListCall {
+	api.opts = append(api.opts, SetQueryParameter("started_at", startedAt.Format(time.RFC3339)))
+	return api
 }
 
-// After A cursor for forward pagination: the first set of results to return. Provide this value in the after query parameter.
-func (r *AnalyticsGameListCall) After(a string) *AnalyticsGameListCall {
-	r.opts = append(r.opts, SetQueryParameter("after", a))
-	return r
+// EndedAt sets the EndedAt query parameter.
+func (api *GameAnalyticsListCall) EndedAt(endedAt time.Time) *GameAnalyticsListCall {
+	api.opts = append(api.opts, SetQueryParameter("ended_at", endedAt.Format(time.RFC3339)))
+	return api
 }
 
 // Do executes the request.
-func (r *AnalyticsGameListCall) Do(ctx context.Context, opts ...RequestOption) (*AnalyticsGameListResponse, error) {
-	res, err := r.client.doRequest(ctx, http.MethodGet, EndpointAnalyticsGetGameAnalytics, nil, append(r.opts, opts...)...)
+func (api *GameAnalyticsListCall) Do(ctx context.Context, opts ...RequestOption) (*GameAnalyticsListResponse, error) {
+	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/analytics/games", nil, append(api.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}
 	defer func() { _ = res.Body.Close() }()
 
-	data, err := decodeResponse[GameAnalytics](res)
+	data, err := decodeResponse[GameAnalyticsReport](res)
 	if err != nil {
 		return nil, err
 	}
 
-	return &AnalyticsGameListResponse{
+	return &GameAnalyticsListResponse{
+		Status:     res.Status,
+		StatusCode: res.StatusCode,
 		Header:     res.Header,
 		Data:       data.Data,
 		Pagination: data.Pagination,
+		Request:    res.Request,
 	}, nil
 }

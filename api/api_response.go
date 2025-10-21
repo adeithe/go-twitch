@@ -14,20 +14,20 @@ type HTTPClient interface {
 
 // ResponseData represents a generic response from the Twitch API.
 type ResponseData[T any] struct {
-	Total  int `json:"total,omitempty"`  // Only present in some endpoints.
-	Points int `json:"points,omitempty"` // Only present in some endpoints.
+	Total     int `json:"total,omitempty"`          // Only present in some endpoints.
+	TotalCost int `json:"total_cost,omitempty"`     // Only present in some endpoints.
+	MaxCost   int `json:"max_total_cost,omitempty"` // Only present in some endpoints.
+	Points    int `json:"points,omitempty"`         // Only present in some endpoints.
 
-	Data       []T        `json:"data"`
-	Pagination Pagination `json:"pagination,omitempty"`
+	Data       []T            `json:"data"`
+	Errors     []ConduitError `json:"errors,omitempty"`
+	Template   string         `json:"template,omitempty"`
+	DateRange  DateRange      `json:"date_range,omitempty"`
+	Pagination Pagination     `json:"pagination,omitempty"`
 
 	Status  int    `json:"status"`            // If not provided by Twitch, defaults to HTTP status code.
 	Code    string `json:"error"`             // If not provided by Twitch, defaults to HTTP status text.
 	Message string `json:"message,omitempty"` // Only present if status is non-200
-}
-
-// Pagination represents pagination information in a Twitch API response.
-type Pagination struct {
-	Cursor string `json:"cursor,omitempty"`
 }
 
 // TwitchAPIError represents an error returned by the Twitch API.
@@ -55,7 +55,7 @@ func decodeResponse[T any](res *http.Response) (*ResponseData[T], error) {
 }
 
 func (data ResponseData[T]) asError() error {
-	if data.Status <= 400 {
+	if data.Status < http.StatusBadRequest {
 		return nil
 	}
 	return &TwitchAPIError{data.Status, data.Code, data.Message}
@@ -68,8 +68,8 @@ func (err TwitchAPIError) Error() string {
 // CodeOf returns the HTTP status code of the given error.
 // If the error is not an API error, it returns http.StatusInternalServerError.
 func CodeOf(err error) int {
-	apiErr := &TwitchAPIError{}
-	if errors.As(err, apiErr) {
+	var apiErr *TwitchAPIError
+	if errors.As(err, &apiErr) {
 		return apiErr.Status
 	}
 	return http.StatusInternalServerError

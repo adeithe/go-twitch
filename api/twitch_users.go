@@ -3,22 +3,7 @@ package api
 import (
 	"context"
 	"net/http"
-	"time"
 )
-
-// User represents a Twitch user.
-type User struct {
-	ID              string    `json:"id"`
-	Login           string    `json:"login"`
-	DisplayName     string    `json:"display_name"`
-	Type            string    `json:"type"`
-	BroadcasterType string    `json:"broadcaster_type"`
-	Description     string    `json:"description"`
-	ProfileImageURL string    `json:"profile_image_url"`
-	OfflineImageURL string    `json:"offline_image_url"`
-	Email           string    `json:"email,omitempty"`
-	CreatedAt       time.Time `json:"created_at"`
-}
 
 // UsersResource represents the Twitch Users API.
 type UsersResource struct {
@@ -30,55 +15,68 @@ func NewUsersResource(client *Client) *UsersResource {
 	return &UsersResource{client}
 }
 
-// UsersListCall is a call to the Users List endpoint.
+// UsersListCall represents a GET call to a Twitch Users API endpoint.
 type UsersListCall struct {
 	resource *UsersResource
 	opts     []RequestOption
 }
 
-// UsersListResponse is the response from the Users List endpoint.
+// UsersListResponse represents the response from a GET request to /helix/users.
 type UsersListResponse struct {
+	// Status is the HTTP status text returned by the Twitch API. For example, "200 OK".
+	Status string
+	// StatusCode is the HTTP status code returned by the Twitch API. For example, 200.
+	StatusCode int
+	// Header contains the HTTP headers from the Twitch API response.
 	Header http.Header
-	Data   []User
+	// Data is the User data returned by the Twitch API.
+	Data []User
+	// Request is the HTTP request that was sent to the Twitch API.
+	Request *http.Request
 }
 
-const (
-	// EndpointUsers is the endpoint for getting users.
-	EndpointUsers = TwitchAPIVersionHelix + "/users"
-	// EndpointUsersBlocks is the endpoint for managing blocked users.
-	EndpointUsersBlocks = TwitchAPIVersionHelix + "/users/blocks"
-	// EndpointUsersAllExtensions is the endpoint for getting all extensions a user has installed.
-	EndpointUsersAllExtensions = TwitchAPIVersionHelix + "/users/extensions/list"
-	// EndpointUsersActiveExtensions is the endpoint for getting active extensions for a user.
-	EndpointUsersActiveExtensions = TwitchAPIVersionHelix + "/users/extensions"
-)
-
-// List creates a request to list users based on the specified criteria.
+// List creates a new GET request to /helix/users.
 //
-// The email field will be empty unless the access token has the user:read:email scope.
+// Gets information about one or more users.
+// You may specify users by ID or by login name.
+//
+// You may look up users using their user ID, login name, or both but the sum total of the number of users you may look up is 100.
+// For example, you may specify 50 IDs and 50 names or 100 IDs or names, but you cannot specify 100 IDs and 100 names.
+//
+// If you don't specify IDs or login names, the request returns information about the user in the access token if you specify a user access token.
+//
+// # Authorization
+//
+// Requires an app access token or user access token.
+//
+// To include the user's verified email address in the response, you must use a user access token that includes the user:read:email scope.
+//
+// Check the [Official Twitch Documentation] for more information.
+//
+// [Official Twitch Documentation]: https://dev.twitch.tv/docs/api/reference/#get-users
 func (r *UsersResource) List() *UsersListCall {
 	return &UsersListCall{resource: r}
 }
 
-// ID filters the results to the specified user IDs.
-func (c *UsersListCall) ID(ids []string) *UsersListCall {
+// ID adds to the ID query parameter.
+func (api *UsersListCall) ID(ids ...string) *UsersListCall {
 	for _, id := range ids {
-		c.opts = append(c.opts, AddQueryParameter("id", id))
+		api.opts = append(api.opts, AddQueryParameter("id", id))
 	}
-	return c
+	return api
 }
 
-// Login filters the results to the specified usernames.
-func (c *UsersListCall) Login(logins []string) *UsersListCall {
+// Login adds to the Login query parameter.
+func (api *UsersListCall) Login(logins ...string) *UsersListCall {
 	for _, login := range logins {
-		c.opts = append(c.opts, AddQueryParameter("login", login))
+		api.opts = append(api.opts, AddQueryParameter("login", login))
 	}
-	return c
+	return api
 }
 
 // Do executes the request.
-func (c *UsersListCall) Do(ctx context.Context, opts ...RequestOption) (*UsersListResponse, error) {
-	res, err := c.resource.client.doRequest(ctx, http.MethodGet, EndpointUsers, nil, append(opts, c.opts...)...)
+func (api *UsersListCall) Do(ctx context.Context, opts ...RequestOption) (*UsersListResponse, error) {
+	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/users", nil, append(api.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}
@@ -90,7 +88,10 @@ func (c *UsersListCall) Do(ctx context.Context, opts ...RequestOption) (*UsersLi
 	}
 
 	return &UsersListResponse{
-		Header: res.Header,
-		Data:   data.Data,
+		Status:     res.Status,
+		StatusCode: res.StatusCode,
+		Header:     res.Header,
+		Data:       data.Data,
+		Request:    res.Request,
 	}, nil
 }

@@ -1,134 +1,478 @@
 package api
 
 import (
+	"bytes"
 	"context"
-	"fmt"
+	"encoding/json"
 	"net/http"
-	"time"
 )
-
-// Stream represents a Twitch stream.
-type Stream struct {
-	ID              string    `json:"id"`
-	UserID          string    `json:"user_id"`
-	UserLogin       string    `json:"user_login"`
-	UserDisplayName string    `json:"user_name"`
-	GameID          string    `json:"game_id"`
-	GameName        string    `json:"game_name"`
-	Type            string    `json:"type"`
-	Title           string    `json:"title"`
-	Tags            []string  `json:"tags"`
-	ViewerCount     int       `json:"viewer_count"`
-	Language        string    `json:"language"`
-	ThumbnailURL    string    `json:"thumbnail_url"`
-	IsMature        bool      `json:"is_mature"`
-	StartedAt       time.Time `json:"started_at"`
-}
 
 // StreamsResource represents the Twitch Streams API.
 type StreamsResource struct {
 	client *Client
+
+	// StreamKey provides access to the Twitch StreamKey API.
+	StreamKey *StreamsStreamKeyResource
+	// Followed provides access to the Twitch Followed API.
+	Followed *StreamsFollowedResource
+	// Markers provides access to the Twitch Markers API.
+	Markers *StreamsMarkersResource
 }
 
 // NewStreamsResource creates a new StreamsResource.
 func NewStreamsResource(client *Client) *StreamsResource {
-	return &StreamsResource{client}
+	r := &StreamsResource{client: client}
+	r.StreamKey = NewStreamsStreamKeyResource(client)
+	r.Followed = NewStreamsFollowedResource(client)
+	r.Markers = NewStreamsMarkersResource(client)
+	return r
 }
 
-// StreamsListCall is a call to the Streams List endpoint.
+// StreamsStreamKeyResource represents the Twitch StreamsStreamKey API.
+type StreamsStreamKeyResource struct {
+	client *Client
+}
+
+// NewStreamsStreamKeyResource creates a new StreamsStreamKeyResource.
+func NewStreamsStreamKeyResource(client *Client) *StreamsStreamKeyResource {
+	return &StreamsStreamKeyResource{client}
+}
+
+// StreamKeyListCall represents a GET call to a Twitch StreamsStreamKey API endpoint.
+type StreamKeyListCall struct {
+	resource *StreamsStreamKeyResource
+	opts     []RequestOption
+}
+
+// StreamKeyListResponse represents the response from a GET request to /helix/streams/key.
+type StreamKeyListResponse struct {
+	// Status is the HTTP status text returned by the Twitch API. For example, "200 OK".
+	Status string
+	// StatusCode is the HTTP status code returned by the Twitch API. For example, 200.
+	StatusCode int
+	// Header contains the HTTP headers from the Twitch API response.
+	Header http.Header
+	// Data is the StreamKey data returned by the Twitch API.
+	Data []StreamKey
+	// Request is the HTTP request that was sent to the Twitch API.
+	Request *http.Request
+}
+
+// List creates a new GET request to /helix/streams/key.
+//
+// Gets the channel's stream key.
+//
+// # Authorization
+//
+// Requires a user access token that includes the channel:read:stream_key scope.
+//
+// Check the [Official Twitch Documentation] for more information.
+//
+// [Official Twitch Documentation]: https://dev.twitch.tv/docs/api/reference/#get-stream-key
+func (r *StreamsStreamKeyResource) List(broadcasterID string) *StreamKeyListCall {
+	c := &StreamKeyListCall{resource: r}
+	return c.
+		BroadcasterID(broadcasterID)
+}
+
+// BroadcasterID sets the BroadcasterID query parameter.
+func (api *StreamKeyListCall) BroadcasterID(broadcasterID string) *StreamKeyListCall {
+	api.opts = append(api.opts, SetQueryParameter("broadcaster_id", broadcasterID))
+	return api
+}
+
+// Do executes the request.
+func (api *StreamKeyListCall) Do(ctx context.Context, opts ...RequestOption) (*StreamKeyListResponse, error) {
+	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/streams/key", nil, append(api.opts, opts...)...)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = res.Body.Close() }()
+
+	data, err := decodeResponse[StreamKey](res)
+	if err != nil {
+		return nil, err
+	}
+
+	return &StreamKeyListResponse{
+		Status:     res.Status,
+		StatusCode: res.StatusCode,
+		Header:     res.Header,
+		Data:       data.Data,
+		Request:    res.Request,
+	}, nil
+}
+
+// StreamsFollowedResource represents the Twitch StreamsFollowed API.
+type StreamsFollowedResource struct {
+	client *Client
+}
+
+// NewStreamsFollowedResource creates a new StreamsFollowedResource.
+func NewStreamsFollowedResource(client *Client) *StreamsFollowedResource {
+	return &StreamsFollowedResource{client}
+}
+
+// StreamsFollowedListCall represents a GET call to a Twitch StreamsFollowed API endpoint.
+type StreamsFollowedListCall struct {
+	resource *StreamsFollowedResource
+	opts     []RequestOption
+}
+
+// StreamsFollowedListResponse represents the response from a GET request to /helix/streams/followed.
+type StreamsFollowedListResponse struct {
+	// Status is the HTTP status text returned by the Twitch API. For example, "200 OK".
+	Status string
+	// StatusCode is the HTTP status code returned by the Twitch API. For example, 200.
+	StatusCode int
+	// Header contains the HTTP headers from the Twitch API response.
+	Header http.Header
+	// Data is the Stream data returned by the Twitch API.
+	Data []Stream
+	// Pagination is the Pagination data returned by the Twitch API.
+	Pagination Pagination
+	// Request is the HTTP request that was sent to the Twitch API.
+	Request *http.Request
+}
+
+// List creates a new GET request to /helix/streams/followed.
+//
+// Gets the list of broadcasters that the user follows and that are streaming live.
+//
+// # Authorization
+//
+// Requires a user access token that includes the user:read:follows scope.
+//
+// Check the [Official Twitch Documentation] for more information.
+//
+// [Official Twitch Documentation]: https://dev.twitch.tv/docs/api/reference/#get-followed-streams
+func (r *StreamsFollowedResource) List(userID string) *StreamsFollowedListCall {
+	c := &StreamsFollowedListCall{resource: r}
+	return c.
+		UserID(userID)
+}
+
+// UserID sets the UserID query parameter.
+func (api *StreamsFollowedListCall) UserID(userID string) *StreamsFollowedListCall {
+	api.opts = append(api.opts, SetQueryParameter("user_id", userID))
+	return api
+}
+
+// After sets the After query parameter.
+func (api *StreamsFollowedListCall) After(after string) *StreamsFollowedListCall {
+	api.opts = append(api.opts, SetQueryParameter("after", after))
+	return api
+}
+
+// First sets the First query parameter.
+func (api *StreamsFollowedListCall) First(first int) *StreamsFollowedListCall {
+	api.opts = append(api.opts, SetQueryParameter("first", first))
+	return api
+}
+
+// Do executes the request.
+func (api *StreamsFollowedListCall) Do(ctx context.Context, opts ...RequestOption) (*StreamsFollowedListResponse, error) {
+	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/streams/followed", nil, append(api.opts, opts...)...)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = res.Body.Close() }()
+
+	data, err := decodeResponse[Stream](res)
+	if err != nil {
+		return nil, err
+	}
+
+	return &StreamsFollowedListResponse{
+		Status:     res.Status,
+		StatusCode: res.StatusCode,
+		Header:     res.Header,
+		Data:       data.Data,
+		Pagination: data.Pagination,
+		Request:    res.Request,
+	}, nil
+}
+
+// StreamsMarkersResource represents the Twitch StreamsMarkers API.
+type StreamsMarkersResource struct {
+	client *Client
+}
+
+// NewStreamsMarkersResource creates a new StreamsMarkersResource.
+func NewStreamsMarkersResource(client *Client) *StreamsMarkersResource {
+	return &StreamsMarkersResource{client}
+}
+
+// StreamMarkerInsertCall represents a POST call to a Twitch StreamsMarkers API endpoint.
+type StreamMarkerInsertCall struct {
+	resource *StreamsMarkersResource
+	body     map[string]any
+}
+
+// StreamMarkerInsertResponse represents the response from a POST request to /helix/streams/markers.
+type StreamMarkerInsertResponse struct {
+	// Status is the HTTP status text returned by the Twitch API. For example, "200 OK".
+	Status string
+	// StatusCode is the HTTP status code returned by the Twitch API. For example, 200.
+	StatusCode int
+	// Header contains the HTTP headers from the Twitch API response.
+	Header http.Header
+	// Data is the StreamMarkerData data returned by the Twitch API.
+	Data []StreamMarkerData
+	// Request is the HTTP request that was sent to the Twitch API.
+	Request *http.Request
+}
+
+// Insert creates a new POST request to /helix/streams/markers.
+//
+// Creates a marker for a stream that is currently live.
+//
+// # Authorization
+//
+// Requires a user access token that includes the channel:manage:broadcast scope.
+//
+// Check the [Official Twitch Documentation] for more information.
+//
+// [Official Twitch Documentation]: https://dev.twitch.tv/docs/api/reference/#create-stream-marker
+func (r *StreamsMarkersResource) Insert(broadcasterID string) *StreamMarkerInsertCall {
+	c := &StreamMarkerInsertCall{resource: r, body: make(map[string]any)}
+	return c.
+		BroadcasterID(broadcasterID)
+}
+
+// BroadcasterID sets the BroadcasterID body parameter.
+func (api *StreamMarkerInsertCall) BroadcasterID(broadcasterID string) *StreamMarkerInsertCall {
+	api.body["user_id"] = broadcasterID
+	return api
+}
+
+// Description sets the Description body parameter.
+func (api *StreamMarkerInsertCall) Description(description string) *StreamMarkerInsertCall {
+	api.body["description"] = description
+	return api
+}
+
+// Do executes the request.
+func (api *StreamMarkerInsertCall) Do(ctx context.Context, opts ...RequestOption) (*StreamMarkerInsertResponse, error) {
+	bs, err := json.Marshal(api.body)
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := api.resource.client.DoRequest(ctx, "POST", "/helix/streams/markers", bytes.NewReader(bs), opts...)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = res.Body.Close() }()
+
+	data, err := decodeResponse[StreamMarkerData](res)
+	if err != nil {
+		return nil, err
+	}
+
+	return &StreamMarkerInsertResponse{
+		Status:     res.Status,
+		StatusCode: res.StatusCode,
+		Header:     res.Header,
+		Data:       data.Data,
+		Request:    res.Request,
+	}, nil
+}
+
+// StreamMarkerListCall represents a GET call to a Twitch StreamsMarkers API endpoint.
+type StreamMarkerListCall struct {
+	resource *StreamsMarkersResource
+	opts     []RequestOption
+}
+
+// StreamMarkerListResponse represents the response from a GET request to /helix/streams/markers.
+type StreamMarkerListResponse struct {
+	// Status is the HTTP status text returned by the Twitch API. For example, "200 OK".
+	Status string
+	// StatusCode is the HTTP status code returned by the Twitch API. For example, 200.
+	StatusCode int
+	// Header contains the HTTP headers from the Twitch API response.
+	Header http.Header
+	// Data is the StreamMarker data returned by the Twitch API.
+	Data []StreamMarker
+	// Request is the HTTP request that was sent to the Twitch API.
+	Request *http.Request
+}
+
+// List creates a new GET request to /helix/streams/markers.
+//
+// Gets a list of markers from the user's most recent stream or from the specified VOD/video.
+//
+// A marker is an arbitrary point in a live stream that the broadcaster or editor marked, so they can return to that spot later to create video highlights (see Video Producer, Highlights in the Twitch UX).
+//
+// # Authorization
+//
+// Requires a user access token that includes the user:read:broadcast or channel:manage:broadcast scope.
+//
+// Check the [Official Twitch Documentation] for more information.
+//
+// [Official Twitch Documentation]: https://dev.twitch.tv/docs/api/reference/#get-stream-markers
+func (r *StreamsMarkersResource) List(broadcasterID string, videoID string) *StreamMarkerListCall {
+	c := &StreamMarkerListCall{resource: r}
+	return c.
+		BroadcasterID(broadcasterID).
+		VideoID(videoID)
+}
+
+// BroadcasterID sets the BroadcasterID query parameter.
+func (api *StreamMarkerListCall) BroadcasterID(broadcasterID string) *StreamMarkerListCall {
+	api.opts = append(api.opts, SetQueryParameter("user_id", broadcasterID))
+	return api
+}
+
+// VideoID sets the VideoID query parameter.
+func (api *StreamMarkerListCall) VideoID(videoID string) *StreamMarkerListCall {
+	api.opts = append(api.opts, SetQueryParameter("video_id", videoID))
+	return api
+}
+
+// Before sets the Before query parameter.
+func (api *StreamMarkerListCall) Before(before string) *StreamMarkerListCall {
+	api.opts = append(api.opts, SetQueryParameter("before", before))
+	return api
+}
+
+// After sets the After query parameter.
+func (api *StreamMarkerListCall) After(after string) *StreamMarkerListCall {
+	api.opts = append(api.opts, SetQueryParameter("after", after))
+	return api
+}
+
+// First sets the First query parameter.
+func (api *StreamMarkerListCall) First(first int) *StreamMarkerListCall {
+	api.opts = append(api.opts, SetQueryParameter("first", first))
+	return api
+}
+
+// Do executes the request.
+func (api *StreamMarkerListCall) Do(ctx context.Context, opts ...RequestOption) (*StreamMarkerListResponse, error) {
+	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/streams/markers", nil, append(api.opts, opts...)...)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = res.Body.Close() }()
+
+	data, err := decodeResponse[StreamMarker](res)
+	if err != nil {
+		return nil, err
+	}
+
+	return &StreamMarkerListResponse{
+		Status:     res.Status,
+		StatusCode: res.StatusCode,
+		Header:     res.Header,
+		Data:       data.Data,
+		Request:    res.Request,
+	}, nil
+}
+
+// StreamsListCall represents a GET call to a Twitch Streams API endpoint.
 type StreamsListCall struct {
 	resource *StreamsResource
 	opts     []RequestOption
 }
 
-// StreamsListResponse is the response from the Streams List endpoint.
+// StreamsListResponse represents the response from a GET request to /helix/streams.
 type StreamsListResponse struct {
+	// Status is the HTTP status text returned by the Twitch API. For example, "200 OK".
+	Status string
+	// StatusCode is the HTTP status code returned by the Twitch API. For example, 200.
+	StatusCode int
+	// Header contains the HTTP headers from the Twitch API response.
 	Header http.Header
-	Data   []Stream
-	Cursor string
+	// Data is the Stream data returned by the Twitch API.
+	Data []Stream
+	// Pagination is the Pagination data returned by the Twitch API.
+	Pagination Pagination
+	// Request is the HTTP request that was sent to the Twitch API.
+	Request *http.Request
 }
 
-const (
-	// EndpointStreamsGetKey is the endpoint for getting a stream key.
-	EndpointStreamsGetKey = TwitchAPIVersionHelix + "/streams/key"
-	// EndpointStreams is the endpoint for getting stream information.
-	EndpointStreams = TwitchAPIVersionHelix + "/streams"
-	// EndpointStreamsFollowed is the endpoint for getting followed streams.
-	EndpointStreamsFollowed = TwitchAPIVersionHelix + "/streams/followed"
-	// EndpointStreamsMarkers is the endpoint for managing a markers for a stream.
-	EndpointStreamsMarkers = TwitchAPIVersionHelix + "/streams/markers"
-)
-
-// List creates a request to list streams based on the specified criteria.
+// List creates a new GET request to /helix/streams.
 //
-// Requires an app or user access token. No scope is required.
+// Gets a list of all streams.
+// The list is in descending order by the number of viewers watching the stream.
+// Because viewers come and go during a stream, it's possible to find duplicate or missing streams in the list as you page through the results.
+//
+// # Authorization
+//
+// Requires an app access token or user access token.
+//
+// Check the [Official Twitch Documentation] for more information.
+//
+// [Official Twitch Documentation]: https://dev.twitch.tv/docs/api/reference/#get-streams
 func (r *StreamsResource) List() *StreamsListCall {
 	return &StreamsListCall{resource: r}
 }
 
-// UserID filters the results to the specified user IDs.
-func (c *StreamsListCall) UserID(ids []string) *StreamsListCall {
+// ID adds to the ID query parameter.
+func (api *StreamsListCall) ID(ids ...string) *StreamsListCall {
 	for _, id := range ids {
-		c.opts = append(c.opts, AddQueryParameter("user_id", id))
+		api.opts = append(api.opts, AddQueryParameter("id", id))
 	}
-	return c
+	return api
 }
 
-// Username filters the results to the specified usernames.
-func (c *StreamsListCall) Username(usernames []string) *StreamsListCall {
-	for _, username := range usernames {
-		c.opts = append(c.opts, AddQueryParameter("user_login", username))
+// UserID adds to the UserID query parameter.
+func (api *StreamsListCall) UserID(userIDs ...string) *StreamsListCall {
+	for _, userID := range userIDs {
+		api.opts = append(api.opts, AddQueryParameter("user_id", userID))
 	}
-	return c
+	return api
 }
 
-// GameID filters the results to the specified game IDs.
-func (c *StreamsListCall) GameID(ids []string) *StreamsListCall {
-	for _, id := range ids {
-		c.opts = append(c.opts, AddQueryParameter("game_id", id))
+// GameID adds to the GameID query parameter.
+func (api *StreamsListCall) GameID(gameIDs ...string) *StreamsListCall {
+	for _, gameID := range gameIDs {
+		api.opts = append(api.opts, AddQueryParameter("game_id", gameID))
 	}
-	return c
+	return api
 }
 
-// Type filters the results to the specified stream types.
-//
-// Possible values: "all", "live" (Default: "all")
-func (c *StreamsListCall) Type(t string) *StreamsListCall {
-	c.opts = append(c.opts, SetQueryParameter("type", t))
-	return c
+// Language sets the Language query parameter.
+func (api *StreamsListCall) Language(language string) *StreamsListCall {
+	api.opts = append(api.opts, SetQueryParameter("language", language))
+	return api
 }
 
-// Languages filters the results to the specified stream languages.
-func (c *StreamsListCall) Languages(languages []string) *StreamsListCall {
-	for _, language := range languages {
-		c.opts = append(c.opts, AddQueryParameter("language", language))
-	}
-	return c
+// Period sets the Period query parameter.
+func (api *StreamsListCall) Period(period string) *StreamsListCall {
+	api.opts = append(api.opts, SetQueryParameter("period", period))
+	return api
 }
 
-// First limits the number of results to the specified amount.
-//
-// Maximum: 100 (default: 20)
-func (c *StreamsListCall) First(n int) *StreamsListCall {
-	c.opts = append(c.opts, SetQueryParameter("first", fmt.Sprint(n)))
-	return c
+// Type sets the Type query parameter.
+func (api *StreamsListCall) Type(t string) *StreamsListCall {
+	api.opts = append(api.opts, SetQueryParameter("type", t))
+	return api
 }
 
-// Before filters the results to streams that started before the specified cursor.
-func (c *StreamsListCall) Before(cursor string) *StreamsListCall {
-	c.opts = append(c.opts, SetQueryParameter("before", cursor))
-	return c
+// Before sets the Before query parameter.
+func (api *StreamsListCall) Before(before string) *StreamsListCall {
+	api.opts = append(api.opts, SetQueryParameter("before", before))
+	return api
 }
 
-// After filters the results to streams that started after the specified cursor.
-func (c *StreamsListCall) After(cursor string) *StreamsListCall {
-	c.opts = append(c.opts, SetQueryParameter("after", cursor))
-	return c
+// After sets the After query parameter.
+func (api *StreamsListCall) After(after string) *StreamsListCall {
+	api.opts = append(api.opts, SetQueryParameter("after", after))
+	return api
+}
+
+// First sets the First query parameter.
+func (api *StreamsListCall) First(first int) *StreamsListCall {
+	api.opts = append(api.opts, SetQueryParameter("first", first))
+	return api
 }
 
 // Do executes the request.
-func (c *StreamsListCall) Do(ctx context.Context, opts ...RequestOption) (*StreamsListResponse, error) {
-	res, err := c.resource.client.doRequest(ctx, http.MethodGet, EndpointStreams, nil, append(opts, c.opts...)...)
+func (api *StreamsListCall) Do(ctx context.Context, opts ...RequestOption) (*StreamsListResponse, error) {
+	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/streams", nil, append(api.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}
@@ -140,8 +484,11 @@ func (c *StreamsListCall) Do(ctx context.Context, opts ...RequestOption) (*Strea
 	}
 
 	return &StreamsListResponse{
-		Header: res.Header,
-		Data:   data.Data,
-		Cursor: data.Pagination.Cursor,
+		Status:     res.Status,
+		StatusCode: res.StatusCode,
+		Header:     res.Header,
+		Data:       data.Data,
+		Pagination: data.Pagination,
+		Request:    res.Request,
 	}, nil
 }

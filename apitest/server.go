@@ -35,15 +35,30 @@ type MockTwitchAPI struct {
 
 // MockTwitchAPIEndpoint represents available data for a mock Twitch API endpoint.
 type MockTwitchAPIEndpoint struct {
-	data any
+	data       any
+	validators []ValidatorFunc
 
-	TimesCalled, Successes, Failures int
+	TimesCalled int
+	Successes   int
+	Failures    int
+}
+
+// ValidatorFunc is a function type for validating incoming HTTP requests.
+type ValidatorFunc func(req *http.Request) error
+
+// SetMockValidator adds a mock validator for the given path.
+//
+// Successful requests will return an empty response.
+//
+// If a response has already been added for the given path and method, it will be overwritten.
+func SetMockValidator(m *MockTwitchAPI, method, path string, validators ...ValidatorFunc) *MockTwitchAPIEndpoint {
+	return SetMockResponse(m, method, path, &api.ResponseData[any]{}, validators...)
 }
 
 // SetMockResponse adds a mock response for the given path.
 //
 // If a response has already been added for the given path and method, it will be overwritten.
-func SetMockResponse[T any, V api.ResponseData[T]](m *MockTwitchAPI, method string, path string, data *V) *MockTwitchAPIEndpoint {
+func SetMockResponse[T any, V api.ResponseData[T]](m *MockTwitchAPI, method, path string, data *V, validators ...ValidatorFunc) *MockTwitchAPIEndpoint {
 	m.mx.RLock()
 	key := fmt.Sprintf("%s %s", strings.ToUpper(method), path)
 	handler, ok := m.handlers[key]
@@ -55,6 +70,7 @@ func SetMockResponse[T any, V api.ResponseData[T]](m *MockTwitchAPI, method stri
 		m.mx.Unlock()
 	}
 	handler.data = data
+	handler.validators = validators
 	return handler
 }
 
@@ -139,7 +155,7 @@ func (m *MockTwitchAPI) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	writer := json.NewEncoder(res)
 	data := &api.ResponseData[any]{Status: http.StatusOK}
 	defer func() {
-		if data.Status < 400 {
+		if data.Status < http.StatusBadRequest {
 			return
 		}
 
@@ -173,6 +189,13 @@ func (m *MockTwitchAPI) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 
 	authorization := strings.SplitN(token, " ", 2)
 	clientID := strings.TrimSpace(req.Header.Get("Client-ID"))
+	if clientID == "" {
+		handler.Failures++
+		data.Status = http.StatusUnauthorized
+		data.Message = "Client ID is missing"
+		return
+	}
+
 	if len(authorization) != 2 || !strings.EqualFold(authorization[0], "Bearer") {
 		handler.Failures++
 		data.Status = http.StatusUnauthorized
@@ -188,18 +211,20 @@ func (m *MockTwitchAPI) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if clientID == "" {
-		handler.Failures++
-		data.Status = http.StatusUnauthorized
-		data.Message = "Client ID is missing"
-		return
-	}
-
 	if clientID != authClient {
 		handler.Failures++
 		data.Status = http.StatusUnauthorized
 		data.Message = "Client ID does not match OAuth token"
 		return
+	}
+
+	for _, validate := range handler.validators {
+		if err := validate(req); err != nil {
+			handler.Failures++
+			data.Status = http.StatusBadRequest
+			data.Message = err.Error()
+			return
+		}
 	}
 
 	handler.Successes++
