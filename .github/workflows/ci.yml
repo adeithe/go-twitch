@@ -1,5 +1,5 @@
 name: CI
-on: [push]
+on: [push, pull_request]
 
 env:
   GO_VERSION: 1.22
@@ -32,11 +32,12 @@ jobs:
       - name: Install dependencies
         run: go mod download
       - name: Run tests
-        run: go test -coverprofile=coverage.txt -timeout 300s -v ./...
+        run: go test -coverprofile=coverage.out -covermode=atomic -coverpkg=./... -timeout 300s -v ./...
       - name: Upload coverage report to Codecov
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+          files: coverage.out
   benchmark:
     name: Benchmark
     needs: [test]

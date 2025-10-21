@@ -1933,6 +1933,7 @@ func RunEndpointTestCases(t *testing.T, tests []EndpointTestCase) {
 	t.Helper()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			mock := apitest.NewMockAPI(t, tt.opts...)
 			endpoint := tt.endpoint(mock)
 

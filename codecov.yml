@@ -3,7 +3,32 @@ coverage:
     project:
       default:
         target: 60%
+        threshold: 1%
+        only_pulls: true
+    patch:
+      default:
+        target: 60%
+        threshold: 0%
+        only_pulls: true
+
+component_management:
+  individual_components:
+    - component_id: api
+      name: API
+      paths:
+        - api/**
+        - apitest/**
+    - component_id: irc
+      name: IRC
+      paths:
+        - irc/**
+    - component_id: pubsub
+      name: PubSub
+      paths:
+        - pubsub/**
 
 ignore:
-  - .codegen/*
-  - .codegen/**/*
+  - .codegen/**
+
+comment:
+  layout: "header, diff, components"
