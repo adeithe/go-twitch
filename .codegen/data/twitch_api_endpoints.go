@@ -1116,9 +1116,9 @@ var Endpoints = []*TwitchAPIEndpoint{
 			"# Authorization", "", "Requires a user access token that includes the moderator:manage:banned_users scope.",
 		},
 		Params: struct {
-			BroadcasterID string            `query:"-,required"`
-			ModeratorID   string            `query:"-,required"`
-			Ban           []api.OutboundBan `body:"data,required"`
+			BroadcasterID string          `query:"-,required"`
+			ModeratorID   string          `query:"-,required"`
+			Ban           api.OutboundBan `body:"data,required"`
 		}{},
 		Response: BasicResponse[api.IssuedBan]{},
 	},

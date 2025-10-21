@@ -91,8 +91,8 @@ func (api *BanUserInsertCall) ModeratorID(moderatorID string) *BanUserInsertCall
 }
 
 // Ban sets the Ban body parameter.
-func (api *BanUserInsertCall) Ban(bans ...OutboundBan) *BanUserInsertCall {
-	api.body["data"] = bans
+func (api *BanUserInsertCall) Ban(ban OutboundBan) *BanUserInsertCall {
+	api.body["data"] = ban
 	return api
 }
 
