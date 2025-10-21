@@ -1,4 +1,4 @@
-# go-twitch [![GoDoc](https://godoc.org/github.com/Adeithe/go-twitch?status.svg)](https://godoc.org/github.com/Adeithe/go-twitch) [![Go Report Card](https://goreportcard.com/badge/github.com/Adeithe/go-twitch?style=flat-square)](https://goreportcard.com/report/github.com/Adeithe/go-twitch) [![Codecov](https://img.shields.io/codecov/c/github/adeithe/go-twitch?style=flat-square&logo=codecov&label=codecov)](https://codecov.io/github/adeithe/go-twitch)
+# go-twitch [![GoDoc](https://godoc.org/github.com/adeithe/go-twitch?status.svg)](https://godoc.org/github.com/adeithe/go-twitch) [![Go Report Card](https://goreportcard.com/badge/github.com/adeithe/go-twitch?style=flat-square)](https://goreportcard.com/report/github.com/adeithe/go-twitch) [![Codecov](https://img.shields.io/codecov/c/github/adeithe/go-twitch?style=flat-square&logo=codecov&label=codecov)](https://codecov.io/github/adeithe/go-twitch)
 
 The go-twitch library is a complete interface for Twitch services. It is designed to be easy to use and allows for easy integration into any project.
 
