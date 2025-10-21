@@ -438,7 +438,7 @@ var Endpoints = []*TwitchAPIEndpoint{
 		Resource: CharityDonationsResource,
 		Name:     "CharityDonations",
 		Method:   http.MethodGet,
-		Path:     api.EndpointCharityGetCampaign,
+		Path:     api.EndpointCharityGetCampaignDonations,
 		DocsURL:  "#get-charity-campaign-donations",
 		Comments: []string{
 			"Gets the list of donations that users have made to the broadcasters active charity campaign.", "",

@@ -1877,7 +1877,8 @@ func WithPermanentBan(userID, reason string) OutboundBan {
 }
 
 // WithTimeout creates a new outbound ban with a timeout duration in seconds.
-func WithTimeout(userID, reason string, durationSeconds int) OutboundBan {
+func WithTimeout(userID, reason string, duration time.Duration) OutboundBan {
+	durationSeconds := int(duration.Seconds())
 	return OutboundBan{
 		UserID:   userID,
 		Reason:   reason,

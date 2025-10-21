@@ -329,7 +329,75 @@ func TestAPI_Channels(t *testing.T) {
 
 func TestAPI_ChannelPoints(t *testing.T) {}
 
-func TestAPI_Charity(t *testing.T) {}
+func TestAPI_Charity(t *testing.T) {
+	RunEndpointTestCases(t, []EndpointTestCase{
+		{
+			"Get Charity Campaign",
+			[]apitest.MockTwitchAPIOption{},
+			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
+				return apitest.SetMockResponse(mock, http.MethodGet, "/helix/charity/campaigns", &api.ResponseData[api.CharityCampaign]{
+					Data: []api.CharityCampaign{{
+						ID:                 "camp123",
+						BroadcasterID:      "1234",
+						BroadcasterName:    "TwitchDev",
+						CharityName:        "Save the Whales",
+						CharityDescription: "Help us save the whales!",
+						CharityLogo:        "https://example.com/logo.png",
+						TargetAmount:       api.CharityCampaignAmount{Value: 10000, Decimal: 2, Currency: "USD"},
+						CurrentAmount:      api.CharityCampaignAmount{Value: 5000, Decimal: 2, Currency: "USD"},
+					}},
+				}, apitest.RequireQueryParam("broadcaster_id"))
+			},
+			func(api *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
+				res, err := api.Charity.Campaign.List("1234").Do(context.Background(), opts...)
+				return func(t *testing.T) {
+					require.Len(t, res.Data, 1)
+					require.Equal(t, "1234", res.Data[0].BroadcasterID)
+					require.Equal(t, "TwitchDev", res.Data[0].BroadcasterName)
+					require.Equal(t, "Save the Whales", res.Data[0].CharityName)
+					require.Equal(t, "Help us save the whales!", res.Data[0].CharityDescription)
+					require.Equal(t, "https://example.com/logo.png", res.Data[0].CharityLogo)
+					require.Equal(t, 10000, res.Data[0].TargetAmount.Value)
+					require.Equal(t, 2, res.Data[0].TargetAmount.Decimal)
+					require.Equal(t, "USD", res.Data[0].TargetAmount.Currency)
+					require.Equal(t, 5000, res.Data[0].CurrentAmount.Value)
+					require.Equal(t, 2, res.Data[0].CurrentAmount.Decimal)
+					require.Equal(t, "USD", res.Data[0].CurrentAmount.Currency)
+				}, err
+			},
+		},
+		{
+			"Get Charity Campaign Donations",
+			[]apitest.MockTwitchAPIOption{},
+			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
+				return apitest.SetMockResponse(mock, http.MethodGet, "/helix/charity/donations", &api.ResponseData[api.CharityCampaignDonation]{
+					Data: []api.CharityCampaignDonation{{
+						ID:         "don123",
+						CampaignID: "camp123",
+						UserID:     "1234",
+						UserLogin:  "generousviewer",
+						UserName:   "GenerousViewer",
+						Amount:     api.CharityCampaignAmount{Value: 500, Decimal: 2, Currency: "USD"},
+					}},
+				}, apitest.RequireQueryParam("broadcaster_id"))
+			},
+			func(api *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
+				res, err := api.Charity.Donations.List("1234").After("abc123").First(1).Do(context.Background(), opts...)
+				return func(t *testing.T) {
+					require.Len(t, res.Data, 1)
+					require.Equal(t, "don123", res.Data[0].ID)
+					require.Equal(t, "camp123", res.Data[0].CampaignID)
+					require.Equal(t, "1234", res.Data[0].UserID)
+					require.Equal(t, "generousviewer", res.Data[0].UserLogin)
+					require.Equal(t, "GenerousViewer", res.Data[0].UserName)
+					require.Equal(t, 500, res.Data[0].Amount.Value)
+					require.Equal(t, 2, res.Data[0].Amount.Decimal)
+					require.Equal(t, "USD", res.Data[0].Amount.Currency)
+				}, err
+			},
+		},
+	})
+}
 
 func TestAPI_Chat(t *testing.T) {
 	RunEndpointTestCases(t, []EndpointTestCase{

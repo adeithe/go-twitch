@@ -163,6 +163,20 @@ func TestAPI_WithChoice(t *testing.T) {
 	require.Equal(t, "option1", choice.Title)
 }
 
+func TestAPI_WithPermanentBan(t *testing.T) {
+	timeout := api.WithPermanentBan("1234", "You're banned!")
+	require.Equal(t, "1234", timeout.UserID)
+	require.Equal(t, "You're banned!", timeout.Reason)
+	require.Nil(t, timeout.Duration)
+}
+
+func TestAPI_WithTimeout(t *testing.T) {
+	timeout := api.WithTimeout("1234", "Stop breaking the rules", 30*time.Second)
+	require.Equal(t, "1234", timeout.UserID)
+	require.Equal(t, "Stop breaking the rules", timeout.Reason)
+	require.Equal(t, 30, *timeout.Duration)
+}
+
 func TestAPI_CodeOf_Invalid(t *testing.T) {
 	require.Equal(t, 500, api.CodeOf(&time.ParseError{}))
 }

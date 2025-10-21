@@ -117,7 +117,7 @@ type CharityDonationsListCall struct {
 	opts     []RequestOption
 }
 
-// CharityDonationsListResponse represents the response from a GET request to /helix/charity/campaigns.
+// CharityDonationsListResponse represents the response from a GET request to /helix/charity/donations.
 type CharityDonationsListResponse struct {
 	// Status is the HTTP status text returned by the Twitch API. For example, "200 OK".
 	Status string
@@ -133,7 +133,7 @@ type CharityDonationsListResponse struct {
 	Request *http.Request
 }
 
-// List creates a new GET request to /helix/charity/campaigns.
+// List creates a new GET request to /helix/charity/donations.
 //
 // Gets the list of donations that users have made to the broadcasters active charity campaign.
 //
@@ -172,7 +172,7 @@ func (api *CharityDonationsListCall) First(first int) *CharityDonationsListCall 
 
 // Do executes the request.
 func (api *CharityDonationsListCall) Do(ctx context.Context, opts ...RequestOption) (*CharityDonationsListResponse, error) {
-	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/charity/campaigns", nil, append(api.opts, opts...)...)
+	res, err := api.resource.client.DoRequest(ctx, "GET", "/helix/charity/donations", nil, append(api.opts, opts...)...)
 	if err != nil {
 		return nil, err
 	}
