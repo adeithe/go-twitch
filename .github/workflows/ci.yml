@@ -32,7 +32,7 @@ jobs:
       - name: Install dependencies
         run: go mod download
       - name: Run tests
-        run: go test -coverprofile=coverage.out -covermode=atomic -coverpkg=./... -timeout 300s -v ./...
+        run: go test -coverprofile=coverage.out -covermode=atomic -timeout 300s -v ./...
       - name: Upload coverage report to Codecov
         uses: codecov/codecov-action@v5
         with:

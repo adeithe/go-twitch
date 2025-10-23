@@ -136,7 +136,9 @@ var (
 	// TeamsChannelsResource is the resource for the Twitch Teams Channels API
 	TeamsChannelsResource = NewTwitchAPIResource("Channels")
 	// UsersResource is the resource for the Twitch Users API
-	UsersResource = NewTwitchAPIResource("Users")
+	UsersResource = NewTwitchAPIResource("Users", UsersAuthorizationResource)
+	// UsersAuthorizationResource is the resource for the Twitch Users Authorization API
+	UsersAuthorizationResource = NewTwitchAPIResource("Authorization")
 	// VideosResource is the resource for the Twitch Videos API
 	VideosResource = NewTwitchAPIResource("Videos")
 	// WhispersResource is the resource for the Twitch Whispers API

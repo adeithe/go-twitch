@@ -66,10 +66,8 @@ type ClipsDownloadListResponse struct {
 // Check the [Official Twitch Documentation] for more information.
 //
 // [Official Twitch Documentation]: https://dev.twitch.tv/docs/api/reference/#get-clips-download
-func (r *ClipsDownloadResource) List(clipID string) *ClipsDownloadListCall {
-	c := &ClipsDownloadListCall{resource: r}
-	return c.
-		ClipID(clipID)
+func (r *ClipsDownloadResource) List() *ClipsDownloadListCall {
+	return &ClipsDownloadListCall{resource: r}
 }
 
 // ClipID sets the ClipID query parameter.
@@ -126,8 +124,8 @@ type CreateClipInsertResponse struct {
 	StatusCode int
 	// Header contains the HTTP headers from the Twitch API response.
 	Header http.Header
-	// Data is the Clip data returned by the Twitch API.
-	Data []Clip
+	// Data is the EditableClip data returned by the Twitch API.
+	Data []EditableClip
 	// Request is the HTTP request that was sent to the Twitch API.
 	Request *http.Request
 }
@@ -169,7 +167,7 @@ func (api *CreateClipInsertCall) Do(ctx context.Context, opts ...RequestOption) 
 	}
 	defer func() { _ = res.Body.Close() }()
 
-	data, err := decodeResponse[Clip](res)
+	data, err := decodeResponse[EditableClip](res)
 	if err != nil {
 		return nil, err
 	}

@@ -13,7 +13,6 @@ import (
 
 type EndpointTestCase struct {
 	name     string
-	opts     []apitest.MockTwitchAPIOption
 	endpoint func(*apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint
 	fetch    func(*api.Client, ...api.RequestOption) (func(t *testing.T), error)
 }
@@ -22,7 +21,6 @@ func TestAPI_Ads(t *testing.T) {
 	RunEndpointTestCases(t, []EndpointTestCase{
 		{
 			"Start Commercial",
-			[]apitest.MockTwitchAPIOption{},
 			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
 				return apitest.SetMockResponse(mock, http.MethodPost, "/helix/channels/commercial", &api.ResponseData[api.Commercial]{
 					Data: []api.Commercial{{Length: 60, RetryAfter: 480}},
@@ -39,7 +37,6 @@ func TestAPI_Ads(t *testing.T) {
 		},
 		{
 			"Get Ad Schedule",
-			[]apitest.MockTwitchAPIOption{},
 			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
 				timestamp := Must[time.Time](t)(time.Parse(time.RFC3339, "2023-08-01T23:08:18+00:00"))
 				return apitest.SetMockResponse(mock, http.MethodGet, "/helix/channels/ads", &api.ResponseData[api.AdSchedule]{
@@ -69,7 +66,6 @@ func TestAPI_Ads(t *testing.T) {
 		},
 		{
 			"Snooze Next Ad",
-			[]apitest.MockTwitchAPIOption{},
 			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
 				timestamp := Must[time.Time](t)(time.Parse(time.RFC3339, "2023-08-01T23:08:18+00:00"))
 				return apitest.SetMockResponse(mock, http.MethodPost, "/helix/channels/ads/schedule/snooze", &api.ResponseData[api.AdsSnoozed]{
@@ -98,7 +94,6 @@ func TestAPI_Analytics(t *testing.T) {
 	RunEndpointTestCases(t, []EndpointTestCase{
 		{
 			"Get Extension Analytics",
-			[]apitest.MockTwitchAPIOption{},
 			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
 				start := Must[time.Time](t)(time.Parse(time.RFC3339, "2018-03-01T00:00:00Z"))
 				end := Must[time.Time](t)(time.Parse(time.RFC3339, "2018-06-01T00:00:00Z"))
@@ -131,7 +126,6 @@ func TestAPI_Analytics(t *testing.T) {
 		},
 		{
 			"Get Game Analytics",
-			[]apitest.MockTwitchAPIOption{},
 			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
 				start := Must[time.Time](t)(time.Parse(time.RFC3339, "2018-03-01T00:00:00Z"))
 				end := Must[time.Time](t)(time.Parse(time.RFC3339, "2018-06-01T00:00:00Z"))
@@ -165,7 +159,6 @@ func TestAPI_Bits(t *testing.T) {
 	RunEndpointTestCases(t, []EndpointTestCase{
 		{
 			"Get Bits Leaderboard",
-			[]apitest.MockTwitchAPIOption{},
 			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
 				start := Must[time.Time](t)(time.Parse(time.RFC3339, "2023-08-01T00:00:00Z"))
 				end := Must[time.Time](t)(time.Parse(time.RFC3339, "2023-08-31T23:59:59Z"))
@@ -197,7 +190,6 @@ func TestAPI_Bits(t *testing.T) {
 		},
 		{
 			"Get Bits Cheermotes",
-			[]apitest.MockTwitchAPIOption{},
 			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
 				updated := Must[time.Time](t)(time.Parse(time.RFC3339, "2023-08-01T00:00:00Z"))
 				return apitest.SetMockResponse(mock, http.MethodGet, "/helix/bits/cheermotes", &api.ResponseData[api.Cheermote]{
@@ -238,7 +230,6 @@ func TestAPI_Bits(t *testing.T) {
 		},
 		{
 			"Get Extension Transactions",
-			[]apitest.MockTwitchAPIOption{},
 			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
 				start := Must[time.Time](t)(time.Parse(time.RFC3339, "2023-08-01T00:00:00Z"))
 				end := Must[time.Time](t)(time.Parse(time.RFC3339, "2023-08-31T23:59:59Z"))
@@ -301,8 +292,59 @@ func TestAPI_Bits(t *testing.T) {
 func TestAPI_Channels(t *testing.T) {
 	RunEndpointTestCases(t, []EndpointTestCase{
 		{
+			"Get Channel Information",
+			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
+				return apitest.SetMockResponse(mock, http.MethodGet, "/helix/channels", &api.ResponseData[api.Channel]{
+					Data: []api.Channel{{
+						GameID:              "game123",
+						GameName:            "Awesome Game",
+						BroadcasterID:       "1234",
+						BroadcasterLogin:    "twitchdev",
+						BroadcasterName:     "TwitchDev",
+						BroadcasterLanguage: "en",
+						Title:               "Playing Awesome Game!",
+						Delay:               10,
+					}},
+				}, apitest.QueryParamEquals("broadcaster_id", "5678"))
+			},
+			func(api *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
+				res, err := api.Channels.List("5678").Do(context.Background(), opts...)
+				return func(t *testing.T) {
+					require.Len(t, res.Data, 1)
+					require.Equal(t, "game123", res.Data[0].GameID)
+					require.Equal(t, "Awesome Game", res.Data[0].GameName)
+					require.Equal(t, "1234", res.Data[0].BroadcasterID)
+					require.Equal(t, "twitchdev", res.Data[0].BroadcasterLogin)
+					require.Equal(t, "TwitchDev", res.Data[0].BroadcasterName)
+					require.Equal(t, "en", res.Data[0].BroadcasterLanguage)
+					require.Equal(t, "Playing Awesome Game!", res.Data[0].Title)
+					require.Equal(t, 10, res.Data[0].Delay)
+				}, err
+			},
+		},
+		{
+			"Modify Channel Information",
+			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
+				return apitest.SetMockValidator(mock, http.MethodPatch, "/helix/channels",
+					apitest.QueryParamEquals("broadcaster_id", "5678"),
+					apitest.RequireBodyParam("title"),
+					apitest.RequireBodyParam("game_id"),
+					apitest.RequireBodyParam("broadcaster_language"),
+					apitest.RequireBodyParam("delay"),
+					apitest.RequireBodyParam("is_branded_content"),
+					apitest.RequireBodyParam("content_classification_labels"),
+					apitest.RequireBodyParam("tags"),
+				)
+			},
+			func(client *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
+				res, err := client.Channels.Modify("5678").GameID("game456").BroadcasterLanguage("en").Title("This should be fun!").Delay(15).Tags("fun").ContentClassificationLabels(api.ChannelContentClassificationLabel{ID: "mature", IsEnabled: true}).IsBrandedContent(false).Do(context.Background(), opts...)
+				return func(t *testing.T) {
+					require.Equal(t, http.StatusOK, res.StatusCode)
+				}, err
+			},
+		},
+		{
 			"Get Channel Editors",
-			[]apitest.MockTwitchAPIOption{},
 			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
 				start := Must[time.Time](t)(time.Parse(time.RFC3339, "2023-08-01T00:00:00Z"))
 				return apitest.SetMockResponse(mock, http.MethodGet, "/helix/channels/editors", &api.ResponseData[api.ChannelEditor]{
@@ -324,6 +366,60 @@ func TestAPI_Channels(t *testing.T) {
 				}, err
 			},
 		},
+		{
+			"Get Followed Channels",
+			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
+				return apitest.SetMockResponse(mock, http.MethodGet, "/helix/channels/followed", &api.ResponseData[api.Followed]{
+					Total: 1,
+					Data: []api.Followed{{
+						BroadcasterID:    "1234",
+						BroadcasterLogin: "twitchdev",
+						BroadcasterName:  "TwitchDev",
+						FollowedAt:       Must[time.Time](t)(time.Parse(time.RFC3339, "2023-08-01T00:00:00Z")),
+					}},
+					Pagination: api.Pagination{
+						Cursor: "xyz987",
+					},
+				}, apitest.RequireQueryParam("user_id"), apitest.QueryParamEquals("broadcaster_id", "1234"), apitest.QueryParamEquals("after", "abc123"), apitest.QueryParamEquals("first", "1"))
+			},
+			func(api *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
+				res, err := api.Channels.Followed.List("5678").BroadcasterID("1234").After("abc123").First(1).Do(context.Background(), opts...)
+				return func(t *testing.T) {
+					require.Len(t, res.Data, res.Total)
+					require.Equal(t, "1234", res.Data[0].BroadcasterID)
+					require.Equal(t, "twitchdev", res.Data[0].BroadcasterLogin)
+					require.Equal(t, "TwitchDev", res.Data[0].BroadcasterName)
+					require.Equal(t, "2023-08-01T00:00:00Z", res.Data[0].FollowedAt.Format(time.RFC3339))
+				}, err
+			},
+		},
+		{
+			"Get Channel Followers",
+			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
+				return apitest.SetMockResponse(mock, http.MethodGet, "/helix/channels/followers", &api.ResponseData[api.Follower]{
+					Total: 1,
+					Data: []api.Follower{{
+						UserID:     "1234",
+						UserLogin:  "twitchdev",
+						UserName:   "TwitchDev",
+						FollowedAt: Must[time.Time](t)(time.Parse(time.RFC3339, "2023-08-01T00:00:00Z")),
+					}},
+					Pagination: api.Pagination{
+						Cursor: "xyz987",
+					},
+				}, apitest.QueryParamEquals("user_id", "1234"), apitest.QueryParamEquals("broadcaster_id", "5678"), apitest.QueryParamEquals("after", "abc123"), apitest.QueryParamEquals("first", "1"))
+			},
+			func(api *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
+				res, err := api.Channels.Followers.List("5678").UserID("1234").After("abc123").First(1).Do(context.Background(), opts...)
+				return func(t *testing.T) {
+					require.Len(t, res.Data, res.Total)
+					require.Equal(t, "1234", res.Data[0].UserID)
+					require.Equal(t, "twitchdev", res.Data[0].UserLogin)
+					require.Equal(t, "TwitchDev", res.Data[0].UserName)
+					require.Equal(t, "2023-08-01T00:00:00Z", res.Data[0].FollowedAt.Format(time.RFC3339))
+				}, err
+			},
+		},
 	})
 }
 
@@ -333,7 +429,6 @@ func TestAPI_Charity(t *testing.T) {
 	RunEndpointTestCases(t, []EndpointTestCase{
 		{
 			"Get Charity Campaign",
-			[]apitest.MockTwitchAPIOption{},
 			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
 				return apitest.SetMockResponse(mock, http.MethodGet, "/helix/charity/campaigns", &api.ResponseData[api.CharityCampaign]{
 					Data: []api.CharityCampaign{{
@@ -368,7 +463,6 @@ func TestAPI_Charity(t *testing.T) {
 		},
 		{
 			"Get Charity Campaign Donations",
-			[]apitest.MockTwitchAPIOption{},
 			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
 				return apitest.SetMockResponse(mock, http.MethodGet, "/helix/charity/donations", &api.ResponseData[api.CharityCampaignDonation]{
 					Data: []api.CharityCampaignDonation{{
@@ -403,7 +497,6 @@ func TestAPI_Chat(t *testing.T) {
 	RunEndpointTestCases(t, []EndpointTestCase{
 		{
 			"Get Global Chat Badges",
-			[]apitest.MockTwitchAPIOption{},
 			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
 				return apitest.SetMockResponse(mock, http.MethodGet, "/helix/chat/badges/global", &api.ResponseData[api.ChatBadge]{
 					Data: []api.ChatBadge{{
@@ -432,7 +525,6 @@ func TestAPI_Chat(t *testing.T) {
 		},
 		{
 			"Get Chat Badges",
-			[]apitest.MockTwitchAPIOption{},
 			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
 				return apitest.SetMockResponse(mock, http.MethodGet, "/helix/chat/badges", &api.ResponseData[api.ChatBadge]{
 					Data: []api.ChatBadge{{
@@ -461,7 +553,6 @@ func TestAPI_Chat(t *testing.T) {
 		},
 		{
 			"Get Chat User Color",
-			[]apitest.MockTwitchAPIOption{},
 			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
 				return apitest.SetMockResponse(mock, http.MethodGet, "/helix/chat/color", &api.ResponseData[api.UserChatColor]{
 					Data: []api.UserChatColor{{
@@ -481,7 +572,6 @@ func TestAPI_Chat(t *testing.T) {
 		},
 		{
 			"Update User Chat Color",
-			[]apitest.MockTwitchAPIOption{},
 			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
 				return apitest.SetMockValidator(mock, http.MethodPut, "/helix/chat/color", apitest.QueryParamEquals("user_id", "1234"), apitest.QueryParamEquals("color", "#FF0000"))
 			},
@@ -494,7 +584,6 @@ func TestAPI_Chat(t *testing.T) {
 		},
 		{
 			"Get Global Emotes",
-			[]apitest.MockTwitchAPIOption{},
 			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
 				return apitest.SetMockResponse(mock, http.MethodGet, "/helix/chat/emotes/global", &api.ResponseData[api.Emote]{
 					Data: []api.Emote{{
@@ -532,7 +621,6 @@ func TestAPI_Chat(t *testing.T) {
 		},
 		{
 			"Get Channel Emotes",
-			[]apitest.MockTwitchAPIOption{},
 			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
 				return apitest.SetMockResponse(mock, http.MethodGet, "/helix/chat/emotes", &api.ResponseData[api.Emote]{
 					Data: []api.Emote{{
@@ -570,7 +658,6 @@ func TestAPI_Chat(t *testing.T) {
 		},
 		{
 			"Get User Emotes",
-			[]apitest.MockTwitchAPIOption{},
 			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
 				return apitest.SetMockResponse(mock, http.MethodGet, "/helix/chat/emotes/user", &api.ResponseData[api.Emote]{
 					Data: []api.Emote{{
@@ -608,7 +695,6 @@ func TestAPI_Chat(t *testing.T) {
 		},
 		{
 			"Get Emote Sets",
-			[]apitest.MockTwitchAPIOption{},
 			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
 				return apitest.SetMockResponse(mock, http.MethodGet, "/helix/chat/emotes/set", &api.ResponseData[api.Emote]{
 					Data: []api.Emote{{
@@ -646,7 +732,6 @@ func TestAPI_Chat(t *testing.T) {
 		},
 		{
 			"Get Chatters",
-			[]apitest.MockTwitchAPIOption{},
 			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
 				return apitest.SetMockResponse(mock, http.MethodGet, "/helix/chat/chatters", &api.ResponseData[api.UserInfo]{
 					Data: []api.UserInfo{{
@@ -668,7 +753,6 @@ func TestAPI_Chat(t *testing.T) {
 		},
 		{
 			"Get Chat Settings",
-			[]apitest.MockTwitchAPIOption{},
 			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
 				return apitest.SetMockResponse(mock, http.MethodGet, "/helix/chat/settings", &api.ResponseData[api.ChatSettings]{
 					Data: []api.ChatSettings{{
@@ -700,7 +784,6 @@ func TestAPI_Chat(t *testing.T) {
 		},
 		{
 			"Update Chat Settings",
-			[]apitest.MockTwitchAPIOption{},
 			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
 				return apitest.SetMockValidator(mock, http.MethodPatch, "/helix/chat/settings",
 					apitest.RequireQueryParam("broadcaster_id"), apitest.RequireQueryParam("moderator_id"),
@@ -724,7 +807,6 @@ func TestAPI_Chat(t *testing.T) {
 		},
 		{
 			"Get Shared Chat Session",
-			[]apitest.MockTwitchAPIOption{},
 			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
 				return apitest.SetMockResponse(mock, http.MethodGet, "/helix/shared_chat/session", &api.ResponseData[api.SharedChatSession]{
 					Data: []api.SharedChatSession{{
@@ -754,7 +836,6 @@ func TestAPI_Chat(t *testing.T) {
 		},
 		{
 			"Send Chat Announcement",
-			[]apitest.MockTwitchAPIOption{},
 			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
 				return apitest.SetMockValidator(mock, http.MethodPost, "/helix/chat/announcements", apitest.RequireQueryParam("broadcaster_id"), apitest.RequireQueryParam("moderator_id"), apitest.RequireBodyParam("message"), apitest.RequireBodyParam("color"))
 			},
@@ -767,7 +848,6 @@ func TestAPI_Chat(t *testing.T) {
 		},
 		{
 			"Send A Shoutout",
-			[]apitest.MockTwitchAPIOption{},
 			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
 				return apitest.SetMockValidator(mock, http.MethodPost, "/helix/chat/shoutouts",
 					apitest.RequireQueryParam("from_broadcaster_id"), apitest.RequireQueryParam("to_broadcaster_id"),
@@ -783,7 +863,6 @@ func TestAPI_Chat(t *testing.T) {
 		},
 		{
 			"Send Chat Message",
-			[]apitest.MockTwitchAPIOption{},
 			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
 				return apitest.SetMockValidator(mock, http.MethodPost, "/helix/chat/messages",
 					apitest.RequireBodyParam("broadcaster_id"), apitest.RequireBodyParam("sender_id"),
@@ -801,7 +880,108 @@ func TestAPI_Chat(t *testing.T) {
 	})
 }
 
-func TestAPI_Clips(t *testing.T) {}
+func TestAPI_Clips(t *testing.T) {
+	RunEndpointTestCases(t, []EndpointTestCase{
+		{
+			"Create Clip",
+			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
+				return apitest.SetMockResponse(mock, http.MethodPost, "/helix/clips", &api.ResponseData[api.EditableClip]{
+					Data: []api.EditableClip{{
+						ID:      "FiveWordsForClipSlug",
+						EditURL: "http://clips.twitch.tv/FiveWordsForClipSlug/edit",
+					}},
+				}, apitest.RequireQueryParam("broadcaster_id"))
+			},
+			func(api *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
+				res, err := api.Clips.Insert("1234").HasDelay(false).Do(context.Background(), opts...)
+				return func(t *testing.T) {
+					require.Len(t, res.Data, 1)
+					require.Equal(t, "FiveWordsForClipSlug", res.Data[0].ID)
+					require.Equal(t, "http://clips.twitch.tv/FiveWordsForClipSlug/edit", res.Data[0].EditURL)
+				}, err
+			},
+		},
+		{
+			"Get Clips",
+			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
+				return apitest.SetMockResponse(mock, http.MethodGet, "/helix/clips", &api.ResponseData[api.Clip]{
+					Data: []api.Clip{{
+						ID:              "FiveWordsForClipSlug",
+						URL:             "http://clips.twitch.tv/FiveWordsForClipSlug",
+						Title:           "Amazing Clip Title",
+						EmbedURL:        "http://clips.twitch.tv/embed?clip=FiveWordsForClipSlug",
+						BroadcasterID:   "1234",
+						BroadcasterName: "CoolStreamer",
+						CreatorID:       "5678",
+						CreatorName:     "AwesomeViewer",
+						VideoID:         "abcd1234efgh",
+						GameID:          "9876",
+						Language:        "en",
+						ViewCount:       500,
+						Duration:        60,
+						VODOffset:       480,
+						Featured:        false,
+						ThumbnailURL:    "http://clips-media-assets2.twitch.tv/12345-preview-480x272.jpg",
+						CreatedAt:       Must[time.Time](t)(time.Parse(time.RFC3339, "2023-08-01T12:34:56Z")),
+					}},
+				}, apitest.QueryParamEquals("id", "FiveWordsForClipSlug"), apitest.QueryParamEquals("broadcaster_id", "1234"), apitest.QueryParamEquals("game_id", "9876"), apitest.QueryParamEquals("after", "cba321"), apitest.QueryParamEquals("first", "1"), apitest.QueryParamEquals("started_at", "2023-08-01T12:00:00Z"), apitest.QueryParamEquals("ended_at", "2023-08-02T12:00:00Z"))
+			},
+			func(api *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
+				startedAt := Must[time.Time](t)(time.Parse(time.RFC3339, "2023-08-01T12:00:00Z"))
+				endedAt := Must[time.Time](t)(time.Parse(time.RFC3339, "2023-08-02T12:00:00Z"))
+				res, err := api.Clips.List().ID("FiveWordsForClipSlug").BroadcasterID("1234").GameID("9876").IsFeatured(false).Before("abc123").After("cba321").First(1).StartedAt(startedAt).EndedAt(endedAt).Do(context.Background(), opts...)
+				return func(t *testing.T) {
+					require.Len(t, res.Data, 1)
+					require.Equal(t, "FiveWordsForClipSlug", res.Data[0].ID)
+					require.Equal(t, "http://clips.twitch.tv/FiveWordsForClipSlug", res.Data[0].URL)
+					require.Equal(t, "Amazing Clip Title", res.Data[0].Title)
+					require.Equal(t, "http://clips.twitch.tv/embed?clip=FiveWordsForClipSlug", res.Data[0].EmbedURL)
+					require.Equal(t, "1234", res.Data[0].BroadcasterID)
+					require.Equal(t, "CoolStreamer", res.Data[0].BroadcasterName)
+					require.Equal(t, "5678", res.Data[0].CreatorID)
+					require.Equal(t, "AwesomeViewer", res.Data[0].CreatorName)
+					require.Equal(t, "abcd1234efgh", res.Data[0].VideoID)
+					require.Equal(t, "9876", res.Data[0].GameID)
+					require.Equal(t, "en", res.Data[0].Language)
+					require.Equal(t, 500, res.Data[0].ViewCount)
+					require.InDelta(t, 60, res.Data[0].Duration, 0.00)
+					require.Equal(t, 480, res.Data[0].VODOffset)
+					require.False(t, res.Data[0].Featured)
+					require.Equal(t, "http://clips-media-assets2.twitch.tv/12345-preview-480x272.jpg", res.Data[0].ThumbnailURL)
+					createdAt := Must[time.Time](t)(time.Parse(time.RFC3339, "2023-08-01T12:34:56Z"))
+					require.Equal(t, createdAt.Unix(), res.Data[0].CreatedAt.Unix())
+				}, err
+			},
+		},
+		{
+			"Get Clips Download",
+			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
+				return apitest.SetMockResponse(mock, http.MethodGet, "/helix/clips/downloads", &api.ResponseData[api.DownloadableClip]{
+					Data: []api.DownloadableClip{
+						{
+							ClipID:               "InexpensiveDistinctFoxChefFrank",
+							LandscapeDownloadURL: "https://production.assets.clips.twitchcdn.net/yFZG...",
+						},
+						{
+							ClipID:               "SpinelessCloudyLeopardMcaT",
+							LandscapeDownloadURL: "https://production.assets.clips.twitchcdn.net/542j...",
+						},
+					},
+				}, apitest.RequireQueryParam("clip_id"), apitest.RequireQueryParam("broadcaster_id"), apitest.RequireQueryParam("editor_id"))
+			},
+			func(api *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
+				res, err := api.Clips.Download.List().ClipID("InexpensiveDistinctFoxChefFrank").ClipID("SpinelessCloudyLeopardMcaT").BroadcasterID("141981764").EditorID("141981764").Do(context.Background(), opts...)
+				return func(t *testing.T) {
+					require.Len(t, res.Data, 2)
+					require.Equal(t, "InexpensiveDistinctFoxChefFrank", res.Data[0].ClipID)
+					require.Equal(t, "https://production.assets.clips.twitchcdn.net/yFZG...", res.Data[0].LandscapeDownloadURL)
+					require.Equal(t, "SpinelessCloudyLeopardMcaT", res.Data[1].ClipID)
+					require.Equal(t, "https://production.assets.clips.twitchcdn.net/542j...", res.Data[1].LandscapeDownloadURL)
+				}, err
+			},
+		},
+	})
+}
 
 func TestAPI_Conduits(t *testing.T) {}
 
@@ -809,7 +989,6 @@ func TestAPI_ContentLabels(t *testing.T) {
 	RunEndpointTestCases(t, []EndpointTestCase{
 		{
 			"Get Content Classification Labels",
-			[]apitest.MockTwitchAPIOption{},
 			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
 				return apitest.SetMockResponse(mock, http.MethodGet, "/helix/content_classification_labels", &api.ResponseData[api.ContentClassificationLabel]{
 					Data: []api.ContentClassificationLabel{{
@@ -838,7 +1017,6 @@ func TestAPI_Extensions(t *testing.T) {
 	RunEndpointTestCases(t, []EndpointTestCase{
 		{
 			"Get Extensions",
-			[]apitest.MockTwitchAPIOption{},
 			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
 				return apitest.SetMockResponse(mock, http.MethodGet, "/helix/extensions", &api.ResponseData[api.Extension]{
 					Data: []api.Extension{{
@@ -873,7 +1051,6 @@ func TestAPI_EventSub(t *testing.T) {
 	RunEndpointTestCases(t, []EndpointTestCase{
 		{
 			"Get EventSub Subscriptions",
-			[]apitest.MockTwitchAPIOption{},
 			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
 				return apitest.SetMockResponse(mock, http.MethodGet, "/helix/eventsub/subscriptions", &api.ResponseData[api.EventSubSubscription]{
 					Data: []api.EventSubSubscription{{
@@ -907,7 +1084,6 @@ func TestAPI_Games(t *testing.T) {
 	RunEndpointTestCases(t, []EndpointTestCase{
 		{
 			"Get Top Games",
-			[]apitest.MockTwitchAPIOption{},
 			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
 				return apitest.SetMockResponse(mock, http.MethodGet, "/helix/games/top", &api.ResponseData[api.Game]{
 					Data: []api.Game{{
@@ -931,7 +1107,6 @@ func TestAPI_Games(t *testing.T) {
 		},
 		{
 			"Get Games",
-			[]apitest.MockTwitchAPIOption{},
 			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
 				return apitest.SetMockResponse(mock, http.MethodGet, "/helix/games", &api.ResponseData[api.Game]{
 					Data: []api.Game{{
@@ -960,7 +1135,6 @@ func TestAPI_Goals(t *testing.T) {
 	RunEndpointTestCases(t, []EndpointTestCase{
 		{
 			"Get Creator Goals",
-			[]apitest.MockTwitchAPIOption{},
 			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
 				return apitest.SetMockResponse(mock, http.MethodGet, "/helix/goals", &api.ResponseData[api.CreatorGoal]{
 					Data: []api.CreatorGoal{{
@@ -998,7 +1172,6 @@ func TestAPI_GuestStar(t *testing.T) {
 	RunEndpointTestCases(t, []EndpointTestCase{
 		{
 			"Get Guest Star Sessions",
-			[]apitest.MockTwitchAPIOption{},
 			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
 				return apitest.SetMockResponse(mock, http.MethodGet, "/helix/guest_star/session", &api.ResponseData[api.GuestStarSession]{
 					Data: []api.GuestStarSession{{
@@ -1058,7 +1231,6 @@ func TestAPI_HypeTrain(t *testing.T) {
 	RunEndpointTestCases(t, []EndpointTestCase{
 		{
 			"Get Hype Train Status",
-			[]apitest.MockTwitchAPIOption{},
 			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
 				return apitest.SetMockResponse(mock, http.MethodGet, "/helix/hypetrain/status", &api.ResponseData[api.HypeTrainStatusInfo]{
 					Data: []api.HypeTrainStatusInfo{{
@@ -1104,7 +1276,6 @@ func TestAPI_Moderation(t *testing.T) {
 	RunEndpointTestCases(t, []EndpointTestCase{
 		{
 			"Ban Users",
-			[]apitest.MockTwitchAPIOption{},
 			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
 				createdAt := Must[time.Time](t)(time.Parse(time.RFC3339, "2023-08-01T12:00:00Z"))
 				expiresAt := Must[time.Time](t)(time.Parse(time.RFC3339, "2023-08-01T12:00:01Z"))
@@ -1134,7 +1305,6 @@ func TestAPI_Moderation(t *testing.T) {
 		},
 		{
 			"Unban User",
-			[]apitest.MockTwitchAPIOption{},
 			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
 				return apitest.SetMockValidator(mock, http.MethodDelete, "/helix/moderation/bans",
 					apitest.RequireQueryParam("broadcaster_id"), apitest.RequireQueryParam("moderator_id"),
@@ -1150,7 +1320,6 @@ func TestAPI_Moderation(t *testing.T) {
 		},
 		{
 			"Delete Chat Messages",
-			[]apitest.MockTwitchAPIOption{},
 			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
 				return apitest.SetMockValidator(mock, http.MethodDelete, "/helix/moderation/chat",
 					apitest.RequireQueryParam("broadcaster_id"), apitest.RequireQueryParam("moderator_id"),
@@ -1171,7 +1340,6 @@ func TestAPI_Polls(t *testing.T) {
 	RunEndpointTestCases(t, []EndpointTestCase{
 		{
 			"Get Polls",
-			[]apitest.MockTwitchAPIOption{},
 			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
 				return apitest.SetMockResponse(mock, http.MethodGet, "/helix/polls", &api.ResponseData[api.Poll]{
 					Data: []api.Poll{{
@@ -1214,7 +1382,6 @@ func TestAPI_Polls(t *testing.T) {
 		},
 		{
 			"Create Poll",
-			[]apitest.MockTwitchAPIOption{},
 			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
 				return apitest.SetMockResponse(mock, http.MethodPost, "/helix/polls", &api.ResponseData[api.Poll]{
 					Data: []api.Poll{{
@@ -1250,7 +1417,6 @@ func TestAPI_Polls(t *testing.T) {
 		},
 		{
 			"End Poll",
-			[]apitest.MockTwitchAPIOption{},
 			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
 				return apitest.SetMockResponse(mock, http.MethodPatch, "/helix/polls", &api.ResponseData[api.Poll]{
 					Data: []api.Poll{{
@@ -1293,7 +1459,6 @@ func TestAPI_Predictions(t *testing.T) {
 	RunEndpointTestCases(t, []EndpointTestCase{
 		{
 			"Get Predictions",
-			[]apitest.MockTwitchAPIOption{},
 			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
 				return apitest.SetMockResponse(mock, http.MethodGet, "/helix/predictions", &api.ResponseData[api.Prediction]{
 					Data: []api.Prediction{{
@@ -1340,7 +1505,6 @@ func TestAPI_Predictions(t *testing.T) {
 		},
 		{
 			"Create Prediction",
-			[]apitest.MockTwitchAPIOption{},
 			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
 				return apitest.SetMockResponse(mock, http.MethodPost, "/helix/predictions", &api.ResponseData[api.Prediction]{
 					Data: []api.Prediction{{
@@ -1376,7 +1540,6 @@ func TestAPI_Predictions(t *testing.T) {
 		},
 		{
 			"End Prediction",
-			[]apitest.MockTwitchAPIOption{},
 			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
 				return apitest.SetMockResponse(mock, http.MethodPatch, "/helix/predictions", &api.ResponseData[api.Prediction]{
 					Data: []api.Prediction{{
@@ -1417,7 +1580,6 @@ func TestAPI_Raids(t *testing.T) {
 	RunEndpointTestCases(t, []EndpointTestCase{
 		{
 			"Start A Raid",
-			[]apitest.MockTwitchAPIOption{},
 			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
 				return apitest.SetMockResponse(mock, http.MethodPost, "/helix/raids", &api.ResponseData[api.InitializedRaid]{
 					Data: []api.InitializedRaid{{
@@ -1438,7 +1600,6 @@ func TestAPI_Raids(t *testing.T) {
 		},
 		{
 			"Cancel A Raid",
-			[]apitest.MockTwitchAPIOption{},
 			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
 				return apitest.SetMockValidator(mock, http.MethodDelete, "/helix/raids", apitest.RequireQueryParam("broadcaster_id"))
 			},
@@ -1456,7 +1617,6 @@ func TestAPI_Schedule(t *testing.T) {
 	RunEndpointTestCases(t, []EndpointTestCase{
 		{
 			"Get Channel Stream Schedule",
-			[]apitest.MockTwitchAPIOption{},
 			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
 				return apitest.SetMockResponse(mock, http.MethodGet, "/helix/schedule", &api.ResponseData[api.StreamSchedule]{
 					Data: []api.StreamSchedule{{
@@ -1494,7 +1654,6 @@ func TestAPI_Search(t *testing.T) {
 	RunEndpointTestCases(t, []EndpointTestCase{
 		{
 			"Search Categories",
-			[]apitest.MockTwitchAPIOption{},
 			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
 				return apitest.SetMockResponse(mock, http.MethodGet, "/helix/search/categories", &api.ResponseData[api.CategorySearchResult]{
 					Data: []api.CategorySearchResult{{
@@ -1516,7 +1675,6 @@ func TestAPI_Search(t *testing.T) {
 		},
 		{
 			"Search Channels",
-			[]apitest.MockTwitchAPIOption{},
 			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
 				return apitest.SetMockResponse(mock, http.MethodGet, "/helix/search/channels", &api.ResponseData[api.ChannelSearchResult]{
 					Data: []api.ChannelSearchResult{{
@@ -1555,7 +1713,6 @@ func TestAPI_Streams(t *testing.T) {
 	RunEndpointTestCases(t, []EndpointTestCase{
 		{
 			"Get Stream Key",
-			[]apitest.MockTwitchAPIOption{},
 			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
 				return apitest.SetMockResponse(mock, http.MethodGet, "/helix/streams/key", &api.ResponseData[api.StreamKey]{
 					Data: []api.StreamKey{{
@@ -1573,7 +1730,6 @@ func TestAPI_Streams(t *testing.T) {
 		},
 		{
 			"Get Streams",
-			[]apitest.MockTwitchAPIOption{},
 			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
 				return apitest.SetMockResponse(mock, http.MethodGet, "/helix/streams", &api.ResponseData[api.Stream]{
 					Data: []api.Stream{{
@@ -1610,7 +1766,6 @@ func TestAPI_Streams(t *testing.T) {
 		},
 		{
 			"Get Followed Streams",
-			[]apitest.MockTwitchAPIOption{},
 			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
 				return apitest.SetMockResponse(mock, http.MethodGet, "/helix/streams/followed", &api.ResponseData[api.Stream]{
 					Data: []api.Stream{{
@@ -1647,7 +1802,6 @@ func TestAPI_Streams(t *testing.T) {
 		},
 		{
 			"Create Stream Marker",
-			[]apitest.MockTwitchAPIOption{},
 			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
 				return apitest.SetMockResponse(mock, http.MethodPost, "/helix/streams/markers", &api.ResponseData[api.StreamMarkerData]{
 					Data: []api.StreamMarkerData{{
@@ -1672,7 +1826,6 @@ func TestAPI_Streams(t *testing.T) {
 		},
 		{
 			"Get Stream Markers",
-			[]apitest.MockTwitchAPIOption{},
 			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
 				return apitest.SetMockResponse(mock, http.MethodGet, "/helix/streams/markers", &api.ResponseData[api.StreamMarker]{
 					Data: []api.StreamMarker{
@@ -1722,7 +1875,6 @@ func TestAPI_Subscriptions(t *testing.T) {
 	RunEndpointTestCases(t, []EndpointTestCase{
 		{
 			"Get Broadcaster Subscriptions",
-			[]apitest.MockTwitchAPIOption{},
 			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
 				return apitest.SetMockResponse(mock, http.MethodGet, "/helix/subscriptions", &api.ResponseData[api.ChannelSubscription]{
 					Data: []api.ChannelSubscription{{
@@ -1752,7 +1904,6 @@ func TestAPI_Subscriptions(t *testing.T) {
 		},
 		{
 			"Check User Subscription",
-			[]apitest.MockTwitchAPIOption{},
 			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
 				return apitest.SetMockResponse(mock, http.MethodGet, "/helix/subscriptions/user", &api.ResponseData[api.UserSubscriptionStatus]{
 					Data: []api.UserSubscriptionStatus{{
@@ -1781,7 +1932,6 @@ func TestAPI_Teams(t *testing.T) {
 	RunEndpointTestCases(t, []EndpointTestCase{
 		{
 			"Get Channel Teams",
-			[]apitest.MockTwitchAPIOption{},
 			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
 				return apitest.SetMockResponse(mock, http.MethodGet, "/helix/teams/channel", &api.ResponseData[api.Team]{
 					Data: []api.Team{{
@@ -1802,7 +1952,6 @@ func TestAPI_Teams(t *testing.T) {
 		},
 		{
 			"Get Teams",
-			[]apitest.MockTwitchAPIOption{},
 			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
 				return apitest.SetMockResponse(mock, http.MethodGet, "/helix/teams", &api.ResponseData[api.Team]{
 					Data: []api.Team{{
@@ -1828,7 +1977,6 @@ func TestAPI_Users(t *testing.T) {
 	RunEndpointTestCases(t, []EndpointTestCase{
 		{
 			"Get Users",
-			[]apitest.MockTwitchAPIOption{},
 			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
 				return apitest.SetMockResponse(mock, http.MethodGet, "/helix/users", &api.ResponseData[api.User]{
 					Data: []api.User{{
@@ -1851,6 +1999,30 @@ func TestAPI_Users(t *testing.T) {
 				}, err
 			},
 		},
+		{
+			"Get Authorization By User",
+			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
+				return apitest.SetMockResponse(mock, http.MethodGet, "/helix/authorization/users", &api.ResponseData[api.UserAuthorization]{
+					Data: []api.UserAuthorization{{
+						UserID:    "141981764",
+						UserLogin: "twitchdev",
+						UserName:  "TwitchDev",
+						Scopes:    []string{"user:read:email", "channel:manage:broadcast"},
+					}},
+				})
+			},
+			func(api *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
+				res, err := api.Users.Authorization.List("141981764").Do(context.Background(), opts...)
+				return func(t *testing.T) {
+					require.Equal(t, 200, res.StatusCode)
+					require.Len(t, res.Data, 1)
+					require.Equal(t, "141981764", res.Data[0].UserID)
+					require.Equal(t, "twitchdev", res.Data[0].UserLogin)
+					require.Equal(t, "TwitchDev", res.Data[0].UserName)
+					require.ElementsMatch(t, []string{"user:read:email", "channel:manage:broadcast"}, res.Data[0].Scopes)
+				}, err
+			},
+		},
 	})
 }
 
@@ -1858,7 +2030,6 @@ func TestAPI_Videos(t *testing.T) {
 	RunEndpointTestCases(t, []EndpointTestCase{
 		{
 			"Get Videos",
-			[]apitest.MockTwitchAPIOption{},
 			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
 				return apitest.SetMockResponse(mock, http.MethodGet, "/helix/videos", &api.ResponseData[api.Video]{
 					Data: []api.Video{{
@@ -1893,7 +2064,6 @@ func TestAPI_Videos(t *testing.T) {
 		},
 		{
 			"Delete Videos",
-			[]apitest.MockTwitchAPIOption{},
 			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
 				return apitest.SetMockResponse(mock, http.MethodDelete, "/helix/videos", &api.ResponseData[string]{
 					Data: []string{"1234", "9876"},
@@ -1913,7 +2083,6 @@ func TestAPI_Whispers(t *testing.T) {
 	RunEndpointTestCases(t, []EndpointTestCase{
 		{
 			"Send Whisper",
-			[]apitest.MockTwitchAPIOption{},
 			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
 				return apitest.SetMockResponse(mock, http.MethodPost, "/helix/whispers", &api.ResponseData[any]{},
 					apitest.RequireQueryParam("from_user_id"), apitest.RequireQueryParam("to_user_id"), apitest.BodyParamEquals("message", "Hello!"),
@@ -1934,7 +2103,7 @@ func RunEndpointTestCases(t *testing.T, tests []EndpointTestCase) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			mock := apitest.NewMockAPI(t, tt.opts...)
+			mock := apitest.NewMockAPI(t, apitest.WithTLS(), apitest.EnableHTTP2())
 			endpoint := tt.endpoint(mock)
 
 			clientID, secret, err := mock.RegisterApplication()

@@ -198,6 +198,8 @@ type Channel struct {
 	BroadcasterLogin string `json:"broadcaster_login"`
 	// BroadcasterName is the display name of the broadcaster.
 	BroadcasterName string `json:"broadcaster_name"`
+	// BroadcasterLanguage is the language of the broadcaster.
+	BroadcasterLanguage string `json:"broadcaster_language"`
 	// Title is stream title for the channel.
 	Title string `json:"title"`
 	// Delay is the delay of the stream in seconds.
@@ -1712,6 +1714,18 @@ type User struct {
 	Email string `json:"email,omitempty"`
 	// CreatedAt is the UTC timestamp of when the user was created.
 	CreatedAt time.Time `json:"created_at"`
+}
+
+// UserAuthorization represents the authorization information of a Twitch user.
+type UserAuthorization struct {
+	// UserID is the ID of the user.
+	UserID string `json:"user_id"`
+	// UserLogin is the login name of the user.
+	UserLogin string `json:"user_login"`
+	// UserName is the display name of the user.
+	UserName string `json:"user_name"`
+	// Scopes is a list of scopes that the user has granted to the application.
+	Scopes []string `json:"scopes"`
 }
 
 // UserExtension represents a Twitch user extension.

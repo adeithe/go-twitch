@@ -7,8 +7,8 @@ coverage:
         only_pulls: true
     patch:
       default:
-        target: 60%
-        threshold: 0%
+        target: 80%
+        threshold: 1%
         only_pulls: true
 
 component_management:
@@ -32,3 +32,5 @@ ignore:
 
 comment:
   layout: "header, diff, components"
+  hide_comment_details: false
+  require_changes: true

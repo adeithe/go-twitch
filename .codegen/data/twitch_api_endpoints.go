@@ -749,7 +749,7 @@ var Endpoints = []*TwitchAPIEndpoint{
 			BroadcasterID string `query:"-,required"`
 			HasDelay      bool   `query:"-"`
 		}{},
-		Response: BasicResponse[api.Clip]{},
+		Response: BasicResponse[api.EditableClip]{},
 	},
 	{
 		// https://dev.twitch.tv/docs/api/reference/#get-clips
@@ -792,9 +792,9 @@ var Endpoints = []*TwitchAPIEndpoint{
 			"# Authorization", "", "Requires an app access token or user access token that includes the editor:manage:clips or channel:manage:clips scope.",
 		},
 		Params: struct {
-			ClipID        string `query:"clip_id,required"`
-			EditorID      string `query:"-"`
-			BroadcasterID string `query:"-"`
+			ClipID        string `query:"clip_id"`
+			EditorID      string `query:"editor_id"`
+			BroadcasterID string `query:"broadcaster_id"`
 		}{},
 		Response: BasicResponse[api.DownloadableClip]{},
 	},
@@ -1595,6 +1595,23 @@ var Endpoints = []*TwitchAPIEndpoint{
 			Login []string `query:"-"`
 		}{},
 		Response: BasicResponse[api.User]{},
+	},
+	{
+		// https://dev.twitch.tv/docs/api/reference/#get-authorization-by-user
+		Resource: UsersAuthorizationResource,
+		Name:     "Authorization",
+		Method:   http.MethodGet,
+		Path:     api.EndpointUsersGetAuthorizationByUser,
+		DocsURL:  "#get-authorization-by-user",
+		Comments: []string{
+			"Gets the authorization scopes that the specified user(s) have granted the application.", "",
+			"# Limits", "", "You may fetch the authorization information for a maximum of 10 users per request.", "",
+			"# Authorization", "", "Requires a user access token.",
+		},
+		Params: struct {
+			UserID []string `query:"user_id,required"`
+		}{},
+		Response: BasicResponse[api.UserAuthorization]{},
 	},
 	// Videos
 	{
