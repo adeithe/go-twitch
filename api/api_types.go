@@ -198,6 +198,8 @@ type Channel struct {
 	BroadcasterLogin string `json:"broadcaster_login"`
 	// BroadcasterName is the display name of the broadcaster.
 	BroadcasterName string `json:"broadcaster_name"`
+	// BroadcasterLanguage is the language of the broadcaster.
+	BroadcasterLanguage string `json:"broadcaster_language"`
 	// Title is stream title for the channel.
 	Title string `json:"title"`
 	// Delay is the delay of the stream in seconds.

@@ -292,6 +292,58 @@ func TestAPI_Bits(t *testing.T) {
 func TestAPI_Channels(t *testing.T) {
 	RunEndpointTestCases(t, []EndpointTestCase{
 		{
+			"Get Channel Information",
+			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
+				return apitest.SetMockResponse(mock, http.MethodGet, "/helix/channels", &api.ResponseData[api.Channel]{
+					Data: []api.Channel{{
+						GameID:              "game123",
+						GameName:            "Awesome Game",
+						BroadcasterID:       "1234",
+						BroadcasterLogin:    "twitchdev",
+						BroadcasterName:     "TwitchDev",
+						BroadcasterLanguage: "en",
+						Title:               "Playing Awesome Game!",
+						Delay:               10,
+					}},
+				}, apitest.QueryParamEquals("broadcaster_id", "5678"))
+			},
+			func(api *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
+				res, err := api.Channels.List("5678").Do(context.Background(), opts...)
+				return func(t *testing.T) {
+					require.Len(t, res.Data, 1)
+					require.Equal(t, "game123", res.Data[0].GameID)
+					require.Equal(t, "Awesome Game", res.Data[0].GameName)
+					require.Equal(t, "1234", res.Data[0].BroadcasterID)
+					require.Equal(t, "twitchdev", res.Data[0].BroadcasterLogin)
+					require.Equal(t, "TwitchDev", res.Data[0].BroadcasterName)
+					require.Equal(t, "en", res.Data[0].BroadcasterLanguage)
+					require.Equal(t, "Playing Awesome Game!", res.Data[0].Title)
+					require.Equal(t, 10, res.Data[0].Delay)
+				}, err
+			},
+		},
+		{
+			"Modify Channel Information",
+			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
+				return apitest.SetMockValidator(mock, http.MethodPatch, "/helix/channels",
+					apitest.QueryParamEquals("broadcaster_id", "5678"),
+					apitest.RequireBodyParam("title"),
+					apitest.RequireBodyParam("game_id"),
+					apitest.RequireBodyParam("broadcaster_language"),
+					apitest.RequireBodyParam("delay"),
+					apitest.RequireBodyParam("is_branded_content"),
+					apitest.RequireBodyParam("content_classification_labels"),
+					apitest.RequireBodyParam("tags"),
+				)
+			},
+			func(client *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
+				res, err := client.Channels.Modify("5678").GameID("game456").BroadcasterLanguage("en").Title("This should be fun!").Delay(15).Tags("fun").ContentClassificationLabels(api.ChannelContentClassificationLabel{ID: "mature", IsEnabled: true}).IsBrandedContent(false).Do(context.Background(), opts...)
+				return func(t *testing.T) {
+					require.Equal(t, http.StatusOK, res.StatusCode)
+				}, err
+			},
+		},
+		{
 			"Get Channel Editors",
 			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
 				start := Must[time.Time](t)(time.Parse(time.RFC3339, "2023-08-01T00:00:00Z"))
@@ -311,6 +363,60 @@ func TestAPI_Channels(t *testing.T) {
 					require.Equal(t, "1234", res.Data[0].UserID)
 					require.Equal(t, "Cool_Editor", res.Data[0].UserName)
 					require.Equal(t, start.Unix(), res.Data[0].AddedAt.Unix())
+				}, err
+			},
+		},
+		{
+			"Get Followed Channels",
+			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
+				return apitest.SetMockResponse(mock, http.MethodGet, "/helix/channels/followed", &api.ResponseData[api.Followed]{
+					Total: 1,
+					Data: []api.Followed{{
+						BroadcasterID:    "1234",
+						BroadcasterLogin: "twitchdev",
+						BroadcasterName:  "TwitchDev",
+						FollowedAt:       Must[time.Time](t)(time.Parse(time.RFC3339, "2023-08-01T00:00:00Z")),
+					}},
+					Pagination: api.Pagination{
+						Cursor: "xyz987",
+					},
+				}, apitest.RequireQueryParam("user_id"), apitest.QueryParamEquals("broadcaster_id", "1234"), apitest.QueryParamEquals("after", "abc123"), apitest.QueryParamEquals("first", "1"))
+			},
+			func(api *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
+				res, err := api.Channels.Followed.List("5678").BroadcasterID("1234").After("abc123").First(1).Do(context.Background(), opts...)
+				return func(t *testing.T) {
+					require.Len(t, res.Data, res.Total)
+					require.Equal(t, "1234", res.Data[0].BroadcasterID)
+					require.Equal(t, "twitchdev", res.Data[0].BroadcasterLogin)
+					require.Equal(t, "TwitchDev", res.Data[0].BroadcasterName)
+					require.Equal(t, "2023-08-01T00:00:00Z", res.Data[0].FollowedAt.Format(time.RFC3339))
+				}, err
+			},
+		},
+		{
+			"Get Channel Followers",
+			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
+				return apitest.SetMockResponse(mock, http.MethodGet, "/helix/channels/followers", &api.ResponseData[api.Follower]{
+					Total: 1,
+					Data: []api.Follower{{
+						UserID:     "1234",
+						UserLogin:  "twitchdev",
+						UserName:   "TwitchDev",
+						FollowedAt: Must[time.Time](t)(time.Parse(time.RFC3339, "2023-08-01T00:00:00Z")),
+					}},
+					Pagination: api.Pagination{
+						Cursor: "xyz987",
+					},
+				}, apitest.QueryParamEquals("user_id", "1234"), apitest.QueryParamEquals("broadcaster_id", "5678"), apitest.QueryParamEquals("after", "abc123"), apitest.QueryParamEquals("first", "1"))
+			},
+			func(api *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
+				res, err := api.Channels.Followers.List("5678").UserID("1234").After("abc123").First(1).Do(context.Background(), opts...)
+				return func(t *testing.T) {
+					require.Len(t, res.Data, res.Total)
+					require.Equal(t, "1234", res.Data[0].UserID)
+					require.Equal(t, "twitchdev", res.Data[0].UserLogin)
+					require.Equal(t, "TwitchDev", res.Data[0].UserName)
+					require.Equal(t, "2023-08-01T00:00:00Z", res.Data[0].FollowedAt.Format(time.RFC3339))
 				}, err
 			},
 		},
