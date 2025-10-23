@@ -774,7 +774,108 @@ func TestAPI_Chat(t *testing.T) {
 	})
 }
 
-func TestAPI_Clips(t *testing.T) {}
+func TestAPI_Clips(t *testing.T) {
+	RunEndpointTestCases(t, []EndpointTestCase{
+		{
+			"Create Clip",
+			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
+				return apitest.SetMockResponse(mock, http.MethodPost, "/helix/clips", &api.ResponseData[api.EditableClip]{
+					Data: []api.EditableClip{{
+						ID:      "FiveWordsForClipSlug",
+						EditURL: "http://clips.twitch.tv/FiveWordsForClipSlug/edit",
+					}},
+				}, apitest.RequireQueryParam("broadcaster_id"))
+			},
+			func(api *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
+				res, err := api.Clips.Insert("1234").HasDelay(false).Do(context.Background(), opts...)
+				return func(t *testing.T) {
+					require.Len(t, res.Data, 1)
+					require.Equal(t, "FiveWordsForClipSlug", res.Data[0].ID)
+					require.Equal(t, "http://clips.twitch.tv/FiveWordsForClipSlug/edit", res.Data[0].EditURL)
+				}, err
+			},
+		},
+		{
+			"Get Clips",
+			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
+				return apitest.SetMockResponse(mock, http.MethodGet, "/helix/clips", &api.ResponseData[api.Clip]{
+					Data: []api.Clip{{
+						ID:              "FiveWordsForClipSlug",
+						URL:             "http://clips.twitch.tv/FiveWordsForClipSlug",
+						Title:           "Amazing Clip Title",
+						EmbedURL:        "http://clips.twitch.tv/embed?clip=FiveWordsForClipSlug",
+						BroadcasterID:   "1234",
+						BroadcasterName: "CoolStreamer",
+						CreatorID:       "5678",
+						CreatorName:     "AwesomeViewer",
+						VideoID:         "abcd1234efgh",
+						GameID:          "9876",
+						Language:        "en",
+						ViewCount:       500,
+						Duration:        60,
+						VODOffset:       480,
+						Featured:        false,
+						ThumbnailURL:    "http://clips-media-assets2.twitch.tv/12345-preview-480x272.jpg",
+						CreatedAt:       Must[time.Time](t)(time.Parse(time.RFC3339, "2023-08-01T12:34:56Z")),
+					}},
+				}, apitest.QueryParamEquals("id", "FiveWordsForClipSlug"), apitest.QueryParamEquals("broadcaster_id", "1234"), apitest.QueryParamEquals("game_id", "9876"), apitest.QueryParamEquals("after", "cba321"), apitest.QueryParamEquals("first", "1"), apitest.QueryParamEquals("started_at", "2023-08-01T12:00:00Z"), apitest.QueryParamEquals("ended_at", "2023-08-02T12:00:00Z"))
+			},
+			func(api *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
+				startedAt := Must[time.Time](t)(time.Parse(time.RFC3339, "2023-08-01T12:00:00Z"))
+				endedAt := Must[time.Time](t)(time.Parse(time.RFC3339, "2023-08-02T12:00:00Z"))
+				res, err := api.Clips.List().ID("FiveWordsForClipSlug").BroadcasterID("1234").GameID("9876").IsFeatured(false).Before("abc123").After("cba321").First(1).StartedAt(startedAt).EndedAt(endedAt).Do(context.Background(), opts...)
+				return func(t *testing.T) {
+					require.Len(t, res.Data, 1)
+					require.Equal(t, "FiveWordsForClipSlug", res.Data[0].ID)
+					require.Equal(t, "http://clips.twitch.tv/FiveWordsForClipSlug", res.Data[0].URL)
+					require.Equal(t, "Amazing Clip Title", res.Data[0].Title)
+					require.Equal(t, "http://clips.twitch.tv/embed?clip=FiveWordsForClipSlug", res.Data[0].EmbedURL)
+					require.Equal(t, "1234", res.Data[0].BroadcasterID)
+					require.Equal(t, "CoolStreamer", res.Data[0].BroadcasterName)
+					require.Equal(t, "5678", res.Data[0].CreatorID)
+					require.Equal(t, "AwesomeViewer", res.Data[0].CreatorName)
+					require.Equal(t, "abcd1234efgh", res.Data[0].VideoID)
+					require.Equal(t, "9876", res.Data[0].GameID)
+					require.Equal(t, "en", res.Data[0].Language)
+					require.Equal(t, 500, res.Data[0].ViewCount)
+					require.InDelta(t, 60, res.Data[0].Duration, 0.00)
+					require.Equal(t, 480, res.Data[0].VODOffset)
+					require.False(t, res.Data[0].Featured)
+					require.Equal(t, "http://clips-media-assets2.twitch.tv/12345-preview-480x272.jpg", res.Data[0].ThumbnailURL)
+					createdAt := Must[time.Time](t)(time.Parse(time.RFC3339, "2023-08-01T12:34:56Z"))
+					require.Equal(t, createdAt.Unix(), res.Data[0].CreatedAt.Unix())
+				}, err
+			},
+		},
+		{
+			"Get Clips Download",
+			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
+				return apitest.SetMockResponse(mock, http.MethodGet, "/helix/clips/downloads", &api.ResponseData[api.DownloadableClip]{
+					Data: []api.DownloadableClip{
+						{
+							ClipID:               "InexpensiveDistinctFoxChefFrank",
+							LandscapeDownloadURL: "https://production.assets.clips.twitchcdn.net/yFZG...",
+						},
+						{
+							ClipID:               "SpinelessCloudyLeopardMcaT",
+							LandscapeDownloadURL: "https://production.assets.clips.twitchcdn.net/542j...",
+						},
+					},
+				}, apitest.RequireQueryParam("clip_id"), apitest.RequireQueryParam("broadcaster_id"), apitest.RequireQueryParam("editor_id"))
+			},
+			func(api *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
+				res, err := api.Clips.Download.List().ClipID("InexpensiveDistinctFoxChefFrank").ClipID("SpinelessCloudyLeopardMcaT").BroadcasterID("141981764").EditorID("141981764").Do(context.Background(), opts...)
+				return func(t *testing.T) {
+					require.Len(t, res.Data, 2)
+					require.Equal(t, "InexpensiveDistinctFoxChefFrank", res.Data[0].ClipID)
+					require.Equal(t, "https://production.assets.clips.twitchcdn.net/yFZG...", res.Data[0].LandscapeDownloadURL)
+					require.Equal(t, "SpinelessCloudyLeopardMcaT", res.Data[1].ClipID)
+					require.Equal(t, "https://production.assets.clips.twitchcdn.net/542j...", res.Data[1].LandscapeDownloadURL)
+				}, err
+			},
+		},
+	})
+}
 
 func TestAPI_Conduits(t *testing.T) {}
 
