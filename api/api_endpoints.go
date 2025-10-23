@@ -200,6 +200,8 @@ const (
 	EndpointTeamsGetChannelTeams = TwitchAPIVersionHelix + "/teams/channel"
 	// EndpointUsers is the endpoint for getting users.
 	EndpointUsers = TwitchAPIVersionHelix + "/users"
+	// EndpointUsersGetAuthorizationByUser is the endpoint for getting authorizations by user.
+	EndpointUsersGetAuthorizationByUser = TwitchAPIVersionHelix + "/authorization/users"
 	// EndpointUsersBlocks is the endpoint for managing blocked users.
 	EndpointUsersBlocks = TwitchAPIVersionHelix + "/users/blocks"
 	// EndpointUsersAllExtensions is the endpoint for getting all extensions a user has installed.

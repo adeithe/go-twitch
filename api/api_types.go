@@ -1714,6 +1714,18 @@ type User struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
+// UserAuthorization represents the authorization information of a Twitch user.
+type UserAuthorization struct {
+	// UserID is the ID of the user.
+	UserID string `json:"user_id"`
+	// UserLogin is the login name of the user.
+	UserLogin string `json:"user_login"`
+	// UserName is the display name of the user.
+	UserName string `json:"user_name"`
+	// Scopes is a list of scopes that the user has granted to the application.
+	Scopes []string `json:"scopes"`
+}
+
 // UserExtension represents a Twitch user extension.
 type UserExtension struct {
 	// ID is the ID that uniquely identifies the extension.

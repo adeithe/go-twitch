@@ -1596,6 +1596,23 @@ var Endpoints = []*TwitchAPIEndpoint{
 		}{},
 		Response: BasicResponse[api.User]{},
 	},
+	{
+		// https://dev.twitch.tv/docs/api/reference/#get-authorization-by-user
+		Resource: UsersAuthorizationResource,
+		Name:     "Authorization",
+		Method:   http.MethodGet,
+		Path:     api.EndpointUsersGetAuthorizationByUser,
+		DocsURL:  "#get-authorization-by-user",
+		Comments: []string{
+			"Gets the authorization scopes that the specified user(s) have granted the application.", "",
+			"# Limits", "", "You may fetch the authorization information for a maximum of 10 users per request.", "",
+			"# Authorization", "", "Requires a user access token.",
+		},
+		Params: struct {
+			UserID []string `query:"user_id,required"`
+		}{},
+		Response: BasicResponse[api.UserAuthorization]{},
+	},
 	// Videos
 	{
 		// https://dev.twitch.tv/docs/api/reference/#get-videos

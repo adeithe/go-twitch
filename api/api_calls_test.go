@@ -1792,6 +1792,30 @@ func TestAPI_Users(t *testing.T) {
 				}, err
 			},
 		},
+		{
+			"Get Authorization By User",
+			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
+				return apitest.SetMockResponse(mock, http.MethodGet, "/helix/authorization/users", &api.ResponseData[api.UserAuthorization]{
+					Data: []api.UserAuthorization{{
+						UserID:    "141981764",
+						UserLogin: "twitchdev",
+						UserName:  "TwitchDev",
+						Scopes:    []string{"user:read:email", "channel:manage:broadcast"},
+					}},
+				})
+			},
+			func(api *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
+				res, err := api.Users.Authorization.List("141981764").Do(context.Background(), opts...)
+				return func(t *testing.T) {
+					require.Equal(t, 200, res.StatusCode)
+					require.Len(t, res.Data, 1)
+					require.Equal(t, "141981764", res.Data[0].UserID)
+					require.Equal(t, "twitchdev", res.Data[0].UserLogin)
+					require.Equal(t, "TwitchDev", res.Data[0].UserName)
+					require.ElementsMatch(t, []string{"user:read:email", "channel:manage:broadcast"}, res.Data[0].Scopes)
+				}, err
+			},
+		},
 	})
 }
 
