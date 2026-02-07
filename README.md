@@ -43,7 +43,7 @@ const (
 
 func main() {
 	ctx := context.Background()
-	client := api.NewClient(ClientID)
+	client := api.New(ClientID)
 
 	var cursor string
 	req := client.Streams.List().First(100)
