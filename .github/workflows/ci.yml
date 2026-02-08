@@ -96,11 +96,14 @@ jobs:
         if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)
         uses: codecov/codecov-action@v5
         with:
+          verbose: true
           use_oidc: true
+          fail_ci_if_error: true
           files: coverage.out
       - name: Upload coverage report to Codecov (Tokenless)
         if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository
         uses: codecov/codecov-action@v5
         with:
-          fail_ci_if_error: false
+          verbose: true
+          fail_ci_if_error: true
           files: coverage.out
