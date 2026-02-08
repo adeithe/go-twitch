@@ -105,7 +105,7 @@ jobs:
           verbose: true
           use_oidc: true
           fail_ci_if_error: true
-          use_legacy_upload_endpoint: true
+          token: ${{ secrets.CODECOV_TOKEN }}
           files: coverage.out
       - name: Upload coverage report to Codecov (Tokenless)
         if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository
@@ -113,5 +113,4 @@ jobs:
         with:
           verbose: true
           fail_ci_if_error: true
-          use_legacy_upload_endpoint: true
           files: coverage.out
