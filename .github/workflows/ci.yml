@@ -46,11 +46,14 @@ jobs:
         run: go mod download
       - name: Run tests
         run: go test -coverprofile=coverage.out -covermode=atomic -timeout 300s -v ./...
+      - name: Hash artifacts (sha256)
+        run: |
+          sha256sum coverage.out || shasum -a 256 coverage.out
       - name: Upload coverage report
         uses: actions/upload-artifact@v6
         with:
           name: test-coverage
-          path: coverage.out
+          path: ${{ github.workspace }}/coverage.out
           retention-days: 1
   benchmark:
     name: Benchmark
@@ -84,14 +87,19 @@ jobs:
       contents: read
       id-token: write
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
-        with:
-          persist-credentials: false
       - name: Retrieve coverage report
         uses: actions/download-artifact@v7
         with:
           name: test-coverage
+          path: ${{ github.workspace }}
+      - name: Hash artifacts (sha256)
+        working-directory: ${{ github.workspace }}
+        run: |
+          sha256sum coverage.out || shasum -a 256 coverage.out
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
       - name: Upload coverage report to Codecov (OIDC)
         if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)
         uses: codecov/codecov-action@v5
@@ -99,6 +107,7 @@ jobs:
           verbose: true
           use_oidc: true
           fail_ci_if_error: true
+          working-directory: ${{ github.workspace }}
           files: coverage.out
       - name: Upload coverage report to Codecov (Tokenless)
         if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository
@@ -106,4 +115,5 @@ jobs:
         with:
           verbose: true
           fail_ci_if_error: true
+          working-directory: ${{ github.workspace }}
           files: coverage.out
