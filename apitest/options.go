@@ -26,6 +26,16 @@ func WithTLS() MockTwitchAPIOption {
 	}
 }
 
+// RequireHeader returns a ValidatorFunc that checks for the presence of a header.
+func RequireHeader(key string) ValidatorFunc {
+	return func(req *http.Request) error {
+		if req.Header.Get(key) == "" {
+			return errors.New("missing header: " + key)
+		}
+		return nil
+	}
+}
+
 // RequireQueryParam returns a ValidatorFunc that checks for the presence of a query parameter.
 func RequireQueryParam(key string) ValidatorFunc {
 	return func(req *http.Request) error {
@@ -48,6 +58,21 @@ func RequireBodyParam(key string) ValidatorFunc {
 
 		if _, ok := m[key]; !ok {
 			return errors.New("missing body parameter: " + key)
+		}
+		return nil
+	}
+}
+
+// HeaderEquals returns a ValidatorFunc that checks if a header equals a specific value.
+func HeaderEquals(key, value string) ValidatorFunc {
+	return func(req *http.Request) error {
+		actual := req.Header.Get(key)
+		if actual == "" {
+			return errors.New("missing header: " + key)
+		}
+
+		if actual != value {
+			return errors.New("expected header " + key + " to be " + value + ", got " + actual)
 		}
 		return nil
 	}

@@ -11,8 +11,10 @@ import (
 	"net/url"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/adeithe/go-twitch/api"
+	"golang.org/x/oauth2"
 )
 
 // TestingT is an interface for the [testing.T] type.
@@ -27,6 +29,7 @@ type MockTwitchAPI struct {
 	applications map[string]string
 	tokens       map[string]string
 	handlers     map[string]*MockTwitchAPIEndpoint
+	oauthToken   *MockTwitchAPIEndpoint
 	mx           sync.RWMutex
 	tls          bool
 
@@ -84,6 +87,7 @@ func NewMockAPI(t TestingT, opts ...MockTwitchAPIOption) *MockTwitchAPI {
 		applications: make(map[string]string),
 		tokens:       make(map[string]string),
 		handlers:     make(map[string]*MockTwitchAPIEndpoint),
+		oauthToken:   &MockTwitchAPIEndpoint{},
 
 		BaseURL: srv.URL,
 	}
@@ -102,8 +106,14 @@ func NewMockAPI(t TestingT, opts ...MockTwitchAPIOption) *MockTwitchAPI {
 	client := mock.Client()
 	url, _ := url.Parse(srv.URL)
 	client.Transport = newMockTransport(client, url)
-	mux.Handle("/{rest...}", mock)
+	mux.Handle("/id/twitch/tv/oauth2/token", mock)
+	mux.Handle("/api/twitch/tv/{rest...}", mock)
 	return mock
+}
+
+// OAuthTokenEndpoint returns the mock endpoint for the Twitch API OAuth token URL.
+func (m *MockTwitchAPI) OAuthTokenEndpoint() *MockTwitchAPIEndpoint {
+	return m.oauthToken
 }
 
 // RegisterApplication simulates registering a new Twitch application and returns a client ID and secret.
@@ -127,17 +137,28 @@ func (m *MockTwitchAPI) RegisterApplication() (clientID, clientSecret string, er
 }
 
 // NewBearerToken simulates generating a new bearer token for the given client ID.
-func (m *MockTwitchAPI) NewBearerToken(clientID string) (token string, err error) {
-	t := make([]byte, 15)
-	if _, err = rand.Read(t); err != nil {
-		return
+func (m *MockTwitchAPI) NewBearerToken(clientID string, scopes ...string) (*oauth2.Token, error) {
+	tokenBs := make([]byte, 15)
+	if _, err := rand.Read(tokenBs); err != nil {
+		return nil, err
+	}
+
+	refreshBs := make([]byte, 15)
+	if _, err := rand.Read(refreshBs); err != nil {
+		return nil, err
 	}
 
 	m.mx.Lock()
 	defer m.mx.Unlock()
-	token = fmt.Sprintf("%x", t)[2:]
-	m.tokens[token] = clientID
-	return
+	accessToken := fmt.Sprintf("%x", tokenBs)[2:]
+	m.tokens[accessToken] = clientID
+	token := &oauth2.Token{
+		TokenType:    "bearer",
+		AccessToken:  accessToken,
+		RefreshToken: fmt.Sprintf("%x", refreshBs)[2:],
+		Expiry:       time.Now().UTC().Add(time.Hour * 24),
+	}
+	return token.WithExtra(map[string]any{"scope": scopes}), nil
 }
 
 // Certificate returns the TLS certificate used by the mock server.
@@ -152,6 +173,12 @@ func (m *MockTwitchAPI) Client() *http.Client {
 
 // ServeHTTP implements the [net/http.Handler] interface for MockTwitchAPI.
 func (m *MockTwitchAPI) ServeHTTP(res http.ResponseWriter, req *http.Request) {
+	if strings.HasPrefix(req.URL.Path, "/id/twitch/tv/") {
+		req.URL.Path = strings.TrimPrefix(req.URL.Path, "/id/twitch/tv")
+		m.handleOAuth(res, req)
+		return
+	}
+
 	writer := json.NewEncoder(res)
 	data := &api.ResponseData[any]{Status: http.StatusOK}
 	defer func() {
@@ -169,7 +196,8 @@ func (m *MockTwitchAPI) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 
 	m.mx.RLock()
 	res.Header().Set("Content-Type", "application/json; charset=utf-8")
-	handler, ok := m.handlers[fmt.Sprintf("%s %s", strings.ToUpper(req.Method), req.URL.Path)]
+	req.URL.Path = strings.TrimPrefix(req.URL.Path, "/api/twitch/tv/")
+	handler, ok := m.handlers[fmt.Sprintf("%s /%s", strings.ToUpper(req.Method), req.URL.Path)]
 	m.mx.RUnlock()
 	if !ok {
 		data.Status = http.StatusNotFound
@@ -230,4 +258,85 @@ func (m *MockTwitchAPI) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	handler.Successes++
 	res.WriteHeader(data.Status)
 	_ = writer.Encode(handler.data)
+}
+
+func (m *MockTwitchAPI) handleOAuth(res http.ResponseWriter, req *http.Request) {
+	m.oauthToken.TimesCalled++
+	if req.Method != http.MethodPost || req.URL.Path != "/oauth2/token" {
+		m.oauthToken.Failures++
+		res.WriteHeader(http.StatusNotFound)
+		_, _ = res.Write([]byte("404 Not Found"))
+		return
+	}
+
+	writer := json.NewEncoder(res)
+	if err := req.ParseForm(); err != nil {
+		m.oauthToken.Failures++
+		res.WriteHeader(http.StatusBadRequest)
+		_ = writer.Encode(api.TwitchAPIError{
+			Status:  http.StatusBadRequest,
+			Message: "malformed request",
+		})
+		return
+	}
+
+	query := req.Form
+	grantType, clientID, clientSecret := query.Get("grant_type"), query.Get("client_id"), query.Get("client_secret")
+	res.Header().Set("Content-Type", "application/json; charset=utf-8")
+
+	m.mx.RLock()
+	secret, ok := m.applications[clientID]
+	m.mx.RUnlock()
+	if !ok || clientSecret != secret {
+		m.oauthToken.Failures++
+		res.WriteHeader(http.StatusBadRequest)
+		_ = writer.Encode(api.TwitchAPIError{
+			Status:  http.StatusBadRequest,
+			Message: "invalid client",
+		})
+		return
+	}
+
+	var refreshToken string
+	scopes := strings.Split(query.Get("scope"), " ")
+	token, err := m.NewBearerToken(clientID, scopes...)
+	if err != nil {
+		m.oauthToken.Failures++
+		res.WriteHeader(http.StatusInternalServerError)
+		_ = writer.Encode(api.TwitchAPIError{
+			Status:  http.StatusInternalServerError,
+			Message: "internal server error",
+		})
+		return
+	}
+
+	switch grantType {
+	case "client_credentials":
+	case "code":
+		refreshToken = token.RefreshToken
+	default:
+		m.oauthToken.Failures++
+		res.WriteHeader(http.StatusBadRequest)
+		_ = writer.Encode(api.TwitchAPIError{
+			Status:  http.StatusBadRequest,
+			Message: "invalid grant type",
+		})
+		return
+	}
+
+	m.oauthToken.Successes++
+	res.WriteHeader(http.StatusOK)
+	_ = writer.Encode(struct {
+		TokenType    string   `json:"token_type"`
+		AccessToken  string   `json:"access_token"`
+		RefreshToken string   `json:"refresh_token,omitempty"`
+		Scope        []string `json:"scope,omitempty"`
+		ExpiresIn    int      `json:"expires_in"`
+	}{
+		TokenType:    "bearer",
+		AccessToken:  token.AccessToken,
+		RefreshToken: refreshToken,
+		ExpiresIn:    int((time.Hour * 24 * 60).Seconds()),
+		Scope:        token.Extra("scope").([]string),
+	})
 }

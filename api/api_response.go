@@ -33,7 +33,7 @@ type ResponseData[T any] struct {
 // TwitchAPIError represents an error returned by the Twitch API.
 type TwitchAPIError struct {
 	Status  int    `json:"status"`
-	Code    string `json:"error"`
+	Code    string `json:"error,omitempty"`
 	Message string `json:"message"`
 }
 

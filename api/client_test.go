@@ -16,26 +16,31 @@ import (
 
 func TestAPI_Client(t *testing.T) {
 	mock := apitest.NewMockAPI(t, apitest.WithTLS())
+	clientID, clientSecret, err := mock.RegisterApplication()
+	require.NoError(t, err)
+
 	endpoint := apitest.SetMockResponse(mock, http.MethodGet, api.EndpointChatGetChatters, &api.ResponseData[api.UserInfo]{
 		Total: 1,
 		Data: []api.UserInfo{
 			{UserID: "3456", UserLogin: "testuser", UserName: "TestUser"},
 		},
-	}, apitest.RequireQueryParam("broadcaster_id"), apitest.RequireQueryParam("moderator_id"))
-
-	clientID, _, err := mock.RegisterApplication()
-	require.NoError(t, err)
+	}, apitest.RequireHeader("Authorization"), apitest.RequireQueryParam("broadcaster_id"), apitest.RequireQueryParam("moderator_id"))
 
 	token, err := mock.NewBearerToken(clientID)
 	require.NoError(t, err)
 
-	client := api.New(clientID, api.WithHTTPClient(mock.Client()), api.WithDefaultBearerToken(token))
-	res, err := client.Chat.Chatters.List("1234", "5678").Do(context.Background())
+	oauthEndpoint := mock.OAuthTokenEndpoint()
+	appAccess := api.AppAccess(clientID, clientSecret)
+	client := api.New(clientID, api.WithHTTPClient(mock.Client()), api.WithDefaultAuthorization(appAccess))
+	res, err := client.Chat.Chatters.List("1234", "5678").Do(context.Background(), api.WithBearerToken(token.AccessToken))
 	require.NoError(t, err)
 	require.Len(t, res.Data, res.Total)
+	require.Exactly(t, 0, oauthEndpoint.TimesCalled)
+	require.Exactly(t, 0, oauthEndpoint.Successes)
+	require.Exactly(t, 0, oauthEndpoint.Failures)
 	require.Exactly(t, 1, endpoint.TimesCalled)
-	require.Exactly(t, 0, endpoint.Failures)
 	require.Exactly(t, 1, endpoint.Successes)
+	require.Exactly(t, 0, endpoint.Failures)
 }
 
 func BenchmarkAPI_Client(b *testing.B) {
@@ -44,7 +49,7 @@ func BenchmarkAPI_Client(b *testing.B) {
 	require.NoError(b, err)
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		_ = api.New(clientID)
 	}
 }
@@ -67,8 +72,8 @@ func TestAPI_Client_APIError(t *testing.T) {
 	require.Equal(t, http.StatusUnauthorized, api.CodeOf(err))
 	require.Equal(t, "twitchapi: 401 Unauthorized - OAuth token is missing", err.Error())
 	require.Exactly(t, 1, endpoint.TimesCalled)
-	require.Exactly(t, 1, endpoint.Failures)
 	require.Exactly(t, 0, endpoint.Successes)
+	require.Exactly(t, 1, endpoint.Failures)
 }
 
 func TestAPI_Client_MissingQueryParam(t *testing.T) {
@@ -82,26 +87,26 @@ func TestAPI_Client_MissingQueryParam(t *testing.T) {
 	require.NoError(t, err)
 
 	client := api.New(clientID, api.WithHTTPClient(mock.Client()))
-	_, err = client.Chat.Chatters.List("1234", "5678").Do(context.Background(), api.WithBearerToken(token))
+	_, err = client.Chat.Chatters.List("1234", "5678").Do(context.Background(), api.WithBearerToken(token.AccessToken))
 	require.Error(t, err)
 	require.Equal(t, http.StatusBadRequest, api.CodeOf(err))
 	require.Equal(t, "twitchapi: 400 Bad Request - missing query parameter: first", err.Error())
 	require.Exactly(t, 1, endpoint.TimesCalled)
-	require.Exactly(t, 1, endpoint.Failures)
 	require.Exactly(t, 0, endpoint.Successes)
+	require.Exactly(t, 1, endpoint.Failures)
 }
 
 func TestAPI_Options_SetHeader(t *testing.T) {
 	r := &http.Request{Header: make(http.Header)}
-	api.SetHeader("X-Custom-Header", "CustomValue")(r)
+	require.NoError(t, api.SetHeader("X-Custom-Header", "CustomValue")(r))
 	require.Equal(t, "CustomValue", r.Header.Get("X-Custom-Header"))
 }
 
 func TestAPI_Options_AddHeader(t *testing.T) {
 	r := &http.Request{Header: make(http.Header)}
-	api.AddHeader("X-Custom-Header", "MyCustomValue")(r)
+	require.NoError(t, api.AddHeader("X-Custom-Header", "MyCustomValue")(r))
 	require.ElementsMatch(t, []string{"MyCustomValue"}, r.Header.Values("X-Custom-Header"))
-	api.AddHeader("X-Custom-Header", "MyOtherCustomValue")(r)
+	require.NoError(t, api.AddHeader("X-Custom-Header", "MyOtherCustomValue")(r))
 	require.ElementsMatch(t, []string{"MyCustomValue", "MyOtherCustomValue"}, r.Header.Values("X-Custom-Header"))
 }
 

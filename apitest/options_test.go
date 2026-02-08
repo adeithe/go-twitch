@@ -11,6 +11,43 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestMockAPI_RequireHeader(t *testing.T) {
+	t.Run("Exists", func(t *testing.T) {
+		headers := http.Header{}
+		headers.Set("key", "value")
+		r := &http.Request{URL: &url.URL{}, Header: headers}
+		require.NoError(t, apitest.RequireHeader("key")(r))
+	})
+
+	t.Run("Invalid", func(t *testing.T) {
+		headers := http.Header{}
+		r := &http.Request{URL: &url.URL{}, Header: headers}
+		require.Error(t, apitest.RequireHeader("key")(r))
+	})
+}
+
+func TestMockAPI_HeaderEquals(t *testing.T) {
+	t.Run("Exists", func(t *testing.T) {
+		headers := http.Header{}
+		headers.Set("key", "value")
+		r := &http.Request{URL: &url.URL{}, Header: headers}
+		require.NoError(t, apitest.HeaderEquals("key", "value")(r))
+	})
+
+	t.Run("Mismatch", func(t *testing.T) {
+		headers := http.Header{}
+		headers.Set("key", "invalid")
+		r := &http.Request{URL: &url.URL{}, Header: headers}
+		require.Error(t, apitest.HeaderEquals("key", "value")(r))
+	})
+
+	t.Run("Invalid", func(t *testing.T) {
+		headers := http.Header{}
+		r := &http.Request{URL: &url.URL{}, Header: headers}
+		require.Error(t, apitest.HeaderEquals("key", "value")(r))
+	})
+}
+
 func TestMockAPI_RequireQueryParam(t *testing.T) {
 	t.Run("Exists", func(t *testing.T) {
 		r := &http.Request{URL: &url.URL{}}

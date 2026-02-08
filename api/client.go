@@ -7,13 +7,16 @@ import (
 	"io"
 	"net/http"
 	"strings"
+
+	"golang.org/x/oauth2"
 )
 
 // Client is a client for interacting with the Twitch API.
 type Client struct {
-	clientID    string
-	bearerToken string
-	httpClient  HTTPClient
+	clientID      string
+	bearerToken   string
+	authorization Authorization
+	httpClient    HTTPClient
 
 	Ads           *AdsResource
 	Analytics     *AnalyticsResource
@@ -91,6 +94,10 @@ func New(clientID string, opts ...ClientOption) *Client {
 
 // DoRequest performs an HTTP request to the Twitch API.
 func (c *Client) DoRequest(ctx context.Context, method, path string, body io.Reader, opts ...RequestOption) (*http.Response, error) {
+	if c.httpClient != nil {
+		ctx = context.WithValue(ctx, oauth2.HTTPClient, c.httpClient)
+	}
+
 	url := fmt.Sprintf("%s/%s", BaseURL, strings.TrimPrefix(path, "/"))
 	req, err := http.NewRequestWithContext(ctx, method, url, body)
 	if err != nil {
@@ -100,14 +107,25 @@ func (c *Client) DoRequest(ctx context.Context, method, path string, body io.Rea
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Client-ID", c.clientID)
 	for _, opt := range opts {
-		opt(req)
+		if err := opt(req); err != nil {
+			return nil, err
+		}
 	}
 
 	if c.bearerToken != "" && req.Header.Get("Authorization") == "" {
-		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.bearerToken))
+		req.Header.Set("Authorization", "Bearer "+c.bearerToken)
 	}
 
-	return c.httpClient.Do(req)
+	if c.authorization == nil || req.Header.Get("Authorization") != "" {
+		return c.httpClient.Do(req)
+	}
+
+	token, err := c.authorization.TokenSource(ctx).Token()
+	if err != nil {
+		return nil, err
+	}
+	token.SetAuthHeader(req)
+	return c.authorization.Client(ctx).Do(req)
 }
 
 //go:generate sh -c "cd ../.codegen && go build -o codegen && cd - && exec ../.codegen/codegen"

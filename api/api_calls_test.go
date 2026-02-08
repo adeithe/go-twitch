@@ -2,6 +2,7 @@ package api_test
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"testing"
 	"time"
@@ -2100,26 +2101,40 @@ func TestAPI_Whispers(t *testing.T) {
 
 func RunEndpointTestCases(t *testing.T, tests []EndpointTestCase) {
 	t.Helper()
+	mock := apitest.NewMockAPI(t, apitest.WithTLS(), apitest.EnableHTTP2())
+	clientID, clientSecret, err := mock.RegisterApplication()
+	authorization := api.AppAccess(clientID, clientSecret)
+	oauthEndpoint := mock.OAuthTokenEndpoint()
+	require.NoError(t, err)
+	require.NotEmpty(t, clientID)
+	require.NotEmpty(t, clientSecret)
+
+	client := api.New(clientID, api.WithHTTPClient(mock.Client()), api.WithDefaultAuthorization(authorization))
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-			mock := apitest.NewMockAPI(t, apitest.WithTLS(), apitest.EnableHTTP2())
-			endpoint := tt.endpoint(mock)
-
-			clientID, secret, err := mock.RegisterApplication()
+		endpoint := tt.endpoint(mock)
+		t.Run(fmt.Sprintf("AppToken_%s", tt.name), func(t *testing.T) {
+			check, err := tt.fetch(client)
 			require.NoError(t, err)
-			require.NotEmpty(t, clientID)
-			require.NotEmpty(t, secret)
-
-			token, err := mock.NewBearerToken(clientID)
-			require.NoError(t, err)
-			require.NotEmpty(t, token)
-
-			client := api.New(clientID, api.WithHTTPClient(mock.Client()))
-			check, err := tt.fetch(client, api.WithBearerToken(token))
-			require.NoError(t, err)
+			require.Exactly(t, 1, oauthEndpoint.TimesCalled)
+			require.Exactly(t, 1, oauthEndpoint.Successes)
+			require.Exactly(t, 0, oauthEndpoint.Failures)
 			require.Exactly(t, 1, endpoint.TimesCalled)
 			require.Exactly(t, 1, endpoint.Successes)
+			require.Exactly(t, 0, endpoint.Failures)
+			check(t)
+		})
+
+		t.Run(fmt.Sprintf("UserToken_%s", tt.name), func(t *testing.T) {
+			token, err := mock.NewBearerToken(clientID)
+			require.NoError(t, err)
+
+			check, err := tt.fetch(client, api.WithBearerToken(token.AccessToken))
+			require.NoError(t, err)
+			require.Exactly(t, 1, oauthEndpoint.TimesCalled)
+			require.Exactly(t, 1, oauthEndpoint.Successes)
+			require.Exactly(t, 0, oauthEndpoint.Failures)
+			require.Exactly(t, 2, endpoint.TimesCalled)
+			require.Exactly(t, 2, endpoint.Successes)
 			require.Exactly(t, 0, endpoint.Failures)
 			check(t)
 		})
