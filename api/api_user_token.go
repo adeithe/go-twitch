@@ -26,7 +26,7 @@ func (a *userToken) Client(ctx context.Context) *http.Client {
 	return oauth2.NewClient(ctx, a.TokenSource(ctx))
 }
 
-// TokenSource returns an oauth2.TokenSource that maintains a Twitch API app access token.
+// TokenSource returns an oauth2.TokenSource that maintains a Twitch API user access token.
 func (a *userToken) TokenSource(ctx context.Context) oauth2.TokenSource {
 	if a.source != nil {
 		return a.source
@@ -35,7 +35,7 @@ func (a *userToken) TokenSource(ctx context.Context) oauth2.TokenSource {
 	return a.source
 }
 
-// Token returns a valid Twitch API app access token, renewing it if necessary.
+// Token returns a valid Twitch API user access token, renewing it if necessary.
 func (a *userToken) Token(ctx context.Context) (*oauth2.Token, error) {
 	return a.TokenSource(ctx).Token()
 }

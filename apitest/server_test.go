@@ -2,12 +2,15 @@ package apitest_test
 
 import (
 	"context"
+	"io"
 	"net/http"
 	"testing"
 
 	"github.com/adeithe/go-twitch/api"
 	"github.com/adeithe/go-twitch/apitest"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/twitch"
 )
 
 func TestMockAPI(t *testing.T) {
@@ -277,4 +280,59 @@ func TestMockAPI_TokenMismatch(t *testing.T) {
 	require.Exactly(t, 1, endpoint.TimesCalled)
 	require.Exactly(t, 0, endpoint.Successes)
 	require.Exactly(t, 1, endpoint.Failures)
+}
+
+func TestMockAPI_OAuth2_EndpointNotFound(t *testing.T) {
+	// The /oauth2/authorize endpoint is not supported by the apitest package.
+	// This is because it's the user-facing endpoint for Twitch's OAuth2 flow and is not used by the API client.
+	// This test ensures that requests to unsupported endpoints are properly handled by the mock server.
+	req, err := http.NewRequest(http.MethodPost, "http://id.twitch.tv/oauth2/authorize", nil)
+	require.NoError(t, err)
+
+	mock := apitest.NewMockAPI(t)
+	res, err := mock.Client().Do(req)
+	require.NoError(t, err)
+	require.Equal(t, http.StatusNotFound, res.StatusCode)
+
+	bs, err := io.ReadAll(res.Body)
+	require.NoError(t, err)
+	require.Exactly(t, "404 Not Found", string(bs))
+}
+
+func TestMockAPI_OAuth2_InvalidClient(t *testing.T) {
+	req, err := http.NewRequest(http.MethodPost, "http://id.twitch.tv/oauth2/token", nil)
+	require.NoError(t, err)
+
+	mock := apitest.NewMockAPI(t)
+	res, err := mock.Client().Do(req)
+	require.NoError(t, err)
+	require.Equal(t, http.StatusBadRequest, res.StatusCode)
+
+	bs, err := io.ReadAll(res.Body)
+	require.NoError(t, err)
+	require.JSONEq(t, `{"status": 400, "message": "invalid client"}`, string(bs))
+}
+
+func TestMockAPI_OAuth2_InvalidGrantType(t *testing.T) {
+	mock := apitest.NewMockAPI(t)
+	ctx, cancel := context.WithCancel(context.WithValue(t.Context(), oauth2.HTTPClient, mock.Client()))
+	defer cancel()
+
+	oauthEndpoint := mock.OAuthTokenEndpoint()
+	clientID, clientSecret, err := mock.RegisterApplication()
+	require.NoError(t, err)
+	oauth2Config := &oauth2.Config{
+		ClientID:     clientID,
+		ClientSecret: clientSecret,
+		Endpoint:     twitch.Endpoint,
+	}
+
+	oauth2Config.Endpoint.AuthStyle = oauth2.AuthStyleInParams
+	token, err := oauth2Config.PasswordCredentialsToken(ctx, "username", "password")
+	require.Nil(t, token)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "invalid grant type")
+	require.Exactly(t, 1, oauthEndpoint.TimesCalled)
+	require.Exactly(t, 0, oauthEndpoint.Successes)
+	require.Exactly(t, 1, oauthEndpoint.Failures)
 }

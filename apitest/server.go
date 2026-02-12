@@ -55,7 +55,7 @@ type ValidatorFunc func(req *http.Request) error
 //
 // If a response has already been added for the given path and method, it will be overwritten.
 func SetMockValidator(m *MockTwitchAPI, method, path string, validators ...ValidatorFunc) *MockTwitchAPIEndpoint {
-	return SetMockResponse(m, method, path, &api.ResponseData[any]{}, validators...)
+	return SetMockResponse[any](m, method, path, nil, validators...)
 }
 
 // SetMockResponse adds a mock response for the given path.
@@ -106,7 +106,7 @@ func NewMockAPI(t TestingT, opts ...MockTwitchAPIOption) *MockTwitchAPI {
 	client := mock.Client()
 	url, _ := url.Parse(srv.URL)
 	client.Transport = newMockTransport(client, url)
-	mux.Handle("/id/twitch/tv/oauth2/token", mock)
+	mux.Handle("/id/twitch/tv/{rest...}", mock)
 	mux.Handle("/api/twitch/tv/{rest...}", mock)
 	return mock
 }
@@ -257,6 +257,9 @@ func (m *MockTwitchAPI) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 
 	handler.Successes++
 	res.WriteHeader(data.Status)
+	if handler.data == nil {
+		return
+	}
 	_ = writer.Encode(handler.data)
 }
 
@@ -312,7 +315,8 @@ func (m *MockTwitchAPI) handleOAuth(res http.ResponseWriter, req *http.Request) 
 
 	switch grantType {
 	case "client_credentials":
-	case "code":
+		break
+	case "authorization_code", "refresh_token":
 		refreshToken = token.RefreshToken
 	default:
 		m.oauthToken.Failures++

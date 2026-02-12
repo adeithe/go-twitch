@@ -94,7 +94,7 @@ func QueryParamEquals(key, value string) ValidatorFunc {
 }
 
 // BodyParamEquals returns a ValidatorFunc that checks if a body parameter equals a specific value.
-func BodyParamEquals(key, value string) ValidatorFunc {
+func BodyParamEquals[T comparable](key string, value T) ValidatorFunc {
 	return func(req *http.Request) error {
 		m := make(map[string]any)
 		bs, _ := io.ReadAll(req.Body)
@@ -108,8 +108,12 @@ func BodyParamEquals(key, value string) ValidatorFunc {
 			return errors.New("missing body parameter: " + key)
 		}
 
+		if _, ok := val.(T); !ok {
+			return errors.New("body parameter " + key + " is not of expected type, got " + fmt.Sprintf("%T", val))
+		}
+
 		if val != value {
-			return errors.New("expected body parameter " + key + " to be " + value + ", got " + fmt.Sprintf("%v", val))
+			return errors.New("expected body parameter " + key + " to be " + fmt.Sprintf("%v", value) + ", got " + fmt.Sprintf("%v", val))
 		}
 		return nil
 	}
