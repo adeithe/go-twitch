@@ -984,6 +984,46 @@ var Endpoints = []*TwitchAPIEndpoint{
 	},
 	// EventSub
 	{
+		// https://dev.twitch.tv/docs/api/reference/#create-eventsub-subscription
+		Resource: EventSubResource,
+		Name:     "EventSubSubscriptions",
+		Method:   http.MethodPost,
+		Path:     api.EndpointEventSubSubscriptions,
+		DocsURL:  "#create-eventsub-subscriptions",
+		Comments: []string{
+			"Create a EventSub subscription.", "",
+			"# Authorization", "", "Requires an app access token or user access token.",
+		},
+		Params: struct {
+			Type      string                `body:"-"`
+			Version   string                `body:"-"`
+			Condition api.EventSubCondition `body:"-"`
+			Transport api.Transport         `body:"-"`
+			SessionID string                `body:"-"`
+			ConduitID string                `body:"-"`
+		}{},
+		Response: struct {
+			TotalCost int
+			MaxCost   int
+			Data      api.EventSubSubscription
+		}{},
+	},
+	{
+		// https://dev.twitch.tv/docs/api/reference/#create-eventsub-subscription
+		Resource: EventSubResource,
+		Name:     "EventSubSubscriptions",
+		Method:   http.MethodDelete,
+		Path:     api.EndpointEventSubSubscriptions,
+		DocsURL:  "#delete-eventsub-subscriptions",
+		Comments: []string{
+			"Create a EventSub subscription.", "",
+			"# Authorization", "", "Requires an app access token or user access token.",
+		},
+		Params: struct {
+			ID string `query:"-,required"`
+		}{},
+	},
+	{
 		// https://dev.twitch.tv/docs/api/reference/#get-eventsub-subscriptions
 		Resource: EventSubResource,
 		Name:     "EventSubSubscriptions",
@@ -992,7 +1032,7 @@ var Endpoints = []*TwitchAPIEndpoint{
 		DocsURL:  "#get-eventsub-subscriptions",
 		Comments: []string{
 			"Gets a list of all EventSub subscriptions that the authenticated app has created.", "",
-			"# Authorization", "", "Requires an app access token.",
+			"# Authorization", "", "Requires an app access token or user access token.",
 		},
 		Params: struct {
 			SubscriptionID string `query:"-"`

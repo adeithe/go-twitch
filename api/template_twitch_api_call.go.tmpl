@@ -79,6 +79,7 @@ func (api *{{ $EndpointName }}) {{ .Name }}({{ $varName }}{{ if .Slice }}s{{ end
 
 {{- range $BodyParams }}
 {{ $varName := .ParameterName }}
+{{ if eq $varName "type" }}{{ $varName = "t" }}{{ end -}}
 // {{ .Name }} sets the {{ .Name }} body parameter.
 func (api *{{ $EndpointName }}) {{ .Name }}({{ $varName }}{{ if .Slice }}s{{ end }} {{ .AsVariadicParam }}) *{{ $EndpointName }} {
 	api.body["{{ .FieldName }}"] = {{ $varName }}{{ if .Slice }}s{{ end }}{{ if eq .Type "time.Time" }}.Format(time.RFC3339){{ end }}
