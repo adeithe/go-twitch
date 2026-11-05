@@ -99,6 +99,23 @@ func TestMockAPI_RequireBodyParam(t *testing.T) {
 	})
 }
 
+func TestMockAPI_BodyNestedParamEquals(t *testing.T) {
+	t.Run("Exists", func(t *testing.T) {
+		r := &http.Request{Body: io.NopCloser(bytes.NewReader([]byte(`{"parent":{"key":"value"}}`)))}
+		require.NoError(t, apitest.BodyNestedParamEquals("parent", "key", "value")(r))
+	})
+
+	t.Run("MissingParent", func(t *testing.T) {
+		r := &http.Request{Body: io.NopCloser(bytes.NewReader([]byte(`{}`)))}
+		require.Error(t, apitest.BodyNestedParamEquals("parent", "key", "value")(r))
+	})
+
+	t.Run("MissingKey", func(t *testing.T) {
+		r := &http.Request{Body: io.NopCloser(bytes.NewReader([]byte(`{"parent":{}}`)))}
+		require.Error(t, apitest.BodyNestedParamEquals("parent", "key", "value")(r))
+	})
+}
+
 func TestMockAPI_BodyParamEquals(t *testing.T) {
 	t.Run("Exists", func(t *testing.T) {
 		r := &http.Request{Body: io.NopCloser(bytes.NewReader([]byte(`{"key":"value"}`)))}

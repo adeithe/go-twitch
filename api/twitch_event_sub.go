@@ -115,6 +115,7 @@ func (api *EventSubSubscriptionsInsertCall) Do(ctx context.Context, opts ...Requ
 		StatusCode: res.StatusCode,
 		Header:     res.Header,
 		TotalCost:  data.TotalCost,
+		MaxCost:    data.MaxCost,
 		Data:       data.Data,
 		Request:    res.Request,
 	}, nil
@@ -271,6 +272,7 @@ func (api *EventSubSubscriptionsListCall) Do(ctx context.Context, opts ...Reques
 		StatusCode: res.StatusCode,
 		Header:     res.Header,
 		TotalCost:  data.TotalCost,
+		MaxCost:    data.MaxCost,
 		Data:       data.Data,
 		Pagination: data.Pagination,
 		Request:    res.Request,
