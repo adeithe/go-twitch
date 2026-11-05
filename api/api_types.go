@@ -875,6 +875,14 @@ type EventSubCondition struct {
 	ExtensionClientID string `json:"extension_client_id,omitempty"`
 	// UserID is the user id
 	UserID string `json:"user_id,omitempty"`
+	// ConduitID is the conduit ID to receive events for. If omitted, events for all of this client’s conduits are sent.
+	ConduitID string `json:"conduit_id,omitempty"`
+	// OrganizationID is the organization ID of the organization that owns the game on the developer portal.
+	OrganizationID string `json:"organization_id,omitempty"`
+	// CategoryID is the category (or game) ID of the game for which entitlement notifications will be received.
+	CategoryID string `json:"category_id,omitempty"`
+	// CampaignID is the campaign ID for a specific campaign for which entitlement notifications will be received.
+	CampaignID string `json:"campaign_id,omitempty"`
 }
 
 // EventSubSubscription represents a Twitch EventSub subscription.
