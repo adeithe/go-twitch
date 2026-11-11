@@ -1132,6 +1132,8 @@ func TestAPI_EventSub(t *testing.T) {
 			"Get EventSub Subscriptions",
 			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
 				return apitest.SetMockResponse(mock, http.MethodGet, "/helix/eventsub/subscriptions", &api.ResponseData[api.EventSubSubscription]{
+					TotalCost: 1,
+					MaxCost:   10000,
 					Data: []api.EventSubSubscription{{
 						ID:        "sub123",
 						Status:    "enabled",
@@ -1153,6 +1155,73 @@ func TestAPI_EventSub(t *testing.T) {
 					require.Equal(t, "1", res.Data[0].Version)
 					require.Equal(t, "1234", res.Data[0].Condition["broadcaster_user_id"])
 					require.Equal(t, createdAt.Unix(), res.Data[0].CreatedAt.Unix())
+					require.Equal(t, 1, res.TotalCost)
+					require.Equal(t, 10000, res.MaxCost)
+				}, err
+			},
+		},
+		{
+			"Create EventSub Subscription",
+			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
+				return apitest.SetMockResponse(mock, http.MethodPost, "/helix/eventsub/subscriptions", &api.ResponseData[api.EventSubSubscription]{
+					TotalCost: 1,
+					MaxCost:   10000,
+					Data: []api.EventSubSubscription{{
+						ID:        "sub-new",
+						Status:    "webhook_callback_verification_pending",
+						Type:      "stream.online",
+						Version:   "1",
+						Condition: map[string]any{"broadcaster_user_id": "1337"},
+						Transport: api.Transport{
+							Method:   "webhook",
+							Callback: "https://example.com/callback",
+						},
+						Cost: 1,
+					}},
+				},
+					apitest.BodyParamEquals("type", "stream.online"),
+					apitest.BodyParamEquals("version", "1"),
+					apitest.BodyNestedParamEquals("condition", "broadcaster_user_id", "1337"),
+					apitest.BodyNestedParamEquals("transport", "method", "webhook"),
+					apitest.BodyNestedParamEquals("transport", "callback", "https://example.com/callback"),
+					apitest.BodyParamEquals("session_id", "sess123"),
+					apitest.BodyParamEquals("conduit_id", "conduit123"),
+				)
+			},
+			func(ctx context.Context, client *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
+				res, err := client.EventSub.Insert().
+					Type("stream.online").
+					Version("1").
+					Condition(api.WithStreamOnlineCondition("1337")).
+					Transport(api.WithWebhookTransport("https://example.com/callback", "s3cre7")).
+					SessionID("sess123").
+					ConduitID("conduit123").
+					Do(ctx, opts...)
+				return func(t *testing.T) {
+					require.Equal(t, 200, res.StatusCode)
+					require.Equal(t, 1, res.TotalCost)
+					require.Equal(t, 10000, res.MaxCost)
+					require.Len(t, res.Data, 1)
+					require.Equal(t, "sub-new", res.Data[0].ID)
+					require.Equal(t, "webhook_callback_verification_pending", res.Data[0].Status)
+					require.Equal(t, "stream.online", res.Data[0].Type)
+					require.Equal(t, "1337", res.Data[0].Condition["broadcaster_user_id"])
+					require.Equal(t, "webhook", res.Data[0].Transport.Method)
+					require.Equal(t, "https://example.com/callback", res.Data[0].Transport.Callback)
+				}, err
+			},
+		},
+		{
+			"Delete EventSub Subscription",
+			func(mock *apitest.MockTwitchAPI) *apitest.MockTwitchAPIEndpoint {
+				return apitest.SetMockValidator(mock, http.MethodDelete, "/helix/eventsub/subscriptions",
+					apitest.QueryParamEquals("id", "sub123"),
+				)
+			},
+			func(ctx context.Context, api *api.Client, opts ...api.RequestOption) (func(t *testing.T), error) {
+				res, err := api.EventSub.Delete("sub123").Do(ctx, opts...)
+				return func(t *testing.T) {
+					require.Equal(t, 200, res.StatusCode)
 				}, err
 			},
 		},

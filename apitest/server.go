@@ -39,6 +39,8 @@ type MockTwitchAPI struct {
 // MockTwitchAPIEndpoint represents available data for a mock Twitch API endpoint.
 type MockTwitchAPIEndpoint struct {
 	data       any
+	rawBody    []byte
+	rawStatus  int
 	validators []ValidatorFunc
 
 	TimesCalled int
@@ -74,7 +76,22 @@ func SetMockResponse[T any, V api.ResponseData[T]](m *MockTwitchAPI, method, pat
 	}
 	handler.data = data
 	handler.validators = validators
+	handler.rawBody = nil
+	handler.rawStatus = 0
 	return handler
+}
+
+// SetMockRawResponse adds a mock response with a raw body for the given path.
+//
+// Use this to simulate malformed JSON or other non-standard responses.
+func SetMockRawResponse(m *MockTwitchAPI, method, path string, statusCode int, body []byte, validators ...ValidatorFunc) *MockTwitchAPIEndpoint {
+	endpoint := SetMockResponse[any](m, method, path, nil, validators...)
+	endpoint.rawBody = body
+	if statusCode == 0 {
+		statusCode = http.StatusOK
+	}
+	endpoint.rawStatus = statusCode
+	return endpoint
 }
 
 // NewMockAPI creates a mock Twitch API server for testing purposes.
@@ -256,6 +273,15 @@ func (m *MockTwitchAPI) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	}
 
 	handler.Successes++
+	if len(handler.rawBody) > 0 {
+		status := handler.rawStatus
+		if status == 0 {
+			status = http.StatusOK
+		}
+		res.WriteHeader(status)
+		_, _ = res.Write(handler.rawBody)
+		return
+	}
 	res.WriteHeader(data.Status)
 	if handler.data == nil {
 		return
