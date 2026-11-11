@@ -118,3 +118,39 @@ func BodyParamEquals[T comparable](key string, value T) ValidatorFunc {
 		return nil
 	}
 }
+
+// BodyNestedParamEquals returns a ValidatorFunc that checks if a nested body parameter equals a specific value.
+func BodyNestedParamEquals[T comparable](parentKey, key string, value T) ValidatorFunc {
+	return func(req *http.Request) error {
+		m := make(map[string]any)
+		bs, _ := io.ReadAll(req.Body)
+		req.Body = io.NopCloser(bytes.NewReader(bs))
+		if err := json.Unmarshal(bs, &m); err != nil {
+			return err
+		}
+
+		parent, ok := m[parentKey]
+		if !ok {
+			return errors.New("missing body parameter: " + parentKey)
+		}
+
+		parentMap, ok := parent.(map[string]any)
+		if !ok {
+			return errors.New("body parameter " + parentKey + " is not an object")
+		}
+
+		val, ok := parentMap[key]
+		if !ok {
+			return errors.New("missing body parameter: " + parentKey + "." + key)
+		}
+
+		if _, ok := val.(T); !ok {
+			return errors.New("body parameter " + parentKey + "." + key + " is not of expected type, got " + fmt.Sprintf("%T", val))
+		}
+
+		if val != value {
+			return errors.New("expected body parameter " + parentKey + "." + key + " to be " + fmt.Sprintf("%v", value) + ", got " + fmt.Sprintf("%v", val))
+		}
+		return nil
+	}
+}

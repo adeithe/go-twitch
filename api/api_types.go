@@ -856,6 +856,35 @@ type ExtensionBitsProductCost struct {
 	Type string `json:"type"`
 }
 
+// EventSubCondition is a representation the conditions for a Twitch EventSub subscription.
+// see https://dev.twitch.tv/docs/eventsub/eventsub-reference#conditions
+type EventSubCondition struct {
+	// BroadcasterUserID is the User ID of the broadcaster (channel).
+	BroadcasterUserID string `json:"broadcaster_user_id,omitempty"`
+	// FromBroadcasterUserID is the broadcaster user ID that created the channel raid you want to get notifications for. Use this parameter if you want to know when a specific broadcaster raids another broadcaster. The channel raid condition must include either from_broadcaster_user_id or to_broadcaster_user_id.
+	FromBroadcasterUserID string `json:"from_broadcaster_user_id,omitempty"`
+	// ModeratorUserID is the User ID of the moderator.
+	ModeratorUserID string `json:"moderator_user_id,omitempty"`
+	// ToBroadcasterUserID is the broadcaster user ID that received the channel raid you want to get notifications for. Use this parameter if you want to know when a specific broadcaster is raided by another broadcaster. The channel raid condition must include either from_broadcaster_user_id or to_broadcaster_user_id.
+	ToBroadcasterUserID string `json:"to_broadcaster_user_id,omitempty"`
+	// RewardID is to Specify a reward id to only receive notifications for a specific reward.
+	RewardID string `json:"reward_id,omitempty"`
+	// ClientID is Your application’s client id. The provided client_id must match the client ID in the application access token.
+	ClientID string `json:"client_id,omitempty"`
+	// ExtensionClientID is the client ID of the extension.
+	ExtensionClientID string `json:"extension_client_id,omitempty"`
+	// UserID is the user id
+	UserID string `json:"user_id,omitempty"`
+	// ConduitID is the conduit ID to receive events for. If omitted, events for all of this client’s conduits are sent.
+	ConduitID string `json:"conduit_id,omitempty"`
+	// OrganizationID is the organization ID of the organization that owns the game on the developer portal.
+	OrganizationID string `json:"organization_id,omitempty"`
+	// CategoryID is the category (or game) ID of the game for which entitlement notifications will be received.
+	CategoryID string `json:"category_id,omitempty"`
+	// CampaignID is the campaign ID for a specific campaign for which entitlement notifications will be received.
+	CampaignID string `json:"campaign_id,omitempty"`
+}
+
 // EventSubSubscription represents a Twitch EventSub subscription.
 type EventSubSubscription struct {
 	// ID is the ID that uniquely identifies the subscription.
@@ -869,7 +898,7 @@ type EventSubSubscription struct {
 	// Condition is the condition that triggers the event.
 	Condition map[string]any `json:"condition"`
 	// Transport is the transport information for the subscription.
-	Transport EventSubTransport `json:"transport"`
+	Transport Transport `json:"transport"`
 	// Cost is the cost of the subscription in points.
 	Cost int `json:"cost"`
 	// TotalCost is the total cost of the subscription in points.
@@ -878,18 +907,6 @@ type EventSubSubscription struct {
 	MaxTotalCost int `json:"max_total_cost"`
 	// CreatedAt is the UTC timestamp of when the subscription was created.
 	CreatedAt time.Time `json:"created_at"`
-}
-
-// EventSubTransport represents the transport information for a Twitch EventSub subscription.
-type EventSubTransport struct {
-	// Method is the transport method.
-	Method string `json:"method"`
-	// Callback is the callback URL for webhook transports.
-	Callback string `json:"callback,omitempty"`
-	// SessionID is the session ID for websocket transports.
-	SessionID string `json:"session_id,omitempty"`
-	// ConduitID is the ID of the conduit being used for an EventSub transport.
-	ConduitID string `json:"conduit_id,omitempty"`
 }
 
 // Game represents a game on Twitch.
